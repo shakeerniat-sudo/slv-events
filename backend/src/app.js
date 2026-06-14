@@ -19,6 +19,11 @@ app.use(morgan('dev'));
 // Mount API routes
 app.use('/api', apiRouter);
 
+// Root path route handler
+app.get('/', (req, res) => {
+  res.send('🚀 SLV Events API is running successfully!');
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
