@@ -4,8 +4,7 @@ import axios from 'axios';
 const AuthContext = createContext(null);
 
 // Configure default base URL for Axios
-axios.defaults.baseURL = 'https://eager-bats-sort.loca.lt/api';
-axios.defaults.headers.common['Bypass-Tunnel-Reminder'] = 'true';
+axios.defaults.baseURL = 'https://slv-events-backend.onrender.com/api';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
