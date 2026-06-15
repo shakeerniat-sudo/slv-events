@@ -64,23 +64,21 @@ exports.getEventDetail = async (req, res) => {
 
     const event = events[0];
 
-    // Get assigned vendors
-    const vendors = await db.query(
-      "SELECT a.*, v.name as vendor_name, v.category as vendor_category, v.phone as vendor_phone, v.rating as vendor_rating FROM assignments a JOIN vendors v ON a.resource_id = v.id WHERE a.event_id = ? AND a.resource_type = 'vendor'",
-      [eventId]
-    );
-
-    // Get assigned staff
-    const staff = await db.query(
-      "SELECT a.*, s.name as staff_name, s.role as staff_role, s.phone as staff_phone FROM assignments a JOIN staff s ON a.resource_id = s.id WHERE a.event_id = ? AND a.resource_type = 'staff'",
-      [eventId]
-    );
-
-    // Get payments
-    const payments = await db.query(
-      "SELECT * FROM payments WHERE event_id = ?",
-      [eventId]
-    );
+    // Get assigned vendors, staff, and payments in parallel
+    const [vendors, staff, payments] = await Promise.all([
+      db.query(
+        "SELECT a.*, v.name as vendor_name, v.category as vendor_category, v.phone as vendor_phone, v.rating as vendor_rating FROM assignments a JOIN vendors v ON a.resource_id = v.id WHERE a.event_id = ? AND a.resource_type = 'vendor'",
+        [eventId]
+      ),
+      db.query(
+        "SELECT a.*, s.name as staff_name, s.role as staff_role, s.phone as staff_phone FROM assignments a JOIN staff s ON a.resource_id = s.id WHERE a.event_id = ? AND a.resource_type = 'staff'",
+        [eventId]
+      ),
+      db.query(
+        "SELECT * FROM payments WHERE event_id = ?",
+        [eventId]
+      )
+    ]);
 
     return res.status(200).json({
       ...event,

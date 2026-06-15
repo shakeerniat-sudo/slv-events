@@ -2,11 +2,13 @@ const db = require('../config/db');
 
 exports.getKpiStats = async (req, res) => {
   try {
-    const events = await db.query('SELECT * FROM events');
-    const vendors = await db.query('SELECT * FROM vendors');
-    const staff = await db.query('SELECT * FROM staff');
-    const assignments = await db.query('SELECT * FROM assignments');
-    const payments = await db.query('SELECT * FROM payments');
+    const [events, vendors, staff, assignments, payments] = await Promise.all([
+      db.query('SELECT * FROM events'),
+      db.query('SELECT * FROM vendors'),
+      db.query('SELECT * FROM staff'),
+      db.query('SELECT * FROM assignments'),
+      db.query('SELECT * FROM payments')
+    ]);
 
     // 1. KPI Counts
     const totalEvents = events.length;
@@ -22,18 +24,20 @@ exports.getKpiStats = async (req, res) => {
 
     // 2. Conflict Alerts
     // Build list of assignments grouped by date to find overlaps
-    const vendorAssignments = await db.query(`
-      SELECT a.resource_id, e.event_date
-      FROM assignments a
-      JOIN events e ON a.event_id = e.id
-      WHERE a.resource_type = 'vendor'
-    `);
-    const staffAssignments = await db.query(`
-      SELECT a.resource_id, e.event_date
-      FROM assignments a
-      JOIN events e ON a.event_id = e.id
-      WHERE a.resource_type = 'staff'
-    `);
+    const [vendorAssignments, staffAssignments] = await Promise.all([
+      db.query(`
+        SELECT a.resource_id, e.event_date
+        FROM assignments a
+        JOIN events e ON a.event_id = e.id
+        WHERE a.resource_type = 'vendor'
+      `),
+      db.query(`
+        SELECT a.resource_id, e.event_date
+        FROM assignments a
+        JOIN events e ON a.event_id = e.id
+        WHERE a.resource_type = 'staff'
+      `)
+    ]);
 
     const detectOverlapCount = (list) => {
       const dates = {};
@@ -63,10 +67,12 @@ exports.getKpiStats = async (req, res) => {
 
 exports.getChartsData = async (req, res) => {
   try {
-    const events = await db.query('SELECT * FROM events');
-    const vendors = await db.query('SELECT * FROM vendors');
-    const staff = await db.query('SELECT * FROM staff');
-    const assignments = await db.query('SELECT * FROM assignments');
+    const [events, vendors, staff, assignments] = await Promise.all([
+      db.query('SELECT * FROM events'),
+      db.query('SELECT * FROM vendors'),
+      db.query('SELECT * FROM staff'),
+      db.query('SELECT * FROM assignments')
+    ]);
 
     // 1. Monthly Events (Recharts Line/Bar)
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

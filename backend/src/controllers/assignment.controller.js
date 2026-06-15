@@ -121,21 +121,22 @@ exports.getConflicts = async (req, res) => {
     // A conflict is when the same resource is assigned to multiple events on the same date.
     // Let's perform a self-join simulation.
     // Query list of all assignments with their events.
-    const vendorAssignments = await db.query(`
-      SELECT a.id, a.event_id, a.resource_id, e.name as event_name, e.event_date, v.name as resource_name, v.phone as resource_phone
-      FROM assignments a
-      JOIN events e ON a.event_id = e.id
-      JOIN vendors v ON a.resource_id = v.id
-      WHERE a.resource_type = 'vendor'
-    `);
-
-    const staffAssignments = await db.query(`
-      SELECT a.id, a.event_id, a.resource_id, e.name as event_name, e.event_date, s.name as resource_name, s.phone as resource_phone
-      FROM assignments a
-      JOIN events e ON a.event_id = e.id
-      JOIN staff s ON a.resource_id = s.id
-      WHERE a.resource_type = 'staff'
-    `);
+    const [vendorAssignments, staffAssignments] = await Promise.all([
+      db.query(`
+        SELECT a.id, a.event_id, a.resource_id, e.name as event_name, e.event_date, v.name as resource_name, v.phone as resource_phone
+        FROM assignments a
+        JOIN events e ON a.event_id = e.id
+        JOIN vendors v ON a.resource_id = v.id
+        WHERE a.resource_type = 'vendor'
+      `),
+      db.query(`
+        SELECT a.id, a.event_id, a.resource_id, e.name as event_name, e.event_date, s.name as resource_name, s.phone as resource_phone
+        FROM assignments a
+        JOIN events e ON a.event_id = e.id
+        JOIN staff s ON a.resource_id = s.id
+        WHERE a.resource_type = 'staff'
+      `)
+    ]);
 
     const conflicts = [];
 
@@ -187,12 +188,14 @@ exports.checkAvailability = async (req, res) => {
       return res.status(400).json({ message: 'Date parameter is required' });
     }
 
-    const vendors = await db.query('SELECT id, name, category, rating FROM vendors');
-    const staff = await db.query('SELECT id, name, role, experience_years FROM staff');
-    const assignments = await db.query(
-      'SELECT a.*, e.event_date FROM assignments a JOIN events e ON a.event_id = e.id WHERE e.event_date = ?',
-      [date]
-    );
+    const [vendors, staff, assignments] = await Promise.all([
+      db.query('SELECT id, name, category, rating FROM vendors'),
+      db.query('SELECT id, name, role, experience_years FROM staff'),
+      db.query(
+        'SELECT a.*, e.event_date FROM assignments a JOIN events e ON a.event_id = e.id WHERE e.event_date = ?',
+        [date]
+      )
+    ]);
 
     const busyVendors = new Set(assignments.filter(a => a.resource_type === 'vendor').map(a => a.resource_id));
     const busyStaff = new Set(assignments.filter(a => a.resource_type === 'staff').map(a => a.resource_id));
@@ -230,15 +233,15 @@ exports.getRecommendations = async (req, res) => {
     const eventDate = event.event_date;
     const budget = event.budget;
 
-    // 1. Load resources
-    const vendors = await db.query('SELECT * FROM vendors');
-    const staff = await db.query('SELECT * FROM staff');
-    
-    // 2. Load already busy resources on this event date
-    const busyAssignments = await db.query(
-      'SELECT a.* FROM assignments a JOIN events e ON a.event_id = e.id WHERE e.event_date = ? AND e.id != ?',
-      [eventDate, eventId]
-    );
+    // 1. Load resources and load already busy resources on this event date in parallel
+    const [vendors, staff, busyAssignments] = await Promise.all([
+      db.query('SELECT * FROM vendors'),
+      db.query('SELECT * FROM staff'),
+      db.query(
+        'SELECT a.* FROM assignments a JOIN events e ON a.event_id = e.id WHERE e.event_date = ? AND e.id != ?',
+        [eventDate, eventId]
+      )
+    ]);
     const busyVendors = new Set(busyAssignments.filter(a => a.resource_type === 'vendor').map(a => a.resource_id));
     const busyStaff = new Set(busyAssignments.filter(a => a.resource_type === 'staff').map(a => a.resource_id));
 
