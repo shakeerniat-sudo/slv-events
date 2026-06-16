@@ -1,11 +1,42 @@
 const db = require('../config/db');
-
 exports.listPayments = async (req, res) => {
   try {
+    const { page, limit, search, type } = req.query;
     const payments = await db.query(
       'SELECT p.*, e.name as event_name, v.name as vendor_name FROM payments p JOIN events e ON p.event_id = e.id LEFT JOIN vendors v ON p.vendor_id = v.id'
     );
-    return res.status(200).json(payments);
+    
+    let filtered = [...payments];
+    if (type && type !== 'all') {
+      filtered = filtered.filter(p => p.type === type);
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.event_name.toLowerCase().includes(q) || 
+        (p.vendor_name && p.vendor_name.toLowerCase().includes(q))
+      );
+    }
+
+    // Sort by due date (latest first)
+    const sortedPayments = filtered.sort((a, b) => new Date(b.due_date) - new Date(a.due_date));
+
+    // Pagination (optional)
+    if (page) {
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 10;
+      const offset = (pageNum - 1) * limitNum;
+      const paginated = sortedPayments.slice(offset, offset + limitNum);
+      return res.status(200).json({
+        data: paginated,
+        total: sortedPayments.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(sortedPayments.length / limitNum)
+      });
+    }
+
+    return res.status(200).json(sortedPayments);
   } catch (err) {
     console.error('List payments error:', err);
     return res.status(500).json({ message: 'Error retrieving payments list' });

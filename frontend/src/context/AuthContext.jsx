@@ -4,7 +4,10 @@ import axios from 'axios';
 const AuthContext = createContext(null);
 
 // Configure default base URL for Axios
-axios.defaults.baseURL = 'https://slv-events-backend.onrender.com/api';
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5050/api'
+    : 'https://slv-events-backend.onrender.com/api');
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

@@ -3,7 +3,7 @@ const db = require('../config/db');
 // List events with search, status filters
 exports.listEvents = async (req, res) => {
   try {
-    const { search, status, sort } = req.query;
+    const { search, status, sort, page, limit } = req.query;
     
     // We fetch all events with their clients
     const events = await db.query(
@@ -39,6 +39,21 @@ exports.listEvents = async (req, res) => {
     } else {
       // Default sort by date ascending (upcoming first)
       filteredEvents.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+    }
+
+    // Pagination (optional)
+    if (page) {
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 10;
+      const offset = (pageNum - 1) * limitNum;
+      const paginatedEvents = filteredEvents.slice(offset, offset + limitNum);
+      return res.status(200).json({
+        data: paginatedEvents,
+        total: filteredEvents.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(filteredEvents.length / limitNum)
+      });
     }
 
     return res.status(200).json(filteredEvents);

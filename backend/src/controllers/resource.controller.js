@@ -6,7 +6,7 @@ const db = require('../config/db');
 
 exports.listVendors = async (req, res) => {
   try {
-    const { category, availability } = req.query;
+    const { category, availability, search, page, limit } = req.query;
     const vendors = await db.query('SELECT * FROM vendors');
     
     let filtered = [...vendors];
@@ -15,6 +15,28 @@ exports.listVendors = async (req, res) => {
     }
     if (availability && availability !== 'all') {
       filtered = filtered.filter(v => v.availability_status.toLowerCase() === availability.toLowerCase());
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(v => 
+        v.name.toLowerCase().includes(q) || 
+        v.contact_person?.toLowerCase().includes(q)
+      );
+    }
+
+    // Pagination (optional)
+    if (page) {
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 10;
+      const offset = (pageNum - 1) * limitNum;
+      const paginated = filtered.slice(offset, offset + limitNum);
+      return res.status(200).json({
+        data: paginated,
+        total: filtered.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(filtered.length / limitNum)
+      });
     }
 
     return res.status(200).json(filtered);
@@ -149,7 +171,7 @@ exports.deleteVendor = async (req, res) => {
 
 exports.listStaff = async (req, res) => {
   try {
-    const { role, availability } = req.query;
+    const { role, availability, search, page, limit } = req.query;
     const staff = await db.query('SELECT * FROM staff');
     
     let filtered = [...staff];
@@ -158,6 +180,28 @@ exports.listStaff = async (req, res) => {
     }
     if (availability && availability !== 'all') {
       filtered = filtered.filter(s => s.availability_status.toLowerCase() === availability.toLowerCase());
+    }
+    if (search) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(s => 
+        s.name.toLowerCase().includes(q) || 
+        s.role.toLowerCase().includes(q)
+      );
+    }
+
+    // Pagination (optional)
+    if (page) {
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 10;
+      const offset = (pageNum - 1) * limitNum;
+      const paginated = filtered.slice(offset, offset + limitNum);
+      return res.status(200).json({
+        data: paginated,
+        total: filtered.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(filtered.length / limitNum)
+      });
     }
 
     return res.status(200).json(filtered);
