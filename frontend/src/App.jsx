@@ -20,6 +20,7 @@ import Inventory from './pages/Inventory';
 import Reports from './pages/Reports';
 import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
+import NotFound from './pages/NotFound';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -158,8 +159,8 @@ function App() {
             }
           />
 
-          {/* Fallback redirect */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Fallback 404 Page Not Found */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
     </AuthProvider>
