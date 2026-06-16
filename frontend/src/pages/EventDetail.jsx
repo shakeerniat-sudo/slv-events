@@ -16,6 +16,7 @@ import {
   Clock,
   Sparkles
 } from 'lucide-react';
+import NotFound from './NotFound';
 
 const EventDetail = () => {
   const { id } = useParams();
@@ -76,16 +77,7 @@ const EventDetail = () => {
   }
 
   if (error || !event) {
-    return (
-      <div className="glass-card p-8 text-center text-slate-500 dark:text-slate-400 bg-white dark:bg-[#111C30]/40">
-        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto mb-4" />
-        <p className="text-sm">{error?.message || 'Failed to load event details.'}</p>
-        <Link to="/events" className="mt-4 inline-flex items-center gap-2 text-xs text-sky-500 hover:underline font-semibold">
-          <ChevronLeft className="w-4 h-4" />
-          <span>Back to events</span>
-        </Link>
-      </div>
-    );
+    return <NotFound />;
   }
 
   // Calculate quick metrics
