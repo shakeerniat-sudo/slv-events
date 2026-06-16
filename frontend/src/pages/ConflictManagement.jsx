@@ -98,7 +98,7 @@ const ConflictManagement = () => {
                       {conf.resourceName}
                     </h3>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                      Double-booked on <strong>{new Date(conf.date).toLocaleDateString()}</strong> for:
+                      Double-booked on <strong>{new Date(conf.date).toLocaleDateString('en-GB')}</strong> for:
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2">
                       {conf.events.map(e => (

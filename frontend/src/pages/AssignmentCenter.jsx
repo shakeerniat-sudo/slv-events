@@ -171,7 +171,7 @@ const AssignmentCenter = () => {
             >
               {events.map(e => (
                 <option key={e.id} value={e.id} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-250">
-                  {e.name} ({new Date(e.event_date).toLocaleDateString()})
+                  {e.name} ({new Date(e.event_date).toLocaleDateString('en-GB')})
                 </option>
               ))}
             </select>
@@ -409,7 +409,7 @@ const AssignmentCenter = () => {
 
             <div className="bg-rose-50 border border-rose-200 dark:bg-rose-950/35 dark:border-rose-900/40 rounded-2xl p-4 text-xs text-rose-800 dark:text-rose-300 mb-6 leading-relaxed">
               <p className="font-semibold mb-2">{conflictWarning.message}</p>
-              <p>The selected resource is booked on <strong>{new Date(conflictWarning.conflict.date).toLocaleDateString()}</strong> for event <strong>{conflictWarning.conflict.eventName || 'another gig'}</strong>.</p>
+              <p>The selected resource is booked on <strong>{new Date(conflictWarning.conflict.date).toLocaleDateString('en-GB')}</strong> for event <strong>{conflictWarning.conflict.eventName || 'another gig'}</strong>.</p>
             </div>
 
             <div className="flex justify-end gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">

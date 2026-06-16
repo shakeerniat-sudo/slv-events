@@ -225,7 +225,7 @@ const Payments = () => {
             placeholder="Search payments by event name or vendor..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="form-input"
+            className="form-input !pl-10"
           />
         </div>
 
@@ -293,7 +293,7 @@ const Payments = () => {
                           {p.status}
                         </span>
                       </td>
-                      <td className="text-slate-600 dark:text-slate-400">{new Date(p.due_date).toLocaleDateString()}</td>
+                      <td className="text-slate-600 dark:text-slate-400">{new Date(p.due_date).toLocaleDateString('en-GB')}</td>
                       <td className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-2">
                           {p.status !== 'Paid' && isFinance && (

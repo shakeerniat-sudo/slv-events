@@ -141,7 +141,7 @@ const Inventory = () => {
             placeholder="Search structural items, lights or speakers..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="form-input animate-fade-in"
+            className="form-input !pl-10 animate-fade-in"
           />
         </div>
       </div>

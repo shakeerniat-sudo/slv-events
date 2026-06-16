@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
@@ -34,6 +34,21 @@ const Events = () => {
     notes: ''
   });
   const [formError, setFormError] = useState(null);
+
+  // Handle auto-open and prefill date from URL query (e.g. from Availability Calendar)
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('create') === 'true') {
+      const dateParam = params.get('date');
+      if (dateParam) {
+        setFormData(prev => ({ ...prev, eventDate: dateParam }));
+      }
+      setShowModal(true);
+      // Clean up parameters to prevent modal reopening on refresh
+      navigate('/events', { replace: true });
+    }
+  }, [location.search]);
 
   // Search input debouncing
   useEffect(() => {
@@ -175,7 +190,7 @@ const Events = () => {
             placeholder="Search by event title, venue or customer name..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="form-input"
+            className="form-input !pl-10"
           />
         </div>
 
@@ -252,7 +267,7 @@ const Events = () => {
                   <div className="grid grid-cols-2 gap-4 mt-6 border-t border-slate-150 dark:border-slate-850/80 pt-4 text-xs">
                     <div>
                       <span className="text-[10px] text-slate-450 dark:text-slate-500 block uppercase font-bold">Event Date</span>
-                      <span className="text-slate-700 dark:text-slate-300 font-bold">{new Date(ev.event_date).toLocaleDateString()}</span>
+                      <span className="text-slate-700 dark:text-slate-300 font-bold">{new Date(ev.event_date).toLocaleDateString('en-GB')}</span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-450 dark:text-slate-500 block uppercase font-bold">Budget Allocation</span>

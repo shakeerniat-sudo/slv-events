@@ -157,7 +157,7 @@ const EventDetail = () => {
                 <Calendar className="w-4.5 h-4.5 text-sky-500 shrink-0 mt-0.5" />
                 <div>
                   <span className="text-[10px] text-slate-450 dark:text-slate-500 block uppercase font-bold">Scheduled Date</span>
-                  <span className="text-slate-700 dark:text-slate-300 font-semibold">{new Date(event.event_date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                  <span className="text-slate-700 dark:text-slate-300 font-semibold">{new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                 </div>
               </div>
 

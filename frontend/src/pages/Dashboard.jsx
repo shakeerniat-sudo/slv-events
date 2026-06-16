@@ -158,7 +158,7 @@ const Dashboard = () => {
         </div>
         <div className="text-xs text-slate-650 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl flex items-center gap-2 shadow-inner transition-colors">
           <Clock className="w-4 h-4 text-sky-500" />
-          <span>Local Time: {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+          <span>Local Time: {new Date().toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
         </div>
       </div>
 
@@ -294,7 +294,7 @@ const Dashboard = () => {
                       {log.details}
                     </td>
                     <td className="text-right text-slate-450 dark:text-slate-400">
-                      {new Date(log.timestamp).toLocaleDateString()} {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(log.timestamp).toLocaleDateString('en-GB')} {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </td>
                   </tr>
                 ))

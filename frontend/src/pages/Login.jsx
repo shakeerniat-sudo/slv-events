@@ -83,7 +83,7 @@ const Login = () => {
                   placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="form-input pl-10"
+                  className="form-input !pl-10"
                 />
               </div>
             </div>
@@ -103,7 +103,7 @@ const Login = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="form-input pl-10"
+                  className="form-input !pl-10"
                 />
               </div>
             </div>
