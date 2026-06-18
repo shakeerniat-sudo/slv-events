@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Search, Filter, Plus, Eye, Trash2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Search, Filter, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import AssignmentModal from '../components/AssignmentModal';
 
 const Events = () => {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ const Events = () => {
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
+  const [editEventId, setEditEventId] = useState(null);
+  const [activeAssignEvent, setActiveAssignEvent] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     clientName: '',
@@ -42,13 +45,14 @@ const Events = () => {
     if (params.get('create') === 'true') {
       const dateParam = params.get('date');
       if (dateParam) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFormData(prev => ({ ...prev, eventDate: dateParam }));
       }
       setShowModal(true);
       // Clean up parameters to prevent modal reopening on refresh
       navigate('/events', { replace: true });
     }
-  }, [location.search]);
+  }, [location.search, navigate]);
 
   // Search input debouncing
   useEffect(() => {
@@ -59,10 +63,7 @@ const Events = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Page resets when filter changes
-  useEffect(() => {
-    setPage(1);
-  }, [status, sort]);
+
 
   // Query to fetch events
   const { data, isLoading } = useQuery({
@@ -78,35 +79,91 @@ const Events = () => {
 
   const eventsData = data?.data || [];
   const totalPages = data?.totalPages || 1;
-  const totalItems = data?.total || 0;
+
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditEventId(null);
+    setFormData({
+      name: '',
+      clientName: '',
+      clientPhone: '',
+      clientEmail: '',
+      eventType: 'Corporate',
+      eventDate: '',
+      venue: '',
+      budget: '',
+      guestCount: '',
+      themePreference: '',
+      notes: ''
+    });
+    setFormError(null);
+  };
+
+  const handleEditClick = (ev) => {
+    setEditEventId(ev.id);
+    setFormData({
+      name: ev.name || '',
+      clientName: ev.client_name || '',
+      clientPhone: ev.client_phone || '',
+      clientEmail: ev.client_email || '',
+      eventType: ev.event_type || 'Corporate',
+      eventDate: ev.event_date ? new Date(ev.event_date).toISOString().split('T')[0] : '',
+      venue: ev.venue || '',
+      budget: ev.budget || '',
+      guestCount: ev.guest_count || '',
+      themePreference: ev.theme_preference || '',
+      notes: ev.notes || '',
+      status: ev.status || 'Pending'
+    });
+    setShowModal(true);
+  };
 
   // Create Event Mutation
   const createEventMutation = useMutation({
     mutationFn: async (formData) => {
-      await axios.post('/events', formData);
+      const res = await axios.post('/events', formData);
+      return res.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
-      setShowModal(false);
-      // Reset form
-      setFormData({
-        name: '',
-        clientName: '',
-        clientPhone: '',
-        clientEmail: '',
-        eventType: 'Corporate',
-        eventDate: '',
-        venue: '',
-        budget: '',
-        guestCount: '',
-        themePreference: '',
-        notes: ''
-      });
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
+      
+      // Auto open Assign Vendors & Staff modal for this newly created event!
+      if (data && data.eventId) {
+        const newEvent = {
+          id: data.eventId,
+          name: formData.name,
+          event_date: formData.eventDate,
+        };
+        setActiveAssignEvent(newEvent);
+      }
+      
+      handleCloseModal();
       addToast('Event booking registered successfully!');
     },
     onError: (err) => {
       setFormError(err.response?.data?.message || 'Failed to register event. Try again.');
       addToast('Failed to register event.', 'error');
+    }
+  });
+
+  // Update Event Mutation
+  const updateEventMutation = useMutation({
+    mutationFn: async ({ id, updatedData }) => {
+      await axios.put(`/events/${id}`, updatedData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
+      handleCloseModal();
+      addToast('Event updated successfully!');
+    },
+    onError: (err) => {
+      setFormError(err.response?.data?.message || 'Failed to update event. Try again.');
+      addToast('Failed to update event.', 'error');
     }
   });
 
@@ -117,6 +174,8 @@ const Events = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
       addToast('Event successfully deleted and canceled.');
       window.alert('Event deleted successfully.');
     },
@@ -133,7 +192,17 @@ const Events = () => {
   const handleCreateEvent = (e) => {
     e.preventDefault();
     setFormError(null);
-    createEventMutation.mutate(formData);
+    if (editEventId) {
+      updateEventMutation.mutate({
+        id: editEventId,
+        updatedData: {
+          ...formData,
+          status: formData.status || 'Pending'
+        }
+      });
+    } else {
+      createEventMutation.mutate(formData);
+    }
   };
 
   const handleDeleteEvent = (id) => {
@@ -142,6 +211,7 @@ const Events = () => {
   };
 
   const getStatusColor = (st) => {
+    if (!st) return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400';
     switch (st.toLowerCase()) {
       case 'pending': 
         return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/30';
@@ -200,7 +270,10 @@ const Events = () => {
             <Filter className="w-3.5 h-3.5 text-slate-400 dark:text-slate-550" />
             <select
               value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
               className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer pr-4"
             >
               <option value="all" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">All Statuses</option>
@@ -215,7 +288,10 @@ const Events = () => {
           <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl transition-colors">
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
+              onChange={(e) => {
+                setSort(e.target.value);
+                setPage(1);
+              }}
               className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer pr-4"
             >
               <option value="date_asc" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Upcoming First</option>
@@ -245,7 +321,7 @@ const Events = () => {
               <div
                 key={ev.id}
                 onClick={() => navigate(`/events/${ev.id}`)}
-                className="glass-card bg-white hover:bg-slate-50/50 dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/40 p-6 flex flex-col justify-between h-72 cursor-pointer relative overflow-hidden group hover:scale-[1.01] duration-200"
+                className="glass-card bg-white hover:bg-slate-50/50 dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/40 p-6 flex flex-col justify-between h-80 cursor-pointer relative overflow-hidden group hover:scale-[1.01] duration-200"
               >
                 <div>
                   {/* Header tags */}
@@ -266,43 +342,57 @@ const Events = () => {
 
                   <div className="grid grid-cols-2 gap-4 mt-6 border-t border-slate-150 dark:border-slate-850/80 pt-4 text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-450 dark:text-slate-500 block uppercase font-bold">Event Date</span>
+                      <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">Event Date</span>
                       <span className="text-slate-700 dark:text-slate-300 font-bold">{new Date(ev.event_date).toLocaleDateString('en-GB')}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-450 dark:text-slate-500 block uppercase font-bold">Budget Allocation</span>
+                      <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">Budget Allocation</span>
                       <span className="text-sky-500 dark:text-sky-400 font-bold">₹{parseFloat(ev.budget).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between border-t border-slate-150 dark:border-slate-850/80 pt-4 mt-6">
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-[10px] text-sky-600 dark:text-sky-400 capitalize shrink-0">
-                      {ev.client_name?.charAt(0)}
+                <div className="flex flex-col gap-2 border-t border-slate-150 dark:border-slate-850/80 pt-3 mt-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5 overflow-hidden">
+                      <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-[9px] text-sky-600 dark:text-sky-400 capitalize shrink-0">
+                        {ev.client_name?.charAt(0)}
+                      </div>
+                      <span className="text-[10px] truncate max-w-[120px]">{ev.client_name}</span>
                     </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[120px]">{ev.client_name}</span>
-                  </div>
-                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => navigate(`/events/${ev.id}`)}
-                      className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-650 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
-                      title="View Details"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </button>
                     {isCoordinator && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          setTimeout(() => handleDeleteEvent(ev.id), 0);
-                        }}
-                        className="p-1.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950 text-slate-450 hover:text-rose-500 dark:hover:text-rose-400 rounded-lg border border-slate-200 dark:border-slate-700/50 transition-colors cursor-pointer"
+                        onClick={() => handleDeleteEvent(ev.id)}
+                        className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
                         title="Delete Event"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-1.5 w-full">
+                    <button
+                      onClick={() => navigate(`/events/${ev.id}`)}
+                      className="flex-1 py-1 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                    >
+                      View
+                    </button>
+                    {isCoordinator && (
+                      <button
+                        onClick={() => handleEditClick(ev)}
+                        className="flex-1 py-1 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {isCoordinator && (
+                      <button
+                        onClick={() => setActiveAssignEvent(ev)}
+                        className="px-2.5 py-1 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer whitespace-nowrap"
+                      >
+                        Assign Vendors & Staff
                       </button>
                     )}
                   </div>
@@ -334,16 +424,16 @@ const Events = () => {
             </div>
           )}
         </>
-      )}
-
-      {/* Create Event Modal */}
+      )}      {/* Create Event Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl animate-modal-zoom my-8 max-h-[90vh] overflow-y-auto transition-colors">
             <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800 mb-6">
-              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">Register New Event Booking</h3>
+              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
+                {editEventId ? 'Edit Event Details' : 'Register New Event Booking'}
+              </h3>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={handleCloseModal}
                 className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 ✕
@@ -507,22 +597,32 @@ const Events = () => {
               <div className="flex justify-end gap-3 border-t border-slate-200 dark:border-slate-800 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-650 dark:text-slate-350 hover:text-slate-900 dark:hover:text-white rounded-xl text-xs transition-colors cursor-pointer"
+                  onClick={handleCloseModal}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-655 dark:text-slate-350 hover:text-slate-900 dark:hover:text-white rounded-xl text-xs transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={createEventMutation.isPending}
+                  disabled={createEventMutation.isPending || updateEventMutation.isPending}
                   className="px-5 py-2.5 bg-sky-500 hover:bg-sky-650 text-white rounded-xl text-xs font-bold shadow-sm cursor-pointer"
                 >
-                  {createEventMutation.isPending ? 'Registering...' : 'Register Event'}
+                  {editEventId 
+                    ? (updateEventMutation.isPending ? 'Saving...' : 'Save Changes') 
+                    : (createEventMutation.isPending ? 'Registering...' : 'Register Event')}
                 </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {/* Assign Vendors & Staff Modal */}
+      {activeAssignEvent && (
+        <AssignmentModal
+          event={activeAssignEvent}
+          onClose={() => setActiveAssignEvent(null)}
+        />
       )}
     </div>
   );

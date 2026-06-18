@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
@@ -38,10 +38,7 @@ const Staff = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Page reset when filter changes
-  useEffect(() => {
-    setPage(1);
-  }, [role]);
+
 
   // Query to fetch staff list
   const { data, isLoading } = useQuery({
@@ -75,6 +72,8 @@ const Staff = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
       setShowAddModal(false);
       setFormData({
         name: '',
@@ -97,6 +96,8 @@ const Staff = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
       addToast('Staff member removed successfully.');
       window.alert('Staff deleted successfully.');
     },
@@ -163,7 +164,10 @@ const Staff = () => {
         <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl transition-colors">
           <select
             value={role}
-            onChange={(e) => setRole(e.target.value)}
+            onChange={(e) => {
+              setRole(e.target.value);
+              setPage(1);
+            }}
             className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer pr-4"
           >
             <option value="all" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">All Roles</option>

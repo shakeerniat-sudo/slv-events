@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Briefcase, Search, Star, Phone, Mail, Plus, Eye, Trash2, Calendar, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Briefcase, Search, Star, Phone, Mail, Plus, Trash2, Calendar, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Vendors = () => {
   const { isCoordinator } = useAuth();
@@ -42,10 +42,7 @@ const Vendors = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Page reset when filter changes
-  useEffect(() => {
-    setPage(1);
-  }, [category]);
+
 
   // Query to fetch vendors
   const { data, isLoading } = useQuery({
@@ -79,6 +76,8 @@ const Vendors = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      queryClient.invalidateQueries({ queryKey: ['vendors-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
       setShowAddModal(false);
       setFormData({
         name: '',
@@ -105,6 +104,8 @@ const Vendors = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendors'] });
+      queryClient.invalidateQueries({ queryKey: ['vendors-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
       addToast('Vendor removed successfully.');
       window.alert('Vendor deleted successfully.');
     },
@@ -171,7 +172,10 @@ const Vendors = () => {
         <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl transition-colors">
           <select
             value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            onChange={(e) => {
+              setCategory(e.target.value);
+              setPage(1);
+            }}
             className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer pr-4"
           >
             <option value="all" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">All Categories</option>

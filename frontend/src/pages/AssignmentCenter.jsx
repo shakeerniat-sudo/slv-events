@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -16,7 +15,6 @@ import {
 } from 'lucide-react';
 
 const AssignmentCenter = () => {
-  const { isCoordinator } = useAuth();
   const { addToast } = useUIStore();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -41,6 +39,7 @@ const AssignmentCenter = () => {
   // Automatically select first event if none selected
   useEffect(() => {
     if (events.length > 0 && !selectedEventId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedEventId(events[0].id.toString());
     }
   }, [events, selectedEventId]);
@@ -308,19 +307,37 @@ const AssignmentCenter = () => {
                     <div key={cat} className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-2xl p-4 transition-colors">
                       <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">{cat} Suggestions</h4>
                       
-                      <div className="space-y-2">
+                      <div className="space-y-2.5">
                         {options.map(candidate => (
                           <div
                             key={candidate.id}
-                            className="p-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl flex justify-between items-center text-xs transition-colors"
+                            className="p-4 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs transition-colors"
                           >
-                            <div>
-                              <p className="font-semibold text-slate-800 dark:text-slate-200">{candidate.name}</p>
-                              <div className="flex items-center gap-2 text-[10px] text-slate-455 dark:text-slate-400 mt-1 font-medium">
+                            <div className="flex-1 w-full">
+                              <p className="font-semibold text-slate-850 dark:text-slate-200 text-sm">{candidate.name}</p>
+                              <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-bold uppercase tracking-wider">
                                 <span>Rating: {parseFloat(candidate.rating).toFixed(1)}⭐</span>
                                 <span>•</span>
                                 <span>Tier: {candidate.price_range}</span>
                               </div>
+                              
+                              {/* Suitability Reasons */}
+                              {candidate.reasons && candidate.reasons.length > 0 && (
+                                <div className="mt-3 pt-2.5 border-t border-slate-150 dark:border-slate-800/40 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                                  {candidate.reasons.map((r, idx) => (
+                                    <div key={idx} className="flex items-center gap-1.5 text-[10px]">
+                                      {r.success ? (
+                                        <span className="text-emerald-500 font-extrabold text-xs shrink-0">✓</span>
+                                      ) : (
+                                        <span className="text-amber-500 font-extrabold text-xs shrink-0">⚠</span>
+                                      )}
+                                      <span className={r.success ? 'text-slate-655 dark:text-slate-300 font-semibold' : 'text-slate-450 dark:text-slate-500 font-medium'}>
+                                        {r.text}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
 
                             <button
@@ -336,9 +353,9 @@ const AssignmentCenter = () => {
                                   handleAssign('vendor', candidate.id);
                                 }
                               }}
-                              className={`px-3 py-1.5 border rounded-lg font-bold text-[11px] transition-all cursor-pointer ${getStatusStyle(candidate.status)}`}
+                              className={`px-4 py-2 border rounded-xl font-bold text-[11px] transition-all cursor-pointer shrink-0 w-full sm:w-auto ${getStatusStyle(candidate.status)}`}
                             >
-                              {candidate.status === 'Available' ? 'Assign' : 'Conflict ⚠️'}
+                              {candidate.status === 'Available' ? 'Assign Choice' : 'Conflict ⚠️'}
                             </button>
                           </div>
                         ))}
@@ -357,34 +374,57 @@ const AssignmentCenter = () => {
                         return (
                           <div key={role} className="space-y-2">
                             <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">{role} Options</span>
-                            {crew.map(c => (
-                              <div
-                                key={c.id}
-                                className="p-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl flex justify-between items-center text-xs transition-colors"
-                              >
-                                <div>
-                                  <p className="font-semibold text-slate-800 dark:text-slate-200">{c.name}</p>
-                                  <p className="text-[10px] text-slate-455 dark:text-slate-400 mt-0.5">{c.experience_years} Years Experience</p>
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    if (c.status === 'Already Assigned') {
-                                      setConflictWarning({
-                                        resourceType: 'staff',
-                                        resourceId: c.id,
-                                        message: 'Staff member is already assigned to a shift on this day.',
-                                        conflict: { date: eventDetails.event_date }
-                                      });
-                                    } else {
-                                      handleAssign('staff', c.id);
-                                    }
-                                  }}
-                                  className={`px-3 py-1.5 border rounded-lg font-bold text-[11px] transition-all cursor-pointer ${getStatusStyle(c.status)}`}
+                            <div className="space-y-2.5">
+                              {crew.map(c => (
+                                <div
+                                  key={c.id}
+                                  className="p-4 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs transition-colors"
                                 >
-                                  {c.status === 'Available' ? 'Assign' : 'Conflict ⚠️'}
-                                </button>
-                              </div>
-                            ))}
+                                  <div className="flex-1 w-full">
+                                    <p className="font-semibold text-slate-850 dark:text-slate-205 text-sm">{c.name}</p>
+                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-bold uppercase tracking-wider">
+                                      {c.experience_years} Years Experience
+                                    </p>
+                                    
+                                    {/* Crew Suitability Reasons */}
+                                    {c.reasons && c.reasons.length > 0 && (
+                                      <div className="mt-3 pt-2.5 border-t border-slate-150 dark:border-slate-800/40 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                                        {c.reasons.map((r, idx) => (
+                                          <div key={idx} className="flex items-center gap-1.5 text-[10px]">
+                                            {r.success ? (
+                                              <span className="text-emerald-500 font-extrabold text-xs shrink-0">✓</span>
+                                            ) : (
+                                              <span className="text-amber-500 font-extrabold text-xs shrink-0">⚠</span>
+                                            )}
+                                            <span className={r.success ? 'text-slate-655 dark:text-slate-300 font-semibold' : 'text-slate-450 dark:text-slate-500 font-medium'}>
+                                              {r.text}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <button
+                                    onClick={() => {
+                                      if (c.status === 'Already Assigned') {
+                                        setConflictWarning({
+                                          resourceType: 'staff',
+                                          resourceId: c.id,
+                                          message: 'Staff member is already assigned to a shift on this day.',
+                                          conflict: { date: eventDetails.event_date }
+                                        });
+                                      } else {
+                                        handleAssign('staff', c.id);
+                                      }
+                                    }}
+                                    className={`px-4 py-2 border rounded-xl font-bold text-[11px] transition-all cursor-pointer shrink-0 w-full sm:w-auto ${getStatusStyle(c.status)}`}
+                                  >
+                                    {c.status === 'Available' ? 'Assign Choice' : 'Conflict ⚠️'}
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         );
                       })}

@@ -49,6 +49,14 @@
       "email": "sarah@example.com",
       "company_name": "Jenkins & Co",
       "created_at": "2026-06-13T16:50:37.487Z"
+    },
+    {
+      "id": 3,
+      "name": "Rahul sharma",
+      "phone": "9876543210",
+      "email": "rahul@gmail.com",
+      "company_name": "",
+      "created_at": "2026-06-17T16:17:41.970Z"
     }
   ],
   "events": [
@@ -93,6 +101,20 @@
       "status": "Pending",
       "notes": "Requires high quality sound and technicians.",
       "created_at": "2026-06-13T16:50:37.487Z"
+    },
+    {
+      "id": 4,
+      "name": "Wedding Reception",
+      "client_id": 3,
+      "event_type": "Wedding",
+      "event_date": "2026-06-18",
+      "venue": "Royal palace",
+      "budget": 50000,
+      "guest_count": 200,
+      "theme_preference": "Mint green",
+      "notes": "",
+      "status": "Pending",
+      "created_at": "2026-06-17T16:17:41.985Z"
     }
   ],
   "vendors": [
@@ -160,6 +182,110 @@
       "rating": 4.6,
       "availability_status": "Available",
       "created_at": "2026-06-13T16:50:37.488Z"
+    },
+    {
+      "id": 6,
+      "name": "Elegant Events",
+      "category": "Decorator",
+      "contact_person": "Priya Verma",
+      "phone": "+91 96666 77777",
+      "email": "elegant@events.com",
+      "service_type": "Standard Decor",
+      "price_range": "Medium",
+      "rating": 4.2,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T10:16:21.586Z"
+    },
+    {
+      "id": 7,
+      "name": "Mughal Feasts",
+      "category": "Caterer",
+      "contact_person": "Tariq Ali",
+      "phone": "+91 97777 88888",
+      "email": "mughal@feasts.com",
+      "service_type": "Mughlai & North Indian",
+      "price_range": "High",
+      "rating": 4.8,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T10:16:21.604Z"
+    },
+    {
+      "id": 8,
+      "name": "Lens Magic",
+      "category": "Photographer",
+      "contact_person": "Rahul Bose",
+      "phone": "+91 98888 99999",
+      "email": "lens@magic.com",
+      "service_type": "Traditional & Drone",
+      "price_range": "Medium",
+      "rating": 4.5,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T10:16:21.604Z"
+    },
+    {
+      "id": 9,
+      "name": "DJ Rocky",
+      "category": "Sound Team",
+      "contact_person": "Rocky Bhai",
+      "phone": "+91 99999 00000",
+      "email": "rocky@dj.com",
+      "service_type": "Club & EDM Setup",
+      "price_range": "Medium",
+      "rating": 4.4,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T10:16:21.604Z"
+    },
+    {
+      "id": 6,
+      "name": "Elegant Events",
+      "category": "Decorator",
+      "contact_person": "Priya Verma",
+      "phone": "+91 96666 77777",
+      "email": "elegant@events.com",
+      "service_type": "Standard Decor",
+      "price_range": "Medium",
+      "rating": 4.2,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T15:49:36.280Z"
+    },
+    {
+      "id": 7,
+      "name": "Mughal Feasts",
+      "category": "Caterer",
+      "contact_person": "Tariq Ali",
+      "phone": "+91 97777 88888",
+      "email": "mughal@feasts.com",
+      "service_type": "Mughlai & North Indian",
+      "price_range": "High",
+      "rating": 4.8,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T15:49:36.296Z"
+    },
+    {
+      "id": 8,
+      "name": "Lens Magic",
+      "category": "Photographer",
+      "contact_person": "Rahul Bose",
+      "phone": "+91 98888 99999",
+      "email": "lens@magic.com",
+      "service_type": "Traditional & Drone",
+      "price_range": "Medium",
+      "rating": 4.5,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T15:49:36.296Z"
+    },
+    {
+      "id": 9,
+      "name": "DJ Rocky",
+      "category": "Sound Team",
+      "contact_person": "Rocky Bhai",
+      "phone": "+91 99999 00000",
+      "email": "rocky@dj.com",
+      "service_type": "Club & EDM Setup",
+      "price_range": "Medium",
+      "rating": 4.4,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T15:49:36.297Z"
     }
   ],
   "staff": [
@@ -216,6 +342,60 @@
       "experience_years": 1,
       "availability_status": "Available",
       "created_at": "2026-06-14T04:57:17.340Z"
+    },
+    {
+      "id": 7,
+      "name": "Neha Gupta",
+      "role": "Coordinator",
+      "phone": "+91 86666 66666",
+      "experience_years": 2,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T10:16:21.604Z"
+    },
+    {
+      "id": 8,
+      "name": "Arjun Das",
+      "role": "Technician",
+      "phone": "+91 87777 77777",
+      "experience_years": 6,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T10:16:21.604Z"
+    },
+    {
+      "id": 9,
+      "name": "Suman Roy",
+      "role": "Helper",
+      "phone": "+91 88888 88888",
+      "experience_years": 1,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T10:16:21.604Z"
+    },
+    {
+      "id": 7,
+      "name": "Neha Gupta",
+      "role": "Coordinator",
+      "phone": "+91 86666 66666",
+      "experience_years": 2,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T15:49:36.297Z"
+    },
+    {
+      "id": 8,
+      "name": "Arjun Das",
+      "role": "Technician",
+      "phone": "+91 87777 77777",
+      "experience_years": 6,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T15:49:36.297Z"
+    },
+    {
+      "id": 9,
+      "name": "Suman Roy",
+      "role": "Helper",
+      "phone": "+91 88888 88888",
+      "experience_years": 1,
+      "availability_status": "Available",
+      "created_at": "2026-06-17T15:49:36.297Z"
     }
   ],
   "assignments": [
@@ -341,6 +521,21 @@
       "paid_at": null,
       "notes": "First installment due",
       "created_at": "2026-06-13T16:50:37.488Z"
+    },
+    {
+      "id": 4,
+      "event_id": 4,
+      "type": "client",
+      "vendor_id": null,
+      "total_amount": 50000,
+      "advance": 0,
+      "balance": 50000,
+      "amount": 50000,
+      "due_date": "2026-06-18",
+      "status": "Pending",
+      "paid_at": "Initial event budget payment",
+      "notes": "",
+      "created_at": "2026-06-17T16:17:41.994Z"
     }
   ],
   "quotations": [],
@@ -351,7 +546,8 @@
       "message": "Corporate event \"Product Launch 2026\" has been created.",
       "type": "Upcoming Event",
       "is_read": 0,
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-13T16:50:37.488Z",
+      "is_deleted": 1
     },
     {
       "id": 2,
@@ -359,7 +555,260 @@
       "message": "Royal Decorators has a pending assignment for TechCorp Annual Gala.",
       "type": "Assignment Confirmation",
       "is_read": 0,
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-13T16:50:37.488Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 3,
+      "title": "Insufficient Helpers Alert",
+      "message": "⚠ Only 1 helpers available. Required: 3.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.056Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 4,
+      "title": "Insufficient Helpers Alert",
+      "message": "⚠ Only 0 helpers available. Required: 5.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.074Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 5,
+      "title": "Insufficient Helpers Alert",
+      "message": "⚠ Only 0 helpers available. Required: 2.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.082Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 6,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"TechCorp Annual Gala 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.096Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 7,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"TechCorp Annual Gala 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.100Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 8,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"TechCorp Annual Gala 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.113Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 9,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Decorator allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.126Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 10,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.131Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 11,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Photographer allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.158Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 12,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.182Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 13,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.195Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 14,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Decorator allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.211Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 15,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.229Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 16,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Photographer allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.235Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 17,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.246Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 18,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.252Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 19,
+      "title": "Pending Payment Alert",
+      "message": "⚠ Payment of $25,000.00 (vendor payment) for event \"TechCorp Annual Gala 2026\" is pending. Due date: 15/07/2026.",
+      "type": "Payment Reminder",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.276Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 20,
+      "title": "Pending Payment Alert",
+      "message": "⚠ Payment of $1,00,000.00 (client billing) for event \"Sarah Wedding Reception\" is pending. Due date: 30/06/2026.",
+      "type": "Payment Reminder",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:08:59.281Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 21,
+      "title": "New Event Created",
+      "message": "Event \"Wedding Reception\" scheduled for 2026-06-18 at Royal palace has been registered.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:17:42.002Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 22,
+      "title": "Event Summary: Wedding Reception",
+      "message": "Client: Rahul sharma\nEvent Type: Wedding\nDate: 18/06/2026\nVenue: Royal palace\nBudget: $50,000.00\nGuest Count: 200\nAssigned Vendors: None\nAssigned Staff: None\nCurrent Status: Pending",
+      "type": "Event Summary",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:17:42.009Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 23,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Decorator allocated to event \"Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:17:42.038Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 24,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:17:42.042Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 25,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Photographer allocated to event \"Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:17:42.047Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 26,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:17:42.053Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 27,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:17:42.059Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 28,
+      "title": "Upcoming Event Warning",
+      "message": "⚠ Event \"Wedding Reception\" starts within 24 hours on 18/06/2026 at Royal palace.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:17:42.078Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 29,
+      "title": "Pending Payment Alert",
+      "message": "⚠ Payment of $50,000.00 (client billing) for event \"Wedding Reception\" is pending. Due date: 18/06/2026.",
+      "type": "Payment Reminder",
+      "is_read": 0,
+      "created_at": "2026-06-17T16:17:42.096Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 31,
+      "title": "Event Day Reminder",
+      "message": "Reminder: Monitor live event operations for event \"Wedding Reception\".",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-18T05:01:36.365Z",
+      "is_deleted": 1
     }
   ],
   "activity_logs": [
@@ -378,6 +827,14 @@
       "action": "CREATE_STAFF",
       "details": "Added staff member \"sunil\" as \"Supervisor\"",
       "timestamp": "2026-06-14T04:57:17.708Z"
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "CREATE_EVENT",
+      "details": "Created event \"Wedding Reception\" (ID: 4) for client \"Rahul sharma\"",
+      "timestamp": "2026-06-17T16:17:42.118Z"
     }
   ]
 }

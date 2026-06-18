@@ -61,6 +61,8 @@ router.post('/assignments/delete', authenticateToken, assignmentController.delet
 router.get('/assignments/conflicts', authenticateToken, assignmentController.getConflicts);
 router.get('/assignments/availability', authenticateToken, assignmentController.checkAvailability);
 router.get('/assignments/recommendations/:eventId', authenticateToken, assignmentController.getRecommendations);
+router.get('/assignments/event/:eventId', authenticateToken, assignmentController.getEventAssignment);
+router.post('/assignments/event/:eventId', authenticateToken, assignmentController.saveEventAssignment);
 
 // ==========================================
 // Payments Routes
@@ -83,5 +85,7 @@ router.delete('/inventory/:id', authenticateToken, inventoryController.deleteInv
 // ==========================================
 router.get('/notifications', authenticateToken, notificationController.listNotifications);
 router.put('/notifications/:id/read', authenticateToken, notificationController.markAsRead);
+router.delete('/notifications/:id', authenticateToken, notificationController.deleteNotification);
+router.delete('/notifications', authenticateToken, notificationController.deleteAllNotifications);
 
 module.exports = router;

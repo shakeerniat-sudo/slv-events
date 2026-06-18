@@ -1,4 +1,3 @@
-import React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
@@ -12,8 +11,6 @@ import {
   UserCheck,
   CreditCard,
   ChevronLeft,
-  AlertCircle,
-  Clock,
   Sparkles
 } from 'lucide-react';
 import NotFound from './NotFound';

@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
 import { useUIStore } from '../store/uiStore';
 import { Building, Mail, Shield, CheckCircle } from 'lucide-react';
 
 const SettingsPage = () => {
-  const { user } = useAuth();
   const { addToast } = useUIStore();
   const [companyProfile, setCompanyProfile] = useState({
     companyName: 'SLV Events Private Limited',
@@ -34,16 +32,12 @@ const SettingsPage = () => {
   };
 
   // Mock list of database users to show user management
-  const [usersList, setUsersList] = useState([]);
-  
-  useEffect(() => {
-    setUsersList([
-      { id: 1, name: 'Admin User', email: 'admin@slvevents.com', role: 'Admin' },
-      { id: 2, name: 'Coordinator User', email: 'coordinator@slvevents.com', role: 'Vendor Coordinator' },
-      { id: 3, name: 'Operations User', email: 'operations@slvevents.com', role: 'Operations Lead' },
-      { id: 4, name: 'Finance User', email: 'finance@slvevents.com', role: 'Finance Team' }
-    ]);
-  }, []);
+  const [usersList] = useState([
+    { id: 1, name: 'Admin User', email: 'admin@slvevents.com', role: 'Admin' },
+    { id: 2, name: 'Coordinator User', email: 'coordinator@slvevents.com', role: 'Vendor Coordinator' },
+    { id: 3, name: 'Operations User', email: 'operations@slvevents.com', role: 'Operations Lead' },
+    { id: 4, name: 'Finance User', email: 'finance@slvevents.com', role: 'Finance Team' }
+  ]);
 
   const permissionMatrix = [
     { module: 'Events Management', admin: 'Full', coordinator: 'Full', ops: 'Read-Only', finance: 'Read-Only' },

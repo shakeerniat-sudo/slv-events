@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-import { useUIStore } from '../store/uiStore';
+
 import { useNavigate } from 'react-router-dom';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Calendar = () => {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { theme } = useUIStore();
-  const isDark = theme === 'dark';
+
 
   // Filters
   const [showEvents, setShowEvents] = useState(true);

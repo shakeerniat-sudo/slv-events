@@ -37,6 +37,7 @@ app.get('/health', (req, res) => {
 db.connectDb();
 
 // Centralized Error Handler
+// eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error('[SERVER ERROR]', err);
   const status = err.status || 500;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
@@ -40,10 +40,6 @@ const Payments = () => {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Page resets when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [filterType]);
 
   // Query to fetch payments (paginated)
   const { data: paymentsData, isLoading: paymentsLoading } = useQuery({
@@ -80,17 +76,7 @@ const Payments = () => {
     enabled: showAddModal,
   });
 
-  // Set default dropdown values once fetched
-  useEffect(() => {
-    if (showAddModal) {
-      if (events.length > 0 && !formData.eventId) {
-        setFormData(prev => ({ ...prev, eventId: events[0].id.toString() }));
-      }
-      if (vendors.length > 0 && !formData.vendorId) {
-        setFormData(prev => ({ ...prev, vendorId: vendors[0].id.toString() }));
-      }
-    }
-  }, [showAddModal, events, vendors]);
+
 
   // Create Payment Mutation
   const createPaymentMutation = useMutation({
@@ -169,7 +155,10 @@ const Payments = () => {
   const handleAddPayment = (e) => {
     e.preventDefault();
     setFormError(null);
-    createPaymentMutation.mutate(formData);
+    const submitData = { ...formData };
+    if (!submitData.eventId && events.length > 0) submitData.eventId = events[0].id.toString();
+    if (submitData.type === 'vendor' && !submitData.vendorId && vendors.length > 0) submitData.vendorId = vendors[0].id.toString();
+    createPaymentMutation.mutate(submitData);
   };
 
   const handleMarkAsPaid = (id) => {
@@ -232,7 +221,10 @@ const Payments = () => {
         <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 px-3 py-1.5 rounded-xl transition-colors">
           <select
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => {
+              setFilterType(e.target.value);
+              setPage(1);
+            }}
             className="bg-transparent text-xs text-slate-700 dark:text-slate-300 outline-none cursor-pointer pr-4"
           >
             <option value="all" className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">All Types</option>
@@ -381,7 +373,7 @@ const Payments = () => {
                   <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">Select Event *</label>
                   <select
                     name="eventId"
-                    value={formData.eventId}
+                    value={formData.eventId || (events.length > 0 ? events[0].id.toString() : '')}
                     onChange={handleInputChange}
                     className="form-input cursor-pointer"
                   >
@@ -411,7 +403,7 @@ const Payments = () => {
                     <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">Outsource Vendor *</label>
                     <select
                       name="vendorId"
-                      value={formData.vendorId}
+                      value={formData.vendorId || (vendors.length > 0 ? vendors[0].id.toString() : '')}
                       onChange={handleInputChange}
                       className="form-input cursor-pointer"
                     >

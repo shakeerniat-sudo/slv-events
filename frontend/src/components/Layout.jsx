@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
+import Chatbot from './Chatbot';
 import {
   LayoutDashboard,
   Calendar,
@@ -46,6 +47,137 @@ const Layout = ({ children }) => {
     toasts, 
     removeToast 
   } = useUIStore();
+
+  // Prefetch lists globally once layout is mounted
+  useEffect(() => {
+    if (!user) return;
+    
+    // Prefetch Dashboard KPIs
+    queryClient.prefetchQuery({
+      queryKey: ['dashboardKpi'],
+      queryFn: async () => {
+        const res = await axios.get('/dashboard/kpi');
+        return res.data;
+      }
+    });
+
+    // Prefetch Dashboard Charts
+    queryClient.prefetchQuery({
+      queryKey: ['dashboardCharts'],
+      queryFn: async () => {
+        const res = await axios.get('/dashboard/charts');
+        return res.data;
+      }
+    });
+
+    // Prefetch Dashboard Activities
+    queryClient.prefetchQuery({
+      queryKey: ['dashboardActivities'],
+      queryFn: async () => {
+        const res = await axios.get('/dashboard/activities');
+        return res.data;
+      }
+    });
+
+    // Prefetch Events listing (page 1)
+    queryClient.prefetchQuery({
+      queryKey: ['events', { search: '', status: 'all', sort: 'date_asc', page: 1 }],
+      queryFn: async () => {
+        const res = await axios.get('/events', {
+          params: { search: '', status: 'all', sort: 'date_asc', page: 1, limit: 9 }
+        });
+        return res.data;
+      }
+    });
+
+    // Prefetch Vendors listing (page 1)
+    queryClient.prefetchQuery({
+      queryKey: ['vendors', { search: '', category: 'all', page: 1 }],
+      queryFn: async () => {
+        const res = await axios.get('/vendors', {
+          params: { search: '', category: 'all', page: 1, limit: 9 }
+        });
+        return res.data;
+      }
+    });
+
+    // Prefetch Staff listing (page 1)
+    queryClient.prefetchQuery({
+      queryKey: ['staff', { search: '', role: 'all', page: 1 }],
+      queryFn: async () => {
+        const res = await axios.get('/staff', {
+          params: { search: '', role: 'all', page: 1, limit: 9 }
+        });
+        return res.data;
+      }
+    });
+
+    // Prefetch Payments listing (page 1)
+    queryClient.prefetchQuery({
+      queryKey: ['payments', { search: '', type: 'all', page: 1 }],
+      queryFn: async () => {
+        const res = await axios.get('/payments', {
+          params: { search: '', type: 'all', page: 1, limit: 10 }
+        });
+        return res.data;
+      }
+    });
+
+    // Prefetch all events list (dropdown & calendar)
+    queryClient.prefetchQuery({
+      queryKey: ['events-all'],
+      queryFn: async () => {
+        const res = await axios.get('/events');
+        return res.data;
+      }
+    });
+
+    // Prefetch all assignments (calendar)
+    queryClient.prefetchQuery({
+      queryKey: ['assignments-all'],
+      queryFn: async () => {
+        const res = await axios.get('/assignments');
+        return res.data || [];
+      }
+    });
+
+    // Prefetch all vendors (calendar)
+    queryClient.prefetchQuery({
+      queryKey: ['vendors-all'],
+      queryFn: async () => {
+        const res = await axios.get('/vendors');
+        return res.data;
+      }
+    });
+
+    // Prefetch all staff (calendar)
+    queryClient.prefetchQuery({
+      queryKey: ['staff-all'],
+      queryFn: async () => {
+        const res = await axios.get('/staff');
+        return res.data;
+      }
+    });
+
+    // Prefetch initial eventPlanner details (Event ID: 1)
+    queryClient.prefetchQuery({
+      queryKey: ['eventPlanner', '1'],
+      queryFn: async () => {
+        const [detailRes, recRes] = await Promise.all([
+          axios.get('/events/1'),
+          axios.get('/assignments/recommendations/1')
+        ]);
+        return {
+          eventDetails: detailRes.data,
+          recommendations: recRes.data.recommendations,
+          briefs: {
+            summary: recRes.data.summary,
+            alerts: recRes.data.alerts
+          }
+        };
+      }
+    });
+  }, [user, queryClient]);
 
   // Fetch recent notifications via TanStack Query
   const { data: notifications = [] } = useQuery({
@@ -394,6 +526,7 @@ const Layout = ({ children }) => {
           </div>
         </main>
       </div>
+      <Chatbot />
     </div>
   );
 };

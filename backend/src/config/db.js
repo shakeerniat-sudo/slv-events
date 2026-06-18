@@ -64,7 +64,8 @@ const defaultSeedData = {
   ],
   activity_logs: [
     { id: 1, user_id: 1, user_name: 'Admin User', action: 'CREATE_EVENT', details: 'Created event: TechCorp Annual Gala 2026', timestamp: new Date().toISOString() }
-  ]
+  ],
+  event_assignments: []
 };
 
 // Check and initialize JSON database file
@@ -482,7 +483,9 @@ function runJsonQuery(sql, params = []) {
         paid_at: params[1],
         amount: parseFloat(params[2]) || db.payments[idx].amount,
         due_date: params[3] || db.payments[idx].due_date,
-        notes: params[4] || db.payments[idx].notes
+        notes: params[4] || db.payments[idx].notes,
+        advance: params[5] !== undefined ? parseFloat(params[5]) : db.payments[idx].advance,
+        balance: params[6] !== undefined ? parseFloat(params[6]) : db.payments[idx].balance
       };
       writeJsonDb(db);
       return { affectedRows: 1 };
@@ -553,6 +556,9 @@ function runJsonQuery(sql, params = []) {
 
   // 32. SELECT notifications
   if (sqlClean.startsWith('select * from notifications')) {
+    if (sqlClean.includes('where is_deleted = 0 or is_deleted is null')) {
+      return db.notifications.filter(n => !n.is_deleted).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
     return db.notifications.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
   }
 
@@ -584,6 +590,48 @@ function runJsonQuery(sql, params = []) {
     return { affectedRows: 0 };
   }
 
+  // 34b. DELETE FROM notifications (Legacy hard delete, kept for internal sync cleanup)
+  if (sqlClean.startsWith('delete from notifications')) {
+    const orig = db.notifications.length;
+    if (sqlClean.includes('where')) {
+      if (sqlClean.includes('type = ? and message = ?')) {
+        db.notifications = db.notifications.filter(n => !(n.type === params[0] && n.message === params[1]));
+      } else if (sqlClean.includes('title = ? and type = ?')) {
+        db.notifications = db.notifications.filter(n => !(n.title === params[0] && n.type === params[1]));
+      } else if (sqlClean.includes('id = ?')) {
+        db.notifications = db.notifications.filter(n => n.id !== parseInt(params[0]));
+      }
+    } else {
+      db.notifications = [];
+    }
+    writeJsonDb(db);
+    return { affectedRows: orig - db.notifications.length };
+  }
+
+  // 34c. UPDATE notifications is_deleted (Soft Delete)
+  if (sqlClean.startsWith('update notifications set is_deleted = 1')) {
+    if (sqlClean.includes('where id = ?')) {
+      const id = parseInt(params[0]);
+      const idx = db.notifications.findIndex(n => n.id === id);
+      if (idx !== -1) {
+        db.notifications[idx].is_deleted = 1;
+        writeJsonDb(db);
+        return { affectedRows: 1 };
+      }
+      return { affectedRows: 0 };
+    } else {
+      let count = 0;
+      db.notifications.forEach(n => {
+        if (!n.is_deleted) {
+          n.is_deleted = 1;
+          count++;
+        }
+      });
+      writeJsonDb(db);
+      return { affectedRows: count };
+    }
+  }
+
   // 35. SELECT activity_logs
   if (sqlClean.startsWith('select * from activity_logs')) {
     return db.activity_logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -603,6 +651,82 @@ function runJsonQuery(sql, params = []) {
     db.activity_logs.push(log);
     writeJsonDb(db);
     return { insertId: newId };
+  }
+
+  // 37. SELECT event_assignments
+  if (sqlClean.startsWith('select * from event_assignments') && sqlClean.includes('where event_id = ?')) {
+    const eventId = parseInt(params[0]);
+    if (!db.event_assignments) db.event_assignments = [];
+    const ass = db.event_assignments.find(a => a.event_id === eventId);
+    return ass ? [ass] : [];
+  }
+
+  // 38. INSERT INTO event_assignments
+  if (sqlClean.startsWith('insert into event_assignments')) {
+    if (!db.event_assignments) db.event_assignments = [];
+    const newId = db.event_assignments.reduce((max, a) => Math.max(max, a.assignment_id || a.id || 0), 0) + 1;
+    const eventId = parseInt(params[0]);
+    const existingIdx = db.event_assignments.findIndex(a => a.event_id === eventId);
+    
+    const record = {
+      assignment_id: newId,
+      event_id: eventId,
+      decorator_id: params[1] ? parseInt(params[1]) : null,
+      caterer_id: params[2] ? parseInt(params[2]) : null,
+      photographer_id: params[3] ? parseInt(params[3]) : null,
+      anchor_id: params[4] ? parseInt(params[4]) : null,
+      sound_team_id: params[5] ? parseInt(params[5]) : null,
+      staff_ids: params[6] || '',
+      status: params[7] || 'Assigned',
+      assigned_by: params[8] || 'Admin',
+      assigned_at: new Date().toISOString()
+    };
+    
+    if (existingIdx !== -1) {
+      db.event_assignments[existingIdx] = {
+        ...db.event_assignments[existingIdx],
+        ...record,
+        assignment_id: db.event_assignments[existingIdx].assignment_id
+      };
+    } else {
+      db.event_assignments.push(record);
+    }
+    writeJsonDb(db);
+    return { insertId: newId, affectedRows: 1 };
+  }
+
+  // 39. UPDATE event_assignments
+  if (sqlClean.startsWith('update event_assignments set')) {
+    if (!db.event_assignments) db.event_assignments = [];
+    const eventId = parseInt(params[params.length - 1]);
+    const idx = db.event_assignments.findIndex(a => a.event_id === eventId);
+    if (idx !== -1) {
+      db.event_assignments[idx] = {
+        ...db.event_assignments[idx],
+        decorator_id: params[0] ? parseInt(params[0]) : null,
+        caterer_id: params[1] ? parseInt(params[1]) : null,
+        photographer_id: params[2] ? parseInt(params[2]) : null,
+        anchor_id: params[3] ? parseInt(params[3]) : null,
+        sound_team_id: params[4] ? parseInt(params[4]) : null,
+        staff_ids: params[5] || '',
+        status: params[6] || 'Assigned',
+        assigned_by: params[7] || 'Admin',
+        assigned_at: new Date().toISOString()
+      };
+      writeJsonDb(db);
+      return { affectedRows: 1 };
+    }
+    return { affectedRows: 0 };
+  }
+
+  // 40. DELETE FROM event_assignments
+  if (sqlClean.startsWith('delete from event_assignments where event_id = ?')) {
+    if (!db.event_assignments) db.event_assignments = [];
+    const eventId = parseInt(params[0]);
+    const orig = db.event_assignments.length;
+    db.event_assignments = db.event_assignments.filter(a => a.event_id !== eventId);
+    writeJsonDb(db);
+    return { affectedRows: orig - db.event_assignments.length };
   }
 
   // Catch-all or unhandled query fallback simulation
@@ -648,6 +772,42 @@ async function connectDb() {
     // Test connection
     const conn = await pool.getConnection();
     console.log(`✅ Database Connected Successfully to MySQL at ${host}:${port}/${database}`);
+    try {
+      await conn.query('ALTER TABLE notifications MODIFY COLUMN type VARCHAR(50) NOT NULL');
+      console.log('✅ Schema migration for notifications table completed successfully (modified type to VARCHAR(50)).');
+    } catch (migErr) {
+      console.warn('⚠️ Notification table alter query warning:', migErr.message);
+    }
+    try {
+      await conn.query('ALTER TABLE notifications ADD COLUMN is_deleted BOOLEAN DEFAULT 0');
+      console.log('✅ Schema migration: Added is_deleted column to notifications table.');
+    } catch (migErr) {
+      // Ignored if column already exists
+      if (migErr.code !== 'ER_DUP_FIELDNAME') {
+        console.warn('⚠️ Notification table add column warning:', migErr.message);
+      }
+    }
+    try {
+      await conn.query(`
+        CREATE TABLE IF NOT EXISTS event_assignments (
+          assignment_id INT AUTO_INCREMENT PRIMARY KEY,
+          event_id INT UNIQUE NOT NULL,
+          decorator_id INT DEFAULT NULL,
+          caterer_id INT DEFAULT NULL,
+          photographer_id INT DEFAULT NULL,
+          anchor_id INT DEFAULT NULL,
+          sound_team_id INT DEFAULT NULL,
+          staff_ids VARCHAR(255) DEFAULT NULL,
+          status VARCHAR(50) DEFAULT 'Assigned',
+          assigned_by VARCHAR(100) DEFAULT NULL,
+          assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+      `);
+      console.log('✅ Schema migration for event_assignments table completed successfully.');
+    } catch (migErr) {
+      console.warn('⚠️ Event assignments table creation warning:', migErr.message);
+    }
     conn.release();
     isDemoMode = false;
   } catch (err) {

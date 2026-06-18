@@ -2,11 +2,10 @@ const db = require('../config/db');
 
 exports.getKpiStats = async (req, res) => {
   try {
-    const [events, vendors, staff, assignments, payments] = await Promise.all([
+    const [events, vendors, staff, payments] = await Promise.all([
       db.query('SELECT * FROM events'),
       db.query('SELECT * FROM vendors'),
       db.query('SELECT * FROM staff'),
-      db.query('SELECT * FROM assignments'),
       db.query('SELECT * FROM payments')
     ]);
 

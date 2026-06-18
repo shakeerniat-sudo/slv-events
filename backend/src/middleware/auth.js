@@ -22,6 +22,7 @@ const authenticateToken = async (req, res, next) => {
 
     req.user = users[0];
     next();
+  // eslint-disable-next-line no-unused-vars
   } catch (err) {
     return res.status(403).json({ message: 'Invalid or expired token' });
   }

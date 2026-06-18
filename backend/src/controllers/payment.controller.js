@@ -1,4 +1,18 @@
 const db = require('../config/db');
+
+const formatDateString = (dateInput) => {
+  if (!dateInput) return null;
+  const match = dateInput.toString().match(/^(\d{4}-\d{2}-\d{2})/);
+  if (match) return match[1];
+  try {
+    const d = new Date(dateInput);
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().split('T')[0];
+    }
+  } catch (e) {}
+  return dateInput;
+};
+
 exports.listPayments = async (req, res) => {
   try {
     const { page, limit, search, type } = req.query;
@@ -61,7 +75,7 @@ exports.createPayment = async (req, res) => {
         parseFloat(advance) || 0,
         parseFloat(balance) || 0,
         parseFloat(amount),
-        dueDate,
+        formatDateString(dueDate),
         status || 'Pending',
         notes || ''
       ]
@@ -108,7 +122,7 @@ exports.updatePayment = async (req, res) => {
         status,
         paidAt,
         amount !== undefined ? parseFloat(amount) : currentPayment.amount,
-        dueDate || currentPayment.due_date,
+        formatDateString(dueDate || currentPayment.due_date),
         notes || currentPayment.notes,
         newAdvance,
         newBalance,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useUIStore } from '../store/uiStore';
 import { FileBarChart, FileText, Download, ArrowUpRight } from 'lucide-react';
 
@@ -54,7 +54,7 @@ const Reports = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
+
         {/* Left Column: Quick Select Exporter */}
         <div className="lg:col-span-5 glass-card p-6 flex flex-col justify-between bg-white dark:bg-[#111C30]/40 border-slate-200 dark:border-slate-850 h-80 transition-colors">
           <div>
@@ -62,7 +62,7 @@ const Reports = () => {
               <FileBarChart className="w-4 h-4 text-sky-500" />
               <span>Export Custom Document</span>
             </h3>
-            
+
             <div className="space-y-4 text-xs">
               <div>
                 <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase">Report Type</label>

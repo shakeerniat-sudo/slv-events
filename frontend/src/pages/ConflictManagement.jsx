@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, ShieldCheck, RefreshCw, AlertCircle } from 'lucide-react';
 
 const ConflictManagement = () => {
   const navigate = useNavigate();
   const { isCoordinator } = useAuth();
   const { addToast } = useUIStore();
-  const queryClient = useQueryClient();
 
   // Local state for dismissed conflict indexes/IDs
   const [dismissedConflicts, setDismissedConflicts] = useState([]);

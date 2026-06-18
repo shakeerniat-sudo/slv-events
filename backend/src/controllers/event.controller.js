@@ -1,4 +1,19 @@
 const db = require('../config/db');
+const AutomationService = require('../services/automation.service');
+
+const formatDateString = (dateInput) => {
+  if (!dateInput) return null;
+  const match = dateInput.toString().match(/^(\d{4}-\d{2}-\d{2})/);
+  if (match) return match[1];
+  try {
+    const d = new Date(dateInput);
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().split('T')[0];
+    }
+  } catch (e) {}
+  return dateInput;
+};
+
 
 // List events with search, status filters
 exports.listEvents = async (req, res) => {
@@ -24,7 +39,7 @@ exports.listEvents = async (req, res) => {
 
     // Filter by status
     if (status && status !== 'all') {
-      filteredEvents = filteredEvents.filter(e => e.status.toLowerCase() === status.toLowerCase());
+      filteredEvents = filteredEvents.filter(e => e.status && e.status.toLowerCase() === status.toLowerCase());
     }
 
     // Sort
@@ -152,7 +167,7 @@ exports.createEvent = async (req, res) => {
         name,
         clientId,
         eventType,
-        eventDate,
+        formatDateString(eventDate),
         venue,
         parseFloat(budget),
         parseInt(guestCount) || 0,
@@ -174,7 +189,7 @@ exports.createEvent = async (req, res) => {
         0.00,
         parseFloat(budget),
         parseFloat(budget),
-        eventDate, // due date is event date by default
+        formatDateString(eventDate), // due date is event date by default
         'Pending',
         'Initial event budget payment'
       ]
@@ -189,6 +204,10 @@ exports.createEvent = async (req, res) => {
         'Upcoming Event'
       ]
     );
+
+    // Generate event summary & sync automated warnings
+    await AutomationService.generateEventSummary(newEventId);
+    await AutomationService.syncAutomatedNotifications();
 
     // 5. Activity log
     const userName = req.user ? req.user.name : 'System';
@@ -234,7 +253,7 @@ exports.updateEvent = async (req, res) => {
       [
         name,
         eventType,
-        eventDate,
+        formatDateString(eventDate),
         venue,
         parseFloat(budget),
         parseInt(guestCount),
@@ -256,6 +275,9 @@ exports.updateEvent = async (req, res) => {
         ]
       );
     }
+
+    // Sync automated warnings on event status/detail modifications
+    await AutomationService.syncAutomatedNotifications();
 
     const userName = req.user ? req.user.name : 'System';
     const userId = req.user ? req.user.id : null;

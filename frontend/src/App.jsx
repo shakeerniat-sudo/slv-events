@@ -1,5 +1,4 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Components
@@ -22,9 +21,9 @@ import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
-// Protected Route Wrapper
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, loading, hasRole } = useAuth();
+// Protected Route Wrapper (Ensures authentication only)
+const ProtectedRoute = ({ children }) => {
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -38,11 +37,27 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
+  return children;
+};
+
+// Role-based auth guard for child routes
+const RoleProtectedRoute = ({ children, allowedRoles }) => {
+  const { hasRole } = useAuth();
+
   if (allowedRoles && !hasRole(allowedRoles)) {
-    return <Navigate to="/" replace />; // fallback to dashboard if role unauthorized
+    return <Navigate to="/" replace />;
   }
 
-  return <Layout>{children}</Layout>;
+  return children;
+};
+
+// Layout Wrapper to render active route inside Layout Outlet
+const LayoutWrapper = () => {
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
 };
 
 function App() {
@@ -53,111 +68,95 @@ function App() {
           {/* Public Login Route */}
           <Route path="/login" element={<Login />} />
 
-          {/* Protected Main Routes */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/events"
-            element={
-              <ProtectedRoute>
-                <Events />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/events/:id"
-            element={
-              <ProtectedRoute>
-                <EventDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assignments"
-            element={
-              <ProtectedRoute allowedRoles={['Admin', 'Vendor Coordinator']}>
-                <AssignmentCenter />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/vendors"
-            element={
-              <ProtectedRoute allowedRoles={['Admin', 'Vendor Coordinator']}>
-                <Vendors />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/staff"
-            element={
-              <ProtectedRoute allowedRoles={['Admin', 'Operations Lead']}>
-                <Staff />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/calendar"
-            element={
-              <ProtectedRoute allowedRoles={['Admin', 'Vendor Coordinator', 'Operations Lead']}>
-                <Calendar />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/conflicts"
-            element={
-              <ProtectedRoute allowedRoles={['Admin', 'Vendor Coordinator']}>
-                <ConflictManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/payments"
-            element={
-              <ProtectedRoute allowedRoles={['Admin', 'Finance Team']}>
-                <Payments />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/inventory"
-            element={
-              <ProtectedRoute allowedRoles={['Admin', 'Operations Lead']}>
-                <Inventory />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/reports"
-            element={
-              <ProtectedRoute allowedRoles={['Admin', 'Finance Team']}>
-                <Reports />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <ProtectedRoute>
-                <Notifications />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute allowedRoles={['Admin']}>
-                <Settings />
-              </ProtectedRoute>
-            }
-          />
+          {/* Protected Main Routes sharing layout wrapper */}
+          <Route element={<ProtectedRoute><LayoutWrapper /></ProtectedRoute>}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/events/:id" element={<EventDetail />} />
+            
+            <Route
+              path="/assignments"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Vendor Coordinator']}>
+                  <AssignmentCenter />
+                </RoleProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/vendors"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Vendor Coordinator']}>
+                  <Vendors />
+                </RoleProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/staff"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Operations Lead']}>
+                  <Staff />
+                </RoleProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/calendar"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Vendor Coordinator', 'Operations Lead']}>
+                  <Calendar />
+                </RoleProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/conflicts"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Vendor Coordinator']}>
+                  <ConflictManagement />
+                </RoleProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/payments"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Finance Team']}>
+                  <Payments />
+                </RoleProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/inventory"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Operations Lead']}>
+                  <Inventory />
+                </RoleProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/reports"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Finance Team']}>
+                  <Reports />
+                </RoleProtectedRoute>
+              }
+            />
+            
+            <Route path="/notifications" element={<Notifications />} />
+            
+            <Route
+              path="/settings"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin']}>
+                  <Settings />
+                </RoleProtectedRoute>
+              }
+            />
+          </Route>
 
           {/* Fallback 404 Page Not Found */}
           <Route path="*" element={<NotFound />} />
