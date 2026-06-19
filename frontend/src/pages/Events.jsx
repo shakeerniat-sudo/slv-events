@@ -4,7 +4,8 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Calendar, Search, Filter, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Search, Filter, Plus, Trash2, AlertCircle, ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import AssignmentModal from '../components/AssignmentModal';
 
 const Events = () => {
@@ -20,6 +21,7 @@ const Events = () => {
   const [page, setPage] = useState(1);
   
   // Modal states
+  const [newEventId, setNewEventId] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editEventId, setEditEventId] = useState(null);
   const [activeAssignEvent, setActiveAssignEvent] = useState(null);
@@ -132,6 +134,8 @@ const Events = () => {
       
       // Auto open Assign Vendors & Staff modal for this newly created event!
       if (data && data.eventId) {
+        setNewEventId(data.eventId);
+        setTimeout(() => setNewEventId(null), 3000);
         const newEvent = {
           id: data.eventId,
           name: formData.name,
@@ -304,10 +308,8 @@ const Events = () => {
 
       {/* Events List Grid */}
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-pulse">
-          {[1, 2, 3, 4, 5, 6].map(n => (
-            <div key={n} className="h-64 bg-white dark:bg-[#111C30]/40 border border-slate-200 dark:border-slate-800 rounded-3xl" />
-          ))}
+        <div className="flex justify-center items-center py-24 bg-white/70 dark:bg-[#111C30]/40 rounded-3xl border border-slate-200 dark:border-slate-800">
+          <Loader className="w-9 h-9 animate-spin-loader text-sky-500" />
         </div>
       ) : eventsData.length === 0 ? (
         <div className="glass-card p-12 text-center text-slate-450 bg-white dark:bg-[#111C30]/40">
@@ -317,88 +319,108 @@ const Events = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {eventsData.map(ev => (
-              <div
-                key={ev.id}
-                onClick={() => navigate(`/events/${ev.id}`)}
-                className="glass-card bg-white hover:bg-slate-50/50 dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/40 p-6 flex flex-col justify-between h-80 cursor-pointer relative overflow-hidden group hover:scale-[1.01] duration-200"
-              >
-                <div>
-                  {/* Header tags */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[10px] px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-650 dark:text-slate-350 rounded-full font-bold">
-                      {ev.event_type}
-                    </span>
-                    <span className={`text-[9px] px-2.5 py-0.5 border rounded-full font-bold uppercase tracking-wider ${getStatusColor(ev.status)}`}>
-                      {ev.status}
-                    </span>
-                  </div>
-
-                  {/* Event Details */}
-                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 group-hover:text-sky-500 transition-colors truncate">
-                    {ev.name}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{ev.venue}</p>
-
-                  <div className="grid grid-cols-2 gap-4 mt-6 border-t border-slate-150 dark:border-slate-850/80 pt-4 text-xs">
+            <AnimatePresence mode="popLayout">
+              {eventsData.map(ev => {
+                const isNew = ev.id === newEventId;
+                return (
+                  <motion.div
+                    key={ev.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate(`/events/${ev.id}`)}
+                    className={`glass-card bg-white hover:bg-slate-50/50 dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/40 p-6 flex flex-col justify-between h-80 cursor-pointer relative overflow-hidden group border ${
+                      isNew ? 'animate-success-flash' : 'border-slate-200 dark:border-slate-805'
+                    }`}
+                  >
                     <div>
-                      <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">Event Date</span>
-                      <span className="text-slate-700 dark:text-slate-300 font-bold">{new Date(ev.event_date).toLocaleDateString('en-GB')}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">Budget Allocation</span>
-                      <span className="text-sky-500 dark:text-sky-400 font-bold">₹{parseFloat(ev.budget).toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col gap-2 border-t border-slate-150 dark:border-slate-850/80 pt-3 mt-auto" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                    <div className="flex items-center gap-1.5 overflow-hidden">
-                      <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-[9px] text-sky-600 dark:text-sky-400 capitalize shrink-0">
-                        {ev.client_name?.charAt(0)}
+                      {/* Header tags */}
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-[10px] px-2.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-655 dark:text-slate-350 rounded-full font-bold">
+                          {ev.event_type}
+                        </span>
+                        <span className={`text-[9px] px-2.5 py-0.5 border rounded-full font-bold uppercase tracking-wider ${getStatusColor(ev.status)}`}>
+                          {ev.status}
+                        </span>
                       </div>
-                      <span className="text-[10px] truncate max-w-[120px]">{ev.client_name}</span>
+
+                      {/* Event Details */}
+                      <h3 className="font-bold text-sm text-slate-800 dark:text-slate-202 group-hover:text-sky-500 transition-colors truncate">
+                        {ev.name}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">{ev.venue}</p>
+
+                      <div className="grid grid-cols-2 gap-4 mt-6 border-t border-slate-150 dark:border-slate-850/80 pt-4 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">Event Date</span>
+                          <span className="text-slate-700 dark:text-slate-300 font-bold">{new Date(ev.event_date).toLocaleDateString('en-GB')}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">Budget Allocation</span>
+                          <span className="text-sky-500 dark:text-sky-400 font-bold font-sans">₹{parseFloat(ev.budget).toLocaleString()}</span>
+                        </div>
+                      </div>
                     </div>
-                    {isCoordinator && (
-                      <button
-                        onClick={() => handleDeleteEvent(ev.id)}
-                        className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
-                        title="Delete Event"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                  
-                  <div className="flex items-center gap-1.5 w-full">
-                    <button
-                      onClick={() => navigate(`/events/${ev.id}`)}
-                      className="flex-1 py-1 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
-                    >
-                      View
-                    </button>
-                    {isCoordinator && (
-                      <button
-                        onClick={() => handleEditClick(ev)}
-                        className="flex-1 py-1 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {isCoordinator && (
-                      <button
-                        onClick={() => setActiveAssignEvent(ev)}
-                        className="px-2.5 py-1 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer whitespace-nowrap"
-                      >
-                        Assign Vendors & Staff
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-2 border-t border-slate-150 dark:border-slate-850/80 pt-3 mt-auto" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-1.5 overflow-hidden">
+                          <div className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-bold text-[9px] text-sky-605 dark:text-sky-400 capitalize shrink-0">
+                            {ev.client_name?.charAt(0)}
+                          </div>
+                          <span className="text-[10px] truncate max-w-[120px]">{ev.client_name}</span>
+                        </div>
+                        {isCoordinator && (
+                          <button
+                            onClick={() => handleDeleteEvent(ev.id)}
+                            className="p-1 text-slate-400 hover:text-rose-500 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Event"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-1.5 w-full">
+                        <motion.button
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => navigate(`/events/${ev.id}`)}
+                          className="flex-1 py-1 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                        >
+                          View
+                        </motion.button>
+                        {isCoordinator && (
+                          <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => handleEditClick(ev)}
+                            className="flex-1 py-1 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                          >
+                            Edit
+                          </motion.button>
+                        )}
+                        {isCoordinator && (
+                          <motion.button
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setActiveAssignEvent(ev)}
+                            className="px-2.5 py-1 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer whitespace-nowrap"
+                          >
+                            Assign Vendors & Staff
+                          </motion.button>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
 
           {/* Pagination Controls */}
@@ -618,12 +640,14 @@ const Events = () => {
       )}
 
       {/* Assign Vendors & Staff Modal */}
-      {activeAssignEvent && (
-        <AssignmentModal
-          event={activeAssignEvent}
-          onClose={() => setActiveAssignEvent(null)}
-        />
-      )}
+      <AnimatePresence>
+        {activeAssignEvent && (
+          <AssignmentModal
+            event={activeAssignEvent}
+            onClose={() => setActiveAssignEvent(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

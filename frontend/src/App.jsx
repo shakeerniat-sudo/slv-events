@@ -1,5 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Components
 import Layout from './components/Layout';
@@ -53,9 +54,21 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
 
 // Layout Wrapper to render active route inside Layout Outlet
 const LayoutWrapper = () => {
+  const location = useLocation();
   return (
     <Layout>
-      <Outlet />
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="flex-1 flex flex-col min-h-0"
+        >
+          <Outlet />
+        </motion.div>
+      </AnimatePresence>
     </Layout>
   );
 };

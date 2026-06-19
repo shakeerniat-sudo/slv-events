@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
 import { useQuery } from '@tanstack/react-query';
+import { motion, animate } from 'framer-motion';
 import {
   Calendar,
   AlertTriangle,
@@ -11,6 +13,7 @@ import {
   Layers,
   Clock,
   TrendingUp,
+  Loader,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -23,6 +26,27 @@ import {
   Tooltip,
   CartesianGrid
 } from 'recharts';
+
+const AnimatedCounter = ({ value, duration = 0.8 }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    const controls = animate(0, value || 0, {
+      duration: duration,
+      ease: "easeOut",
+      onUpdate: (latest) => {
+        if (isMounted) setCount(Math.floor(latest));
+      }
+    });
+    return () => {
+      isMounted = false;
+      controls.stop();
+    };
+  }, [value, duration]);
+
+  return <span>{count}</span>;
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -70,26 +94,6 @@ const Dashboard = () => {
     },
     refetchInterval: 20000,
   });
-
-  const loading = kpiLoading || chartsLoading || activitiesLoading;
-
-  if (loading) {
-    return (
-      <div className="flex-1 flex flex-col gap-6 animate-pulse p-4">
-        {/* KPI Skeleton */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          {[1, 2, 3, 4, 5, 6].map(n => (
-            <div key={n} className="h-28 bg-white dark:bg-[#111C30]/40 border border-slate-200 dark:border-slate-800/80 rounded-2xl" />
-          ))}
-        </div>
-        {/* Charts Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-8 h-80 bg-white dark:bg-[#111C30]/40 border border-slate-200 dark:border-slate-800/80 rounded-2xl" />
-          <div className="lg:col-span-4 h-80 bg-white dark:bg-[#111C30]/40 border border-slate-200 dark:border-slate-800/80 rounded-2xl" />
-        </div>
-      </div>
-    );
-  }
 
   // Stat Card Configs
   const statCards = [
@@ -146,7 +150,12 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="flex-1 flex flex-col gap-6 overflow-y-auto pb-6 animate-fade-in-up pr-2">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+      className="flex-1 flex flex-col gap-6 overflow-y-auto pb-6 pr-2"
+    >
       {/* Welcome Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#111C30]/40 border border-slate-250/70 dark:border-slate-850 p-6 rounded-2xl shadow-sm dark:shadow-premium relative overflow-hidden transition-all duration-200">
         <div className="z-10">
@@ -166,19 +175,30 @@ const Dashboard = () => {
         {statCards.map((c, idx) => {
           const Icon = c.icon;
           return (
-            <div
+            <motion.div
               key={idx}
-              className={`glass-card p-5 flex flex-col justify-between relative overflow-hidden bg-gradient-to-tr ${c.color} ${c.glow} hover:scale-[1.02] active:scale-[0.98] duration-200 cursor-default`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: idx * 0.04 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className={`glass-card p-5 flex flex-col justify-between relative overflow-hidden bg-gradient-to-tr ${c.color} ${c.glow} cursor-default`}
             >
               <div className="flex justify-between items-start">
                 <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{c.title}</span>
                 <Icon className="w-4.5 h-4.5 shrink-0 opacity-70" />
               </div>
               <div className="mt-4">
-                <h4 className="text-2xl font-bold font-sans tracking-tight text-slate-900 dark:text-slate-100">{c.value}</h4>
+                <h4 className="text-2xl font-bold font-sans tracking-tight text-slate-900 dark:text-slate-100 min-h-[32px] flex items-center">
+                  {kpiLoading ? (
+                    <Loader className="w-5 h-5 animate-spin-loader text-sky-500" />
+                  ) : (
+                    <AnimatedCounter value={c.value} />
+                  )}
+                </h4>
                 <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-1 font-semibold">{c.subtitle}</p>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -195,30 +215,36 @@ const Dashboard = () => {
             <TrendingUp className="w-4 h-4 text-sky-500" />
           </div>
           <div className="h-72 w-full text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={charts.monthlyEvents} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2} />
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#e2e8f0'} />
-                <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} />
-                <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} allowDecimals={false} />
-                <Tooltip
-                  contentStyle={{ 
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff', 
-                    borderColor: isDark ? '#1e293b' : '#e2e8f0', 
-                    borderRadius: '12px',
-                    color: isDark ? '#f8fafc' : '#0f172a'
-                  }}
-                  labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '11px', fontWeight: '600' }}
-                  itemStyle={{ color: '#0ea5e9', fontSize: '11px' }}
-                />
-                <Area type="monotone" dataKey="events" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colorEvents)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {chartsLoading ? (
+              <div className="h-full w-full flex items-center justify-center">
+                <Loader className="w-8 h-8 animate-spin-loader text-sky-500" />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={charts.monthlyEvents} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2} />
+                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#e2e8f0'} />
+                  <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} />
+                  <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: isDark ? '#0f172a' : '#ffffff', 
+                      borderColor: isDark ? '#1e293b' : '#e2e8f0', 
+                      borderRadius: '12px',
+                      color: isDark ? '#f8fafc' : '#0f172a'
+                    }}
+                    labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '11px', fontWeight: '600' }}
+                    itemStyle={{ color: '#0ea5e9', fontSize: '11px' }}
+                  />
+                  <Area type="monotone" dataKey="events" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colorEvents)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -230,23 +256,29 @@ const Dashboard = () => {
           </div>
 
           <div className="h-64 w-full mt-4 text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={charts.vendorUtilization} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#e2e8f0'} horizontal={false} />
-                <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} />
-                <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={65} />
-                <Tooltip
-                  contentStyle={{ 
-                    backgroundColor: isDark ? '#0f172a' : '#ffffff', 
-                    borderColor: isDark ? '#1e293b' : '#e2e8f0', 
-                    borderRadius: '12px',
-                    color: isDark ? '#f8fafc' : '#0f172a'
-                  }}
-                  itemStyle={{ fontSize: '10px' }}
-                />
-                <Bar dataKey="utilizationRate" name="Utilization %" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={12} />
-              </BarChart>
-            </ResponsiveContainer>
+            {chartsLoading ? (
+              <div className="h-full w-full flex items-center justify-center">
+                <Loader className="w-8 h-8 animate-spin-loader text-indigo-500" />
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={charts.vendorUtilization} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#e2e8f0'} horizontal={false} />
+                  <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} />
+                  <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={65} />
+                  <Tooltip
+                    contentStyle={{ 
+                      backgroundColor: isDark ? '#0f172a' : '#ffffff', 
+                      borderColor: isDark ? '#1e293b' : '#e2e8f0', 
+                      borderRadius: '12px',
+                      color: isDark ? '#f8fafc' : '#0f172a'
+                    }}
+                    itemStyle={{ fontSize: '10px' }}
+                  />
+                  <Bar dataKey="utilizationRate" name="Utilization %" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={12} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           <div className="text-[9px] text-slate-450 dark:text-slate-400 text-center border-t border-slate-150 dark:border-slate-850 pt-3 mt-2">
@@ -272,7 +304,13 @@ const Dashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {activities.length === 0 ? (
+              {activitiesLoading ? (
+                <tr>
+                  <td colSpan={4} className="py-12 text-center">
+                    <Loader className="w-6 h-6 animate-spin-loader text-sky-500 mx-auto" />
+                  </td>
+                </tr>
+              ) : activities.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-4 text-center text-slate-450 dark:text-slate-500">No activity logged yet</td>
                 </tr>
@@ -283,7 +321,7 @@ const Dashboard = () => {
                     <td>
                       <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide ${
                         log.action.includes('CREATE') ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/35' :
-                        log.action.includes('DELETE') ? 'bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-450 dark:border-rose-900/35' :
+                        log.action.includes('DELETE') ? 'bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-955/40 dark:text-rose-455 dark:border-rose-900/35' :
                         'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-350 dark:border-slate-700/50'
                       }`}>
                         {log.action}
@@ -302,7 +340,7 @@ const Dashboard = () => {
           </table>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

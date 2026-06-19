@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useUIStore } from '../store/uiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles,
   Calendar,
@@ -220,13 +221,31 @@ const AssignmentCenter = () => {
                       return (
                         <div
                           key={cat}
-                          className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-xl text-xs transition-colors"
+                          className={`flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950/40 border rounded-xl text-xs transition-all duration-300 ${
+                            assigned ? 'border-emerald-500/30 dark:border-emerald-500/20 shadow-sm' : 'border-slate-200 dark:border-slate-850'
+                          }`}
                         >
                           <div>
                             <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">{cat}</span>
-                            <span className={`font-semibold ${assigned ? 'text-slate-800 dark:text-slate-300' : 'text-rose-500 font-bold'}`}>
-                              {assigned ? assigned.vendor_name : '🚨 Not Assigned'}
-                            </span>
+                            {assigned ? (
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <motion.span
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ type: "spring", stiffness: 350, damping: 15 }}
+                                  className="text-emerald-500 font-extrabold text-sm"
+                                >
+                                  ✓
+                                </motion.span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-300">
+                                  {assigned.vendor_name}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="font-semibold text-rose-550 font-bold mt-0.5 block">
+                                🚨 Not Assigned
+                              </span>
+                            )}
                           </div>
                           {assigned ? (
                             <button
@@ -259,13 +278,31 @@ const AssignmentCenter = () => {
                       return (
                         <div
                           key={role}
-                          className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-xl text-xs transition-colors"
+                          className={`flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-950/40 border rounded-xl text-xs transition-all duration-300 ${
+                            assigned ? 'border-emerald-500/30 dark:border-emerald-500/20 shadow-sm' : 'border-slate-200 dark:border-slate-850'
+                          }`}
                         >
                           <div>
                             <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">{role}</span>
-                            <span className={`font-semibold ${assigned ? 'text-slate-800 dark:text-slate-300' : 'text-rose-500 font-bold'}`}>
-                              {assigned ? assigned.staff_name : '🚨 Not Assigned'}
-                            </span>
+                            {assigned ? (
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <motion.span
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  transition={{ type: "spring", stiffness: 350, damping: 15 }}
+                                  className="text-emerald-500 font-extrabold text-sm"
+                                >
+                                  ✓
+                                </motion.span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-300">
+                                  {assigned.staff_name}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="font-semibold text-rose-550 font-bold mt-0.5 block">
+                                🚨 Not Assigned
+                              </span>
+                            )}
                           </div>
                           {assigned ? (
                             <button
@@ -340,7 +377,9 @@ const AssignmentCenter = () => {
                               )}
                             </div>
 
-                            <button
+                            <motion.button
+                              whileHover={candidate.status === 'Available' ? { scale: 1.03 } : { x: [-3, 3, -3, 3, 0] }}
+                              whileTap={{ scale: 0.98 }}
                               onClick={() => {
                                 if (candidate.status === 'Already Assigned') {
                                   setConflictWarning({
@@ -353,10 +392,12 @@ const AssignmentCenter = () => {
                                   handleAssign('vendor', candidate.id);
                                 }
                               }}
-                              className={`px-4 py-2 border rounded-xl font-bold text-[11px] transition-all cursor-pointer shrink-0 w-full sm:w-auto ${getStatusStyle(candidate.status)}`}
+                              className={`px-4 py-2 border rounded-xl font-bold text-[11px] transition-all cursor-pointer shrink-0 w-full sm:w-auto ${
+                                candidate.status === 'Available' ? 'animate-soft-pulse' : ''
+                              } ${getStatusStyle(candidate.status)}`}
                             >
                               {candidate.status === 'Available' ? 'Assign Choice' : 'Conflict ⚠️'}
-                            </button>
+                            </motion.button>
                           </div>
                         ))}
                       </div>
@@ -405,7 +446,9 @@ const AssignmentCenter = () => {
                                     )}
                                   </div>
 
-                                  <button
+                                  <motion.button
+                                    whileHover={c.status === 'Available' ? { scale: 1.03 } : { x: [-3, 3, -3, 3, 0] }}
+                                    whileTap={{ scale: 0.98 }}
                                     onClick={() => {
                                       if (c.status === 'Already Assigned') {
                                         setConflictWarning({
@@ -418,10 +461,12 @@ const AssignmentCenter = () => {
                                         handleAssign('staff', c.id);
                                       }
                                     }}
-                                    className={`px-4 py-2 border rounded-xl font-bold text-[11px] transition-all cursor-pointer shrink-0 w-full sm:w-auto ${getStatusStyle(c.status)}`}
+                                    className={`px-4 py-2 border rounded-xl font-bold text-[11px] transition-all cursor-pointer shrink-0 w-full sm:w-auto ${
+                                      c.status === 'Available' ? 'animate-soft-pulse' : ''
+                                    } ${getStatusStyle(c.status)}`}
                                   >
                                     {c.status === 'Available' ? 'Assign Choice' : 'Conflict ⚠️'}
-                                  </button>
+                                  </motion.button>
                                 </div>
                               ))}
                             </div>
@@ -486,43 +531,58 @@ const AssignmentCenter = () => {
 
             <div className="space-y-6">
               {/* Summary Block */}
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-2xl p-4 relative text-xs">
-                <h4 className="font-semibold text-slate-500 dark:text-slate-405 mb-2 uppercase">Roster Summary Details</h4>
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-2xl p-4 relative text-xs"
+              >
+                <h4 className="font-semibold text-slate-505 dark:text-slate-405 mb-2 uppercase">Roster Summary Details</h4>
                 <pre className="text-slate-705 dark:text-slate-300 font-sans leading-relaxed whitespace-pre-wrap">{briefs.summary}</pre>
                 <button
                   onClick={() => copyToClipboard(briefs.summary, 'summary')}
-                  className="absolute top-4 right-4 p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
+                  className="absolute top-4 right-4 p-1.5 bg-slate-100 hover:bg-slate-205 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
                   title="Copy Summary"
                 >
                   {copiedText === 'summary' ? 'Copied' : <Copy className="w-3.5 h-3.5" />}
                 </button>
-              </div>
+              </motion.div>
 
               {/* Vendor Briefing */}
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-2xl p-4 relative text-xs">
-                <h4 className="font-semibold text-slate-500 dark:text-slate-405 mb-2 uppercase">Vendor Briefing Message (Outgoing SMS/Email)</h4>
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: 0.1 }}
+                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-2xl p-4 relative text-xs"
+              >
+                <h4 className="font-semibold text-slate-505 dark:text-slate-405 mb-2 uppercase">Vendor Briefing Message (Outgoing SMS/Email)</h4>
                 <pre className="text-slate-705 dark:text-slate-300 font-sans leading-relaxed whitespace-pre-wrap">{briefs.vendorBriefing}</pre>
                 <button
                   onClick={() => copyToClipboard(briefs.vendorBriefing, 'vendor')}
-                  className="absolute top-4 right-4 p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
+                  className="absolute top-4 right-4 p-1.5 bg-slate-100 hover:bg-slate-205 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
                   title="Copy Briefing"
                 >
                   {copiedText === 'vendor' ? 'Copied' : <Copy className="w-3.5 h-3.5" />}
                 </button>
-              </div>
+              </motion.div>
 
               {/* Staff Briefing */}
-              <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-855 rounded-2xl p-4 relative text-xs">
-                <h4 className="font-semibold text-slate-500 dark:text-slate-405 mb-2 uppercase">Internal Crew Instructions</h4>
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: 0.2 }}
+                className="bg-slate-50 dark:bg-slate-95 border border-slate-200 dark:border-slate-855 rounded-2xl p-4 relative text-xs"
+              >
+                <h4 className="font-semibold text-slate-505 dark:text-slate-405 mb-2 uppercase">Internal Crew Instructions</h4>
                 <pre className="text-slate-705 dark:text-slate-300 font-sans leading-relaxed whitespace-pre-wrap">{briefs.staffBriefing}</pre>
                 <button
                   onClick={() => copyToClipboard(briefs.staffBriefing, 'staff')}
-                  className="absolute top-4 right-4 p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
+                  className="absolute top-4 right-4 p-1.5 bg-slate-100 hover:bg-slate-205 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
                   title="Copy Briefing"
                 >
                   {copiedText === 'staff' ? 'Copied' : <Copy className="w-3.5 h-3.5" />}
                 </button>
-              </div>
+              </motion.div>
             </div>
 
             <div className="flex justify-end mt-6 border-t border-slate-200 dark:border-slate-800 pt-4">

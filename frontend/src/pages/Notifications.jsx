@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useUIStore } from '../store/uiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Bell, 
   CheckCircle, 
@@ -17,7 +18,8 @@ import {
   Clock,
   Trash2,
   Search,
-  Check
+  Check,
+  Loader
 } from 'lucide-react';
 
 const Notifications = () => {
@@ -154,14 +156,7 @@ const Notifications = () => {
     return details;
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex flex-col justify-center items-center py-12 text-slate-500 dark:text-slate-400">
-        <Clock className="w-8 h-8 animate-spin mb-3 text-sky-500" />
-        <span className="text-xs animate-pulse font-medium">Checking automation desk feeds...</span>
-      </div>
-    );
-  }
+
 
   // Filter list based on selected category tab & search query
   const filteredNotifications = notifications.filter(notif => {
@@ -260,7 +255,11 @@ const Notifications = () => {
       </div>
 
       {/* Notifications Render Pane */}
-      {filteredNotifications.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center items-center py-24 bg-white/70 dark:bg-[#111C30]/40 rounded-3xl border border-slate-200 dark:border-slate-800">
+          <Loader className="w-9 h-9 animate-spin-loader text-sky-500" />
+        </div>
+      ) : filteredNotifications.length === 0 ? (
         <div className="glass-card p-12 text-center text-slate-450 bg-white dark:bg-[#111C30]/40 border border-slate-200 dark:border-slate-800">
           <Bell className="w-12 h-12 text-sky-500 opacity-25 mx-auto mb-4 animate-bounce" />
           <p className="text-sm font-semibold">Workspace clear</p>
@@ -268,220 +267,238 @@ const Notifications = () => {
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          {filteredNotifications.map(notif => {
-            const isSummary = notif.type === 'Event Summary' || notif.title.startsWith('Event Summary:');
-            
-            if (isSummary) {
-              const details = parseSummaryMessage(notif.message);
-              return (
-                <div
-                  key={notif.id}
-                  className={`glass-card p-6 flex flex-col gap-4 transition-all border bg-white dark:bg-[#111C30]/25 ${
-                    !notif.is_read 
-                      ? 'border-sky-300 shadow-md dark:border-sky-900/40' 
-                      : 'border-slate-200 dark:border-slate-850 opacity-80'
-                  } rounded-2xl relative group`}
-                >
-                  {/* Top Summary Header */}
-                  <div className="flex items-center justify-between gap-4 pb-3 border-b border-slate-200/60 dark:border-slate-800/60">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl border border-sky-105 dark:border-sky-900/30 bg-sky-50 dark:bg-sky-955/40 flex items-center justify-center shrink-0">
-                        <ClipboardList className="w-4.5 h-4.5 text-sky-600 dark:text-sky-400" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-slate-850 dark:text-slate-100 leading-tight">
-                            {notif.title}
+          <AnimatePresence mode="popLayout">
+            {filteredNotifications.map((notif, idx) => {
+              const isSummary = notif.type === 'Event Summary' || notif.title.startsWith('Event Summary:');
+              
+              if (isSummary) {
+                const details = parseSummaryMessage(notif.message);
+                return (
+                  <motion.div
+                    key={notif.id}
+                    layout
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                    transition={{ duration: 0.22, delay: idx * 0.02 }}
+                    className={`glass-card p-6 flex flex-col gap-4 border bg-white dark:bg-[#111C30]/25 ${
+                      !notif.is_read 
+                        ? 'border-sky-300 shadow-md dark:border-sky-900/40' 
+                        : 'border-slate-200 dark:border-slate-850 opacity-80'
+                    } rounded-2xl relative group`}
+                  >
+                    {/* Top Summary Header */}
+                    <div className="flex items-center justify-between gap-4 pb-3 border-b border-slate-200/60 dark:border-slate-800/60">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl border border-sky-105 dark:border-sky-900/30 bg-sky-50 dark:bg-sky-955/40 flex items-center justify-center shrink-0">
+                          <ClipboardList className="w-4.5 h-4.5 text-sky-600 dark:text-sky-400" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-slate-850 dark:text-slate-100 leading-tight">
+                              {notif.title}
+                            </span>
+                            {!notif.is_read && (
+                              <span className="relative flex h-2 w-2 shrink-0">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500 animate-unread-pulse"></span>
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[9px] px-2 py-0.5 bg-sky-50 dark:bg-[#0ea5e9]/10 border border-sky-150 dark:border-[#0ea5e9]/20 rounded-full text-sky-600 dark:text-sky-405 uppercase font-extrabold mt-1 inline-block">
+                            Roster Briefing
                           </span>
-                          {!notif.is_read && (
-                            <span className="w-1.5 h-1.5 bg-sky-500 rounded-full shrink-0" />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {!notif.is_read && (
+                          <button
+                            onClick={() => markReadMutation.mutate(notif.id)}
+                            className="p-1 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-[10px] text-sky-600 dark:text-sky-500 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
+                            title="Mark Read"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setDeleteConfirmId(notif.id)}
+                          className="p-1.5 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 dark:bg-slate-900 dark:hover:bg-rose-955/30 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
+                          title="Delete Notification"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Summary Grid details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 text-xs">
+                      <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-955/20 p-2 rounded-xl border border-slate-150 dark:border-slate-855">
+                        <Users className="w-4 h-4 text-indigo-555 dark:text-indigo-400 shrink-0" />
+                        <div>
+                          <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Client</p>
+                          <p className="font-bold text-slate-705 dark:text-slate-300">{details['Client'] || 'N/A'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-955/20 p-2 rounded-xl border border-slate-150 dark:border-slate-855">
+                        <Tag className="w-4 h-4 text-pink-500 shrink-0" />
+                        <div>
+                          <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Event Type</p>
+                          <p className="font-bold text-slate-705 dark:text-slate-300">{details['Event Type'] || 'N/A'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-955/20 p-2 rounded-xl border border-slate-150 dark:border-slate-855">
+                        <Calendar className="w-4 h-4 text-amber-550 dark:text-amber-405 shrink-0" />
+                        <div>
+                          <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Event Date</p>
+                          <p className="font-bold text-slate-705 dark:text-slate-300">{details['Date'] || 'N/A'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-955/20 p-2 rounded-xl border border-slate-150 dark:border-slate-855">
+                        <MapPin className="w-4 h-4 text-sky-505 shrink-0" />
+                        <div>
+                          <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Venue</p>
+                          <p className="font-bold text-slate-705 dark:text-slate-300 truncate max-w-[170px]" title={details['Venue']}>
+                            {details['Venue'] || 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-955/20 p-2 rounded-xl border border-slate-150 dark:border-slate-855">
+                        <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <div>
+                          <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Budget</p>
+                          <p className="font-bold text-slate-705 dark:text-slate-300">{details['Budget'] || 'N/A'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-955/20 p-2 rounded-xl border border-slate-150 dark:border-slate-855">
+                        <Users className="w-4 h-4 text-teal-555 shrink-0" />
+                        <div>
+                          <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Guests</p>
+                          <p className="font-bold text-slate-705 dark:text-slate-300">{details['Guest Count'] || 'N/A'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Resource details */}
+                    <div className="flex flex-col gap-2 border-t border-slate-150 dark:border-slate-850 pt-3 text-[11px]">
+                      <div>
+                        <span className="font-bold text-[9px] text-slate-400 dark:text-slate-550 uppercase tracking-wider block mb-1">
+                          Assigned Vendor Partners:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {details['Assigned Vendors'] && details['Assigned Vendors'] !== 'None' ? (
+                            details['Assigned Vendors'].split(', ').map((v, idx) => (
+                              <span key={idx} className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-805 rounded-lg text-slate-655 dark:text-slate-300 font-semibold shadow-sm">
+                                {v}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-rose-500 dark:text-rose-405 font-bold italic">No vendor partners allocated yet.</span>
                           )}
                         </div>
-                        <span className="text-[9px] px-2 py-0.5 bg-sky-50 dark:bg-[#0ea5e9]/10 border border-sky-150 dark:border-[#0ea5e9]/20 rounded-full text-sky-600 dark:text-sky-405 uppercase font-extrabold mt-1 inline-block">
-                          Roster Briefing
+                      </div>
+
+                      <div className="mt-1">
+                        <span className="font-bold text-[9px] text-slate-400 dark:text-slate-550 uppercase tracking-wider block mb-1">
+                          Assigned Internal Crew:
                         </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {details['Assigned Staff'] && details['Assigned Staff'] !== 'None' ? (
+                            details['Assigned Staff'].split(', ').map((s, idx) => (
+                              <span key={idx} className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-805 rounded-lg text-slate-655 dark:text-slate-300 font-semibold shadow-sm">
+                                {s}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-rose-500 dark:text-rose-405 font-bold italic">No internal staff allocated yet.</span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {!notif.is_read && (
-                        <button
-                          onClick={() => markReadMutation.mutate(notif.id)}
-                          className="p-1 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-[10px] text-sky-600 dark:text-sky-500 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
-                          title="Mark Read"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setDeleteConfirmId(notif.id)}
-                        className="p-1.5 bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 dark:bg-slate-900 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
-                        title="Delete Notification"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    {/* Operational Status */}
+                    <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-850/60 mt-1">
+                      <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase font-sans">Operational Status</span>
+                      <span className={`px-3 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                        details['Current Status'] === 'Assigned' 
+                          ? 'bg-emerald-50 border border-emerald-250 text-emerald-600 dark:bg-emerald-955/20 dark:border-emerald-900/30' 
+                          : 'bg-amber-50 border border-amber-250 text-amber-600 dark:bg-amber-955/20 dark:border-amber-900/30'
+                      }`}>
+                        {details['Current Status'] || 'Pending'}
+                      </span>
                     </div>
-                  </div>
+                  </motion.div>
+                );
+              }
 
-                  {/* Summary Grid details */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 text-xs">
-                    <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-950/20 p-2 rounded-xl border border-slate-150 dark:border-slate-850">
-                      <Users className="w-4 h-4 text-indigo-550 dark:text-indigo-400 shrink-0" />
-                      <div>
-                        <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Client</p>
-                        <p className="font-bold text-slate-705 dark:text-slate-300">{details['Client'] || 'N/A'}</p>
-                      </div>
+              // Otherwise, render regular notification card
+              return (
+                <motion.div
+                  key={notif.id}
+                  layout
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                  transition={{ duration: 0.22, delay: idx * 0.02 }}
+                  className={`glass-card p-4 flex items-start justify-between gap-4 border bg-white dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/30 relative group ${
+                    !notif.is_read 
+                      ? 'border-sky-305 shadow-sm dark:border-sky-900/40' 
+                      : 'border-slate-200 dark:border-slate-850 opacity-80'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${getCategoryColor(notif.type)}`}>
+                      {getIcon(notif.type)}
                     </div>
-
-                    <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-955/20 p-2 rounded-xl border border-slate-150 dark:border-slate-855">
-                      <Tag className="w-4 h-4 text-pink-500 shrink-0" />
-                      <div>
-                        <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Event Type</p>
-                        <p className="font-bold text-slate-705 dark:text-slate-300">{details['Event Type'] || 'N/A'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-950/20 p-2 rounded-xl border border-slate-150 dark:border-slate-850">
-                      <Calendar className="w-4 h-4 text-amber-550 dark:text-amber-405 shrink-0" />
-                      <div>
-                        <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Event Date</p>
-                        <p className="font-bold text-slate-705 dark:text-slate-300">{details['Date'] || 'N/A'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-950/20 p-2 rounded-xl border border-slate-150 dark:border-slate-850">
-                      <MapPin className="w-4 h-4 text-sky-505 shrink-0" />
-                      <div>
-                        <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Venue</p>
-                        <p className="font-bold text-slate-705 dark:text-slate-300 truncate max-w-[170px]" title={details['Venue']}>
-                          {details['Venue'] || 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-950/20 p-2 rounded-xl border border-slate-150 dark:border-slate-850">
-                      <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <div>
-                        <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Budget</p>
-                        <p className="font-bold text-slate-705 dark:text-slate-300">{details['Budget'] || 'N/A'}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-slate-50/50 dark:bg-slate-950/20 p-2 rounded-xl border border-slate-150 dark:border-slate-850">
-                      <Users className="w-4 h-4 text-teal-555 shrink-0" />
-                      <div>
-                        <p className="text-[9px] font-extrabold text-slate-400 dark:text-slate-500 uppercase">Guests</p>
-                        <p className="font-bold text-slate-705 dark:text-slate-300">{details['Guest Count'] || 'N/A'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Resource details */}
-                  <div className="flex flex-col gap-2 border-t border-slate-150 dark:border-slate-850 pt-3 text-[11px]">
                     <div>
-                      <span className="font-bold text-[9px] text-slate-400 dark:text-slate-550 uppercase tracking-wider block mb-1">
-                        Assigned Vendor Partners:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {details['Assigned Vendors'] && details['Assigned Vendors'] !== 'None' ? (
-                          details['Assigned Vendors'].split(', ').map((v, idx) => (
-                            <span key={idx} className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-655 dark:text-slate-300 font-semibold shadow-sm">
-                              {v}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-rose-500 dark:text-rose-405 font-bold italic">No vendor partners allocated yet.</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-bold text-xs text-slate-800 dark:text-slate-105 leading-tight">{notif.title}</span>
+                        <span className="text-[8px] px-2 py-0.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-855 rounded-full text-slate-605 dark:text-slate-400 uppercase font-extrabold tracking-wide">
+                          {getTabCategory(notif.type, notif.title)}
+                        </span>
+                        {!notif.is_read && (
+                          <span className="relative flex h-2 w-2 shrink-0">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500 animate-unread-pulse"></span>
+                          </span>
                         )}
                       </div>
-                    </div>
-
-                    <div className="mt-1">
-                      <span className="font-bold text-[9px] text-slate-400 dark:text-slate-550 uppercase tracking-wider block mb-1">
-                        Assigned Internal Crew:
+                      <p className="text-xs text-slate-600 dark:text-slate-305 leading-relaxed mt-1.5 max-w-2xl font-semibold">
+                        {notif.message}
+                      </p>
+                      <span className="text-[9px] text-slate-400 dark:text-slate-500 block mt-2 font-medium">
+                        {new Date(notif.created_at).toLocaleString('en-GB')}
                       </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {details['Assigned Staff'] && details['Assigned Staff'] !== 'None' ? (
-                          details['Assigned Staff'].split(', ').map((s, idx) => (
-                            <span key={idx} className="px-2.5 py-0.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-slate-655 dark:text-slate-300 font-semibold shadow-sm">
-                              {s}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-rose-500 dark:text-rose-405 font-bold italic">No internal staff allocated yet.</span>
-                        )}
-                      </div>
                     </div>
                   </div>
 
-                  {/* Operational Status */}
-                  <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900/40 p-2.5 rounded-xl border border-slate-200/50 dark:border-slate-850/60 mt-1">
-                    <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase font-sans">Operational Status</span>
-                    <span className={`px-3 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
-                      details['Current Status'] === 'Assigned' 
-                        ? 'bg-emerald-50 border border-emerald-250 text-emerald-600 dark:bg-emerald-950/20 dark:border-emerald-900/30' 
-                        : 'bg-amber-50 border border-amber-250 text-amber-600 dark:bg-amber-950/20 dark:border-amber-900/30'
-                    }`}>
-                      {details['Current Status'] || 'Pending'}
-                    </span>
-                  </div>
-                </div>
-              );
-            }
-
-            // Otherwise, render regular notification card
-            return (
-              <div
-                key={notif.id}
-                className={`glass-card p-4 flex items-start justify-between gap-4 transition-all border bg-white dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/30 relative group ${
-                  !notif.is_read 
-                    ? 'border-sky-305 shadow-sm dark:border-sky-900/40' 
-                    : 'border-slate-200 dark:border-slate-850 opacity-80'
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${getCategoryColor(notif.type)}`}>
-                    {getIcon(notif.type)}
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-bold text-xs text-slate-800 dark:text-slate-105 leading-tight">{notif.title}</span>
-                      <span className="text-[8px] px-2 py-0.5 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-855 rounded-full text-slate-605 dark:text-slate-400 uppercase font-extrabold tracking-wide">
-                        {getTabCategory(notif.type, notif.title)}
-                      </span>
-                      {!notif.is_read && (
-                        <span className="w-1.5 h-1.5 bg-sky-500 rounded-full shrink-0" />
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-305 leading-relaxed mt-1.5 max-w-2xl font-semibold">
-                      {notif.message}
-                    </p>
-                    <span className="text-[9px] text-slate-400 dark:text-slate-500 block mt-2 font-medium">
-                      {new Date(notif.created_at).toLocaleString('en-GB')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {!notif.is_read && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {!notif.is_read && (
+                      <button
+                        onClick={() => markReadMutation.mutate(notif.id)}
+                        className="p-1 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-[10px] text-sky-600 dark:text-sky-505 border border-slate-200 dark:border-slate-805 rounded-lg transition-colors cursor-pointer"
+                        title="Mark Read"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <button
-                      onClick={() => markReadMutation.mutate(notif.id)}
-                      className="p-1 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-[10px] text-sky-600 dark:text-sky-505 border border-slate-200 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
-                      title="Mark Read"
+                      onClick={() => setDeleteConfirmId(notif.id)}
+                      className="p-1.5 bg-slate-50 hover:bg-rose-50 text-slate-450 hover:text-rose-600 dark:bg-slate-900 dark:hover:bg-rose-955/30 dark:hover:text-rose-400 border border-slate-205 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
+                      title="Delete Notification"
                     >
-                      <Check className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  )}
-                  <button
-                    onClick={() => setDeleteConfirmId(notif.id)}
-                    className="p-1.5 bg-slate-50 hover:bg-rose-50 text-slate-450 hover:text-rose-600 dark:bg-slate-900 dark:hover:bg-rose-950/30 dark:hover:text-rose-400 border border-slate-205 dark:border-slate-800 rounded-lg transition-colors cursor-pointer"
-                    title="Delete Notification"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </div>
       )}
 

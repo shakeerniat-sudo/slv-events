@@ -764,7 +764,7 @@ async function connectDb() {
       queueLimit: 0
     };
 
-    if (host.includes('aivencloud.com') || process.env.DB_SSL === 'true') {
+    if (host.includes('aivencloud.com') || host.includes('tidbcloud.com') || process.env.DB_SSL === 'true') {
       poolConfig.ssl = { rejectUnauthorized: false };
     }
 

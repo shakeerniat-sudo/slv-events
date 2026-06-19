@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import { MessageSquare, X, Send, Sparkles, Loader } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const generateBotResponse = async (userMessage, queryClient, navigate) => {
   const msg = userMessage.toLowerCase();
@@ -234,6 +235,25 @@ const generateBotResponse = async (userMessage, queryClient, navigate) => {
     "• *'Go to Dashboard'*";
 };
 
+const TypewriterText = ({ text }) => {
+  const [displayedText, setDisplayedText] = useState('');
+
+  useEffect(() => {
+    let index = 0;
+    setDisplayedText('');
+    const timer = setInterval(() => {
+      setDisplayedText((prev) => prev + text.charAt(index));
+      index++;
+      if (index >= text.length) {
+        clearInterval(timer);
+      }
+    }, 8);
+    return () => clearInterval(timer);
+  }, [text]);
+
+  return <span>{displayedText}</span>;
+};
+
 const Chatbot = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -245,6 +265,7 @@ const Chatbot = () => {
   const [isTyping, setIsTyping] = useState(false);
   
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -272,85 +293,148 @@ const Chatbot = () => {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-[9999]">
+    <div className="fixed bottom-5 right-5 z-[9999] flex flex-col items-end gap-3">
       {/* Floating Action Button */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="w-12 h-12 bg-sky-500 hover:bg-sky-600 text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer border border-sky-450/30"
-          title="Open AI Planner Assistant"
-        >
-          <MessageSquare className="w-5 h-5" />
-        </button>
-      )}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ 
+              scale: 1, 
+              opacity: 1,
+              y: [0, -5, 0] 
+            }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ 
+              y: {
+                duration: 2.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              },
+              scale: { duration: 0.15 },
+              opacity: { duration: 0.15 }
+            }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsOpen(true)}
+            className="w-12 h-12 bg-sky-500 hover:bg-sky-600 text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer border border-sky-450/30"
+            title="Open AI Planner Assistant"
+          >
+            <MessageSquare className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Chat Conversation Drawer */}
-      {isOpen && (
-        <div className="w-80 sm:w-96 h-[450px] bg-white dark:bg-[#111C30]/95 backdrop-blur-md border border-slate-200 dark:border-slate-850 rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-modal-zoom">
-          {/* Header */}
-          <div className="p-4 bg-gradient-to-r from-sky-500 to-indigo-600 text-white flex justify-between items-center select-none">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-300" />
-              <div>
-                <h3 className="font-bold text-xs">SLV Planning Assistant</h3>
-                <span className="text-[9px] opacity-80 uppercase font-extrabold tracking-wider">Rule-Based Sandbox Engine</span>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 30 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="w-80 sm:w-96 h-[460px] bg-white dark:bg-[#111C30]/95 backdrop-blur-md border border-slate-200 dark:border-slate-850 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          >
+            {/* Header */}
+            <div className="p-4 bg-gradient-to-r from-sky-500 to-indigo-600 text-white flex justify-between items-center select-none">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                <div>
+                  <h3 className="font-bold text-xs">SLV Planning Assistant</h3>
+                  <span className="text-[9px] opacity-80 uppercase font-extrabold tracking-wider">Rule-Based Sandbox Engine</span>
+                </div>
               </div>
-            </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Messages Feed */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50/50 dark:bg-slate-950/20 text-xs">
-            {messages.map((m, idx) => (
-              <div
-                key={idx}
-                className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
               >
-                <div
-                  className={`max-w-[80%] p-3 rounded-2xl shadow-sm leading-relaxed whitespace-pre-line font-medium border ${
-                    m.sender === 'user'
-                      ? 'bg-sky-500 border-sky-400 text-white rounded-tr-none'
-                      : 'bg-white border-slate-200 text-slate-800 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 rounded-tl-none'
-                  }`}
-                >
-                  {m.text}
-                </div>
-              </div>
-            ))}
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-white border border-slate-200 text-slate-550 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400 p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 shadow-sm">
-                  <Loader className="w-3.5 h-3.5 animate-spin text-sky-550" />
-                  <span className="text-[10px] font-semibold animate-pulse">Assistant is compiling...</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-          {/* Input Box Footer */}
-          <form onSubmit={handleSend} className="p-3 border-t border-slate-200 dark:border-slate-850 bg-white dark:bg-[#111C30]/50 flex gap-2">
-            <input
-              type="text"
-              placeholder="Ask a suggestion or command..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50 dark:bg-slate-900 focus:border-sky-500 dark:focus:border-sky-500 transition-colors"
-            />
-            <button
-              type="submit"
-              className="px-3.5 py-2.5 bg-sky-500 hover:bg-sky-650 text-white rounded-xl flex items-center justify-center transition-colors cursor-pointer shadow-sm hover:scale-105 active:scale-95 duration-100"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
-        </div>
-      )}
+            {/* Messages Feed */}
+            <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50/50 dark:bg-slate-950/20 text-xs">
+              {messages.map((m, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] p-3 rounded-2xl shadow-sm leading-relaxed whitespace-pre-line font-medium border ${
+                      m.sender === 'user'
+                        ? 'bg-sky-500 border-sky-400 text-white rounded-tr-none'
+                        : 'bg-white border-slate-200 text-slate-800 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-100 rounded-tl-none'
+                    }`}
+                  >
+                    {m.sender === 'bot' && idx === messages.length - 1 ? (
+                      <TypewriterText text={m.text} />
+                    ) : (
+                      m.text
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-slate-200 text-slate-550 dark:bg-slate-900 dark:border-slate-800 dark:text-slate-400 p-3 rounded-2xl rounded-tl-none flex flex-col gap-1.5 shadow-sm">
+                    <span className="text-[10px] font-bold text-slate-400">AI Assistant is typing...</span>
+                    <div className="flex gap-1 items-center py-1">
+                      <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-dot-bounce" style={{ animationDelay: '0ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-dot-bounce" style={{ animationDelay: '150ms' }}></span>
+                      <span className="w-1.5 h-1.5 bg-sky-500 rounded-full animate-dot-bounce" style={{ animationDelay: '300ms' }}></span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Quick Actions / Suggested Questions */}
+            <div className="px-3 py-2 bg-slate-100/50 dark:bg-slate-900/30 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-1.5 justify-center">
+              {[
+                { label: "🔍 Suggest Vendor", text: "Suggest a photographer" },
+                { label: "🚨 Conflicts", text: "What conflict alerts do we have?" },
+                { label: "📊 KPI Stats", text: "Dashboard metrics overview" }
+              ].map((action, i) => (
+                <motion.button
+                  key={i}
+                  type="button"
+                  whileHover={{ scale: 1.05, y: -1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setInput(action.text);
+                    inputRef.current?.focus();
+                  }}
+                  className="px-2.5 py-1 bg-white dark:bg-slate-900 hover:bg-sky-50 dark:hover:bg-slate-800 text-[10px] font-bold rounded-full border border-slate-200 dark:border-slate-800 text-slate-600 hover:text-sky-600 dark:text-slate-350 dark:hover:text-sky-400 transition-colors shadow-sm cursor-pointer"
+                >
+                  {action.label}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Input Box Footer */}
+            <form onSubmit={handleSend} className="p-3 border-t border-slate-200 dark:border-slate-850 bg-white dark:bg-[#111C30]/50 flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                placeholder="Ask a suggestion or command..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                className="flex-1 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 outline-none bg-slate-50 dark:bg-slate-900 focus:border-sky-500 dark:focus:border-sky-500 transition-colors"
+              />
+              <button
+                type="submit"
+                className="px-3.5 py-2.5 bg-sky-500 hover:bg-sky-650 text-white rounded-xl flex items-center justify-center transition-colors cursor-pointer shadow-sm hover:scale-105 active:scale-95 duration-100"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

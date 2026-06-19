@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import Chatbot from './Chatbot';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   Calendar,
@@ -37,6 +38,14 @@ const Layout = ({ children }) => {
   const queryClient = useQueryClient();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+  }, [location.pathname]);
 
   // Zustand stores UI state
   const { 
@@ -232,40 +241,46 @@ const Layout = ({ children }) => {
   const filteredMenuItems = menuItems.filter(item => item.roles.includes(user?.role));
 
   return (
-    <div className={`flex min-h-screen bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 transition-colors duration-200`}>
+    <div className="flex min-h-screen bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 theme-transition">
       
       {/* Toast Notifications Stack */}
       <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none w-full max-w-sm">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`pointer-events-auto p-4 rounded-xl shadow-lg border animate-slide-in-right flex items-start gap-3 backdrop-blur-md ${
-              toast.type === 'error'
-                ? 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/90 dark:border-rose-900 dark:text-rose-200'
-                : 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/90 dark:border-emerald-900 dark:text-emerald-200'
-            }`}
-          >
-            {toast.type === 'error' ? (
-              <AlertCircle className="w-5 h-5 shrink-0" />
-            ) : (
-              <CheckCircle className="w-5 h-5 shrink-0" />
-            )}
-            <div className="flex-1 text-xs font-medium">{toast.message}</div>
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, x: 80, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 80, scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className={`pointer-events-auto p-4 rounded-xl shadow-lg border flex items-start gap-3 backdrop-blur-md ${
+                toast.type === 'error'
+                  ? 'bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/90 dark:border-rose-900 dark:text-rose-200'
+                  : 'bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/90 dark:border-emerald-900 dark:text-emerald-200'
+              }`}
             >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
+              {toast.type === 'error' ? (
+                <AlertCircle className="w-5 h-5 shrink-0 text-rose-550" />
+              ) : (
+                <CheckCircle className="w-5 h-5 shrink-0 text-emerald-500 animate-bounce" />
+              )}
+              <div className="flex-1 text-xs font-medium">{toast.message}</div>
+              <button
+                onClick={() => removeToast(toast.id)}
+                className="text-slate-400 hover:text-slate-655 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* Sidebar - Desktop */}
-      <aside 
-        className={`hidden md:flex flex-col bg-white dark:bg-[#111C30]/40 border-r border-slate-200 dark:border-slate-850 p-4 shrink-0 transition-all duration-200 relative ${
-          sidebarCollapsed ? 'w-20' : 'w-64'
-        }`}
+      <motion.aside 
+        animate={{ width: sidebarCollapsed ? 80 : 256 }}
+        transition={{ duration: 0.2, ease: "easeInOut" }}
+        className="hidden md:flex flex-col bg-white dark:bg-[#111C30]/40 border-r border-slate-200 dark:border-slate-850 p-4 shrink-0 relative z-10"
       >
         {/* Collapse Button */}
         <button
@@ -280,16 +295,24 @@ const Layout = ({ children }) => {
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-md select-none shrink-0">
             SLV
           </div>
-          {!sidebarCollapsed && (
-            <div className="overflow-hidden transition-all duration-250">
-              <h1 className="font-bold text-base leading-tight tracking-tight text-slate-900 dark:text-slate-100">SLV Events</h1>
-              <span className="text-[10px] text-slate-450 dark:text-slate-400 font-semibold tracking-wider uppercase">Planner Admin</span>
-            </div>
-          )}
+          <AnimatePresence mode="wait">
+            {!sidebarCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden whitespace-nowrap"
+              >
+                <h1 className="font-bold text-base leading-tight tracking-tight text-slate-900 dark:text-slate-100">SLV Events</h1>
+                <span className="text-[10px] text-slate-450 dark:text-slate-400 font-semibold tracking-wider uppercase font-sans">Planner Admin</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Menu Navigation */}
-        <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto pr-1 relative z-0">
           {filteredMenuItems.map(item => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
@@ -298,14 +321,38 @@ const Layout = ({ children }) => {
                 key={item.name}
                 to={item.path}
                 title={sidebarCollapsed ? item.name : undefined}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all duration-200 group relative ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl relative transition-colors duration-200 group ${
                   isActive
-                    ? 'bg-sky-500 text-white font-medium shadow-md shadow-sky-500/20'
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 hover:text-slate-900 dark:hover:text-slate-100'
+                    ? 'text-white font-medium'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                 }`}
               >
-                <Icon className={`w-4.5 h-4.5 shrink-0 transition-transform group-hover:scale-105 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-450 group-hover:text-slate-900 dark:group-hover:text-slate-100'}`} />
-                {!sidebarCollapsed && <span className="text-xs">{item.name}</span>}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeMenuItem"
+                    className="absolute inset-0 bg-sky-500 rounded-xl -z-10 shadow-md shadow-sky-500/20"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                
+                <motion.div
+                  whileHover={{ scale: 1.15 }}
+                  transition={{ duration: 0.15 }}
+                  className="shrink-0"
+                >
+                  <Icon className={`w-4.5 h-4.5 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-455 group-hover:text-slate-900 dark:group-hover:text-slate-100'}`} />
+                </motion.div>
+
+                {!sidebarCollapsed && (
+                  <motion.span
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="text-xs whitespace-nowrap"
+                  >
+                    {item.name}
+                  </motion.span>
+                )}
               </Link>
             );
           })}
@@ -318,12 +365,19 @@ const Layout = ({ children }) => {
               <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-semibold text-sky-600 dark:text-sky-400 capitalize shrink-0">
                 {user?.name?.charAt(0)}
               </div>
-              {!sidebarCollapsed && (
-                <div className="overflow-hidden">
-                  <p className="text-[11px] font-semibold truncate text-slate-800 dark:text-slate-200 leading-tight">{user?.name}</p>
-                  <p className="text-[9px] text-slate-450 dark:text-slate-400 truncate capitalize">{user?.role}</p>
-                </div>
-              )}
+              <AnimatePresence mode="wait">
+                {!sidebarCollapsed && (
+                  <motion.div 
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    className="overflow-hidden whitespace-nowrap"
+                  >
+                    <p className="text-[11px] font-semibold truncate text-slate-800 dark:text-slate-200 leading-tight">{user?.name}</p>
+                    <p className="text-[9px] text-slate-455 dark:text-slate-400 truncate capitalize">{user?.role}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             <button
               onClick={handleLogout}
@@ -334,7 +388,7 @@ const Layout = ({ children }) => {
             </button>
           </div>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Sidebar - Mobile Drawer */}
       {mobileMenuOpen && (
@@ -399,7 +453,7 @@ const Layout = ({ children }) => {
       {/* Main Panel Area */}
       <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
         {/* Header Navigation */}
-        <header className="flex items-center justify-between h-16 px-4 md:px-6 bg-white dark:bg-[#111C30]/40 border-b border-slate-200 dark:border-slate-900 shrink-0 relative z-30 transition-colors">
+        <header className="flex items-center justify-between h-16 px-4 md:px-6 bg-white dark:bg-[#111C30]/40 border-b border-slate-200 dark:border-slate-900 shrink-0 relative z-30 theme-transition">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -424,7 +478,7 @@ const Layout = ({ children }) => {
             {/* Light/Dark Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+              className="p-2 rounded-xl text-slate-505 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 theme-transition cursor-pointer"
               title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
               {theme === 'light' ? <Moon className="w-4.5 h-4.5" /> : <Sun className="w-4.5 h-4.5" />}
@@ -438,7 +492,10 @@ const Layout = ({ children }) => {
               >
                 <Bell className="w-4.5 h-4.5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 border border-white dark:border-slate-900 rounded-full" />
+                  <span className="absolute top-1 right-1 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-455 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
                 )}
               </button>
 
@@ -520,8 +577,11 @@ const Layout = ({ children }) => {
         )}
 
         {/* Main Content Pane */}
-        <main className="flex-1 p-4 md:p-6 overflow-hidden flex flex-col bg-slate-50 dark:bg-[#090D16] transition-colors duration-200">
-          <div className="flex-1 flex flex-col min-h-0 overflow-y-auto animate-fade-in pr-0.5">
+        <main className="flex-1 p-4 md:p-6 overflow-hidden flex flex-col bg-slate-50 dark:bg-[#090D16] theme-transition">
+          <div 
+            ref={containerRef}
+            className="flex-1 flex flex-col min-h-0 overflow-y-auto pr-0.5"
+          >
             {children}
           </div>
         </main>
