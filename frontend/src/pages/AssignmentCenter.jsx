@@ -225,21 +225,42 @@ const AssignmentCenter = () => {
                             assigned ? 'border-emerald-500/30 dark:border-emerald-500/20 shadow-sm' : 'border-slate-200 dark:border-slate-850'
                           }`}
                         >
-                          <div>
+                          <div className="flex-1 min-w-0 pr-2">
                             <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">{cat}</span>
                             {assigned ? (
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <motion.span
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ type: "spring", stiffness: 350, damping: 15 }}
-                                  className="text-emerald-500 font-extrabold text-sm"
-                                >
-                                  ✓
-                                </motion.span>
-                                <span className="font-semibold text-slate-800 dark:text-slate-300">
-                                  {assigned.vendor_name}
-                                </span>
+                              <div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <motion.span
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 350, damping: 15 }}
+                                    className="text-emerald-500 font-extrabold text-sm"
+                                  >
+                                    ✓
+                                  </motion.span>
+                                  <span className="font-semibold text-slate-800 dark:text-slate-300 truncate">
+                                    {assigned.vendor_name}
+                                  </span>
+                                </div>
+                                {assigned.vendor_phone && (
+                                  <div className="flex items-center gap-2 mt-1.5">
+                                    <button
+                                      onClick={() => window.location.href = `tel:${assigned.vendor_phone}`}
+                                      className="py-0.5 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded text-[9px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-0.5"
+                                    >
+                                      📞 Call
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        const message = `Hello ${assigned.vendor_name},\n\nYou have been assigned to an event.\n\nPlease confirm your availability.\n\nThank you.\n\nSLV Events`;
+                                        window.open(`https://wa.me/${assigned.vendor_phone}?text=${encodeURIComponent(message)}`, "_blank");
+                                      }}
+                                      className="py-0.5 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded text-[9px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-0.5"
+                                    >
+                                      💬 WhatsApp
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <span className="font-semibold text-rose-550 font-bold mt-0.5 block">
@@ -250,13 +271,13 @@ const AssignmentCenter = () => {
                           {assigned ? (
                             <button
                               onClick={() => handleRemoveAssignment('vendor', assigned.resource_id)}
-                              className="p-1.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-900 dark:hover:bg-red-950 text-slate-450 hover:text-rose-500 dark:hover:text-rose-400 rounded-lg transition-colors border border-slate-200 dark:border-slate-850 cursor-pointer"
+                              className="p-1.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-900 dark:hover:bg-red-950 text-slate-450 hover:text-rose-500 dark:hover:text-rose-400 rounded-lg transition-colors border border-slate-200 dark:border-slate-850 cursor-pointer shrink-0"
                               title="Remove Vendor"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           ) : (
-                            <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-900/35 px-2.5 py-0.5 rounded-full font-bold">
+                            <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-900/35 px-2.5 py-0.5 rounded-full font-bold shrink-0">
                               Pending
                             </span>
                           )}
@@ -282,21 +303,42 @@ const AssignmentCenter = () => {
                             assigned ? 'border-emerald-500/30 dark:border-emerald-500/20 shadow-sm' : 'border-slate-200 dark:border-slate-850'
                           }`}
                         >
-                          <div>
+                          <div className="flex-1 min-w-0 pr-2">
                             <span className="text-[10px] text-slate-455 dark:text-slate-500 block uppercase font-bold">{role}</span>
                             {assigned ? (
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <motion.span
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ type: "spring", stiffness: 350, damping: 15 }}
-                                  className="text-emerald-500 font-extrabold text-sm"
-                                >
-                                  ✓
-                                </motion.span>
-                                <span className="font-semibold text-slate-800 dark:text-slate-300">
-                                  {assigned.staff_name}
-                                </span>
+                              <div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <motion.span
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 350, damping: 15 }}
+                                    className="text-emerald-500 font-extrabold text-sm"
+                                  >
+                                    ✓
+                                  </motion.span>
+                                  <span className="font-semibold text-slate-800 dark:text-slate-300 truncate">
+                                    {assigned.staff_name}
+                                  </span>
+                                </div>
+                                {assigned.staff_phone && (
+                                  <div className="flex items-center gap-2 mt-1.5">
+                                    <button
+                                      onClick={() => window.location.href = `tel:${assigned.staff_phone}`}
+                                      className="py-0.5 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded text-[9px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-0.5"
+                                    >
+                                      📞 Call
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        const message = `Hello ${assigned.staff_name},\n\nYou have been assigned to an event.\n\nPlease confirm your availability.\n\nSLV Events`;
+                                        window.open(`https://wa.me/${assigned.staff_phone}?text=${encodeURIComponent(message)}`, "_blank");
+                                      }}
+                                      className="py-0.5 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded text-[9px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-0.5"
+                                    >
+                                      💬 WhatsApp
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             ) : (
                               <span className="font-semibold text-rose-550 font-bold mt-0.5 block">
@@ -307,13 +349,13 @@ const AssignmentCenter = () => {
                           {assigned ? (
                             <button
                               onClick={() => handleRemoveAssignment('staff', assigned.resource_id)}
-                              className="p-1.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-900 dark:hover:bg-red-950 text-slate-450 hover:text-rose-500 dark:hover:text-rose-400 rounded-lg transition-colors border border-slate-200 dark:border-slate-850 cursor-pointer"
+                              className="p-1.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-900 dark:hover:bg-red-950 text-slate-450 hover:text-rose-500 dark:hover:text-rose-400 rounded-lg transition-colors border border-slate-200 dark:border-slate-850 cursor-pointer shrink-0"
                               title="Remove Crew Member"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           ) : (
-                            <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-900/35 px-2.5 py-0.5 rounded-full font-bold">
+                            <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-950/40 dark:border-amber-900/35 px-2.5 py-0.5 rounded-full font-bold shrink-0">
                               Pending
                             </span>
                           )}
@@ -351,12 +393,31 @@ const AssignmentCenter = () => {
                             className="p-4 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs transition-colors"
                           >
                             <div className="flex-1 w-full">
-                              <p className="font-semibold text-slate-850 dark:text-slate-200 text-sm">{candidate.name}</p>
+                              <p className="font-semibold text-slate-855 dark:text-slate-200 text-sm">{candidate.name}</p>
                               <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-bold uppercase tracking-wider">
                                 <span>Rating: {parseFloat(candidate.rating).toFixed(1)}⭐</span>
                                 <span>•</span>
                                 <span>Tier: {candidate.price_range}</span>
                               </div>
+                              {candidate.phone && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <button
+                                    onClick={() => window.location.href = `tel:${candidate.phone}`}
+                                    className="py-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                                  >
+                                    📞 Call
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      const message = `Hello ${candidate.name},\n\nYou have been assigned to an event.\n\nPlease confirm your availability.\n\nThank you.\n\nSLV Events`;
+                                      window.open(`https://wa.me/${candidate.phone}?text=${encodeURIComponent(message)}`, "_blank");
+                                    }}
+                                    className="py-1 px-2.5 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                                  >
+                                    💬 WhatsApp
+                                  </button>
+                                </div>
+                              )}
                               
                               {/* Suitability Reasons */}
                               {candidate.reasons && candidate.reasons.length > 0 && (
@@ -422,10 +483,29 @@ const AssignmentCenter = () => {
                                   className="p-4 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs transition-colors"
                                 >
                                   <div className="flex-1 w-full">
-                                    <p className="font-semibold text-slate-850 dark:text-slate-205 text-sm">{c.name}</p>
+                                    <p className="font-semibold text-slate-855 dark:text-slate-205 text-sm">{c.name}</p>
                                     <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-bold uppercase tracking-wider">
                                       {c.experience_years} Years Experience
                                     </p>
+                                    {c.phone && (
+                                      <div className="flex items-center gap-2 mt-2">
+                                        <button
+                                          onClick={() => window.location.href = `tel:${c.phone}`}
+                                          className="py-1 px-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                                        >
+                                          📞 Call
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            const message = `Hello ${c.name},\n\nYou have been assigned to an event.\n\nPlease confirm your availability.\n\nSLV Events`;
+                                            window.open(`https://wa.me/${c.phone}?text=${encodeURIComponent(message)}`, "_blank");
+                                          }}
+                                          className="py-1 px-2.5 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                                        >
+                                          💬 WhatsApp
+                                        </button>
+                                      </div>
+                                    )}
                                     
                                     {/* Crew Suitability Reasons */}
                                     {c.reasons && c.reasons.length > 0 && (

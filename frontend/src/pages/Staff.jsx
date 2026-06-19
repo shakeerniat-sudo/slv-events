@@ -220,6 +220,23 @@ const Staff = () => {
                       <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
                       <span className="text-slate-705 dark:text-slate-300 font-medium">{s.phone}</span>
                     </div>
+                    <div className="flex items-center gap-2 mt-1 mb-1">
+                      <button
+                        onClick={() => window.location.href = `tel:${s.phone}`}
+                        className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        📞 Call
+                      </button>
+                      <button
+                        onClick={() => {
+                          const message = `Hello ${s.name},\n\nYou have been assigned to an event.\n\nPlease confirm your availability.\n\nSLV Events`;
+                          window.open(`https://wa.me/${s.phone}?text=${encodeURIComponent(message)}`, "_blank");
+                        }}
+                        className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      >
+                        💬 WhatsApp
+                      </button>
+                    </div>
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
                       <span className="text-slate-705 dark:text-slate-300 capitalize">Available Status: {s.availability_status}</span>

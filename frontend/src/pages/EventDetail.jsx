@@ -208,14 +208,35 @@ const EventDetail = () => {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {event.assignedVendors.map(v => (
-                      <div key={v.id} className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-xl flex justify-between items-center text-xs transition-colors">
-                        <div>
-                          <p className="font-semibold text-slate-800 dark:text-slate-350">{v.vendor_name}</p>
-                          <span className="text-[10px] text-slate-455 dark:text-slate-400 capitalize">{v.vendor_category}</span>
+                      <div key={v.id} className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-xl flex flex-col gap-2 text-xs transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-slate-350">{v.vendor_name}</p>
+                            <span className="text-[10px] text-slate-455 dark:text-slate-400 capitalize">{v.vendor_category}</span>
+                          </div>
+                          <span className="text-[9px] px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-400 rounded-full font-bold shrink-0">
+                            ✓ Confirmed
+                          </span>
                         </div>
-                        <span className="text-[9px] px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-400 rounded-full font-bold">
-                          ✓ Confirmed
-                        </span>
+                        {v.vendor_phone && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <button
+                              onClick={() => window.location.href = `tel:${v.vendor_phone}`}
+                              className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                            >
+                              📞 Call
+                            </button>
+                            <button
+                              onClick={() => {
+                                const message = `Hello ${v.vendor_name},\n\nYou have been assigned to an event.\n\nPlease confirm your availability.\n\nThank you.\n\nSLV Events`;
+                                window.open(`https://wa.me/${v.vendor_phone}?text=${encodeURIComponent(message)}`, "_blank");
+                              }}
+                              className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                            >
+                              💬 WhatsApp
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -233,14 +254,35 @@ const EventDetail = () => {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {event.assignedStaff.map(s => (
-                      <div key={s.id} className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-xl flex justify-between items-center text-xs transition-colors">
-                        <div>
-                          <p className="font-semibold text-slate-800 dark:text-slate-350">{s.staff_name}</p>
-                          <span className="text-[10px] text-slate-455 dark:text-slate-400 capitalize">{s.staff_role}</span>
+                      <div key={s.id} className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-xl flex flex-col gap-2 text-xs transition-colors">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-semibold text-slate-800 dark:text-slate-350">{s.staff_name}</p>
+                            <span className="text-[10px] text-slate-455 dark:text-slate-400 capitalize">{s.staff_role}</span>
+                          </div>
+                          <span className="text-[9px] px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-400 rounded-full font-bold shrink-0">
+                            ✓ Confirmed
+                          </span>
                         </div>
-                        <span className="text-[9px] px-2.5 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-400 rounded-full font-bold">
-                          ✓ Confirmed
-                        </span>
+                        {s.staff_phone && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <button
+                              onClick={() => window.location.href = `tel:${s.staff_phone}`}
+                              className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                            >
+                              📞 Call
+                            </button>
+                            <button
+                              onClick={() => {
+                                const message = `Hello ${s.staff_name},\n\nYou have been assigned to an event.\n\nPlease confirm your availability.\n\nSLV Events`;
+                                window.open(`https://wa.me/${s.staff_phone}?text=${encodeURIComponent(message)}`, "_blank");
+                              }}
+                              className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                            >
+                              💬 WhatsApp
+                            </button>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -269,11 +311,28 @@ const EventDetail = () => {
 
             <div className="space-y-2.5 text-xs text-slate-705 dark:text-slate-350 border-t border-slate-150 dark:border-slate-850 pt-4 transition-colors">
               <div className="flex justify-between">
-                <span className="text-slate-450 dark:text-slate-450 font-medium">Phone:</span>
+                <span className="text-slate-455 dark:text-slate-450 font-medium">Phone:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-250">{event.client_phone}</span>
               </div>
+              <div className="flex items-center gap-2 mt-1 mb-1">
+                <button
+                  onClick={() => window.location.href = `tel:${event.client_phone}`}
+                  className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                >
+                  📞 Call
+                </button>
+                <button
+                  onClick={() => {
+                    const message = `Hello,\n\nYour event planning is currently in progress.\n\nThank you for choosing SLV Events.`;
+                    window.open(`https://wa.me/${event.client_phone}?text=${encodeURIComponent(message)}`, "_blank");
+                  }}
+                  className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                >
+                  💬 WhatsApp
+                </button>
+              </div>
               <div className="flex justify-between">
-                <span className="text-slate-450 dark:text-slate-450 font-medium">Email:</span>
+                <span className="text-slate-450 dark:text-slate-455 font-medium">Email:</span>
                 <span className="font-semibold text-slate-800 dark:text-slate-250 truncate max-w-[150px]" title={event.client_email}>{event.client_email || 'N/A'}</span>
               </div>
             </div>
