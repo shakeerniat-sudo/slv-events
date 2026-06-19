@@ -7,7 +7,9 @@ const AuthContext = createContext(null);
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || 
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:5050/api'
-    : 'https://slv-events-backend.onrender.com/api');
+    : (window.location.hostname.includes('vercel.app')
+        ? window.location.origin + '/_/backend/api'
+        : 'https://slv-events-backend.onrender.com/api'));
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
