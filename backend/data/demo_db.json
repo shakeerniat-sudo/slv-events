@@ -70,9 +70,12 @@
       "budget": 150000,
       "guest_count": 300,
       "theme_preference": "Gold & Black Premium",
-      "status": "Assigned",
-      "notes": "Needs top decorators and anchors.",
-      "created_at": "2026-06-13T16:50:37.487Z"
+      "status": "Completed",
+      "notes": "Needs top decorators and anchors.\nCancellation Reason: idk\nCancellation Reason: ...",
+      "created_at": "2026-06-13T16:50:37.487Z",
+      "workflow_stage": 5,
+      "workflow_mode": "Manual",
+      "event_time": "10:00 AM - 04:00 PM"
     },
     {
       "id": 2,
@@ -84,7 +87,7 @@
       "budget": 350000,
       "guest_count": 500,
       "theme_preference": "Floral Fantasy",
-      "status": "Pending",
+      "status": "Ready",
       "notes": "Provide custom catering preferences.",
       "created_at": "2026-06-13T16:50:37.487Z"
     },
@@ -101,20 +104,6 @@
       "status": "Pending",
       "notes": "Requires high quality sound and technicians.",
       "created_at": "2026-06-13T16:50:37.487Z"
-    },
-    {
-      "id": 4,
-      "name": "Wedding Reception",
-      "client_id": 3,
-      "event_type": "Wedding",
-      "event_date": "2026-06-18",
-      "venue": "Royal palace",
-      "budget": 50000,
-      "guest_count": 200,
-      "theme_preference": "Mint green",
-      "notes": "",
-      "status": "Pending",
-      "created_at": "2026-06-17T16:17:41.985Z"
     }
   ],
   "vendors": [
@@ -430,19 +419,27 @@
       "resource_id": 4,
       "status": "Pending",
       "assigned_at": "2026-06-13T16:50:37.488Z"
+    },
+    {
+      "id": 5,
+      "event_id": 1,
+      "resource_type": "vendor",
+      "resource_id": 4,
+      "status": "Confirmed",
+      "assigned_at": "2026-06-24T18:47:39.388Z"
+    },
+    {
+      "id": 6,
+      "event_id": 1,
+      "resource_type": "vendor",
+      "resource_id": 5,
+      "status": "Confirmed",
+      "assigned_at": "2026-06-24T18:47:55.892Z"
     }
   ],
   "vendor_availability": [],
   "staff_availability": [],
   "inventory": [
-    {
-      "id": 1,
-      "item_name": "Chairs (Banquet Gold)",
-      "quantity": 1000,
-      "available_quantity": 700,
-      "status": "In Stock",
-      "created_at": "2026-06-13T16:50:37.488Z"
-    },
     {
       "id": 2,
       "item_name": "Round Tables (Veneer)",
@@ -502,8 +499,8 @@
       "balance": 0,
       "amount": 25000,
       "due_date": "2026-07-15",
-      "status": "Pending",
-      "paid_at": null,
+      "status": "Paid",
+      "paid_at": "2026-06-24T17:21:13.204Z",
       "notes": "Advance for decoration stage design",
       "created_at": "2026-06-13T16:50:37.488Z"
     },
@@ -521,21 +518,6 @@
       "paid_at": null,
       "notes": "First installment due",
       "created_at": "2026-06-13T16:50:37.488Z"
-    },
-    {
-      "id": 4,
-      "event_id": 4,
-      "type": "client",
-      "vendor_id": null,
-      "total_amount": 50000,
-      "advance": 0,
-      "balance": 50000,
-      "amount": 50000,
-      "due_date": "2026-06-18",
-      "status": "Pending",
-      "paid_at": "Initial event budget payment",
-      "notes": "",
-      "created_at": "2026-06-17T16:17:41.994Z"
     }
   ],
   "quotations": [],
@@ -559,102 +541,12 @@
       "is_deleted": 1
     },
     {
-      "id": 3,
-      "title": "Insufficient Helpers Alert",
-      "message": "⚠ Only 1 helpers available. Required: 3.",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.056Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 4,
-      "title": "Insufficient Helpers Alert",
-      "message": "⚠ Only 0 helpers available. Required: 5.",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.074Z",
-      "is_deleted": 1
-    },
-    {
       "id": 5,
       "title": "Insufficient Helpers Alert",
       "message": "⚠ Only 0 helpers available. Required: 2.",
       "type": "Conflict Alert",
       "is_read": 0,
       "created_at": "2026-06-17T16:08:59.082Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 6,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Caterer allocated to event \"TechCorp Annual Gala 2026\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.096Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 7,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Anchor allocated to event \"TechCorp Annual Gala 2026\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.100Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 8,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Sound Team allocated to event \"TechCorp Annual Gala 2026\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.113Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 9,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Decorator allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.126Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 10,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Caterer allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.131Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 11,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Photographer allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.158Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 12,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Anchor allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.182Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 13,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.195Z",
       "is_deleted": 1
     },
     {
@@ -703,15 +595,6 @@
       "is_deleted": 1
     },
     {
-      "id": 19,
-      "title": "Pending Payment Alert",
-      "message": "⚠ Payment of $25,000.00 (vendor payment) for event \"TechCorp Annual Gala 2026\" is pending. Due date: 15/07/2026.",
-      "type": "Payment Reminder",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.276Z",
-      "is_deleted": 1
-    },
-    {
       "id": 20,
       "title": "Pending Payment Alert",
       "message": "⚠ Payment of $1,00,000.00 (client billing) for event \"Sarah Wedding Reception\" is pending. Due date: 30/06/2026.",
@@ -740,56 +623,461 @@
     },
     {
       "id": 23,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Decorator allocated to event \"Wedding Reception\".",
-      "type": "Conflict Alert",
+      "title": "Event Status Update",
+      "message": "Event \"Sarah Wedding Reception\" status changed to Confirmed.",
+      "type": "Upcoming Event",
       "is_read": 0,
-      "created_at": "2026-06-17T16:17:42.038Z",
+      "created_at": "2026-06-24T17:34:59.192Z",
       "is_deleted": 1
     },
     {
       "id": 24,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Caterer allocated to event \"Wedding Reception\".",
-      "type": "Conflict Alert",
+      "title": "Event Status Update",
+      "message": "Event \"Sarah Wedding Reception\" status changed to Completed.",
+      "type": "Upcoming Event",
       "is_read": 0,
-      "created_at": "2026-06-17T16:17:42.042Z",
+      "created_at": "2026-06-24T17:35:01.389Z",
       "is_deleted": 1
     },
     {
       "id": 25,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Photographer allocated to event \"Wedding Reception\".",
-      "type": "Conflict Alert",
+      "title": "Event Status Update",
+      "message": "Event \"Sarah Wedding Reception\" status changed to Pending.",
+      "type": "Upcoming Event",
       "is_read": 0,
-      "created_at": "2026-06-17T16:17:42.047Z",
+      "created_at": "2026-06-24T17:35:04.873Z",
       "is_deleted": 1
     },
     {
       "id": 26,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Anchor allocated to event \"Wedding Reception\".",
+      "title": "Insufficient Helpers Alert",
+      "message": "⚠ Only 0 helpers available. Required: 5.",
       "type": "Conflict Alert",
       "is_read": 0,
-      "created_at": "2026-06-17T16:17:42.053Z",
+      "created_at": "2026-06-24T17:35:04.921Z",
       "is_deleted": 1
     },
     {
       "id": 27,
       "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Wedding Reception\".",
+      "message": "⚠ Missing assignment: No Decorator allocated to event \"Sarah Wedding Reception\".",
       "type": "Conflict Alert",
       "is_read": 0,
-      "created_at": "2026-06-17T16:17:42.059Z",
+      "created_at": "2026-06-24T17:35:04.923Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 28,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-24T17:35:04.925Z",
       "is_deleted": 1
     },
     {
       "id": 29,
-      "title": "Pending Payment Alert",
-      "message": "⚠ Payment of $50,000.00 (client billing) for event \"Wedding Reception\" is pending. Due date: 18/06/2026.",
-      "type": "Payment Reminder",
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Photographer allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
       "is_read": 0,
-      "created_at": "2026-06-17T16:17:42.096Z",
+      "created_at": "2026-06-24T17:35:04.926Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 30,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-24T17:35:04.928Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 31,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-24T17:35:04.930Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 32,
+      "title": "Event Status Update",
+      "message": "Event \"TechCorp Annual Gala 2026\" status changed to Ready.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:00:49.811Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 33,
+      "title": "Event Status Update",
+      "message": "Event \"TechCorp Annual Gala 2026\" status changed to Completed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:00:58.913Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 34,
+      "title": "Event Status Update",
+      "message": "Event \"Sarah Wedding Reception\" status changed to Ready.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:10:06.827Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 35,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to In Progress.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:24:34.129Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 40,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Ready.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:24:41.473Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 41,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Completed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:24:44.156Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 42,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Ready.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:24:48.172Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 47,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to In Progress.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:25:24.411Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 48,
+      "title": "Event Status Update",
+      "message": "Event \"TechCorp Annual Gala 2026\" status changed to Completed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:39:21.788Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 49,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Confirmed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:39:38.060Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 54,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to In Progress.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:39:43.066Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 55,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Ready.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:39:47.315Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 56,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Completed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:39:47.474Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 57,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to In Progress.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:40:36.144Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 62,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Confirmed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:40:38.343Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 63,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Pending.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:40:40.578Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 64,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Confirmed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:40:42.230Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 65,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to In Progress.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:40:44.338Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 66,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Ready.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:40:49.761Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 67,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Completed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:40:51.980Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 68,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Pending.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:40:54.587Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 73,
+      "title": "Event Status Update",
+      "message": "Event \"TechCorp Annual Gala 2026\" status changed to Cancelled.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:41:09.676Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 74,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Completed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:46:32.758Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 75,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Ready.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:46:35.429Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 80,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to In Progress.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:46:37.611Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 81,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Confirmed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:46:41.277Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 82,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Cancelled.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:46:47.147Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 83,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Completed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:46:52.937Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 84,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to In Progress.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:46:55.468Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 89,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Pending.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:46:58.232Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 90,
+      "title": "Vendors Assigned",
+      "message": "✅ Vendors assigned successfully.",
+      "type": "Assignment Confirmation",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:47:18.850Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 91,
+      "title": "Staffing Warning",
+      "message": "⚠ Only 0 helpers available.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:47:18.911Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 92,
+      "title": "Event Summary: TechCorp Annual Gala 2026",
+      "message": "Client: John Doe\nEvent Type: Corporate\nDate: 15/07/2026\nVenue: Grand Palace Hall, Bangalore\nBudget: $1,50,000.00\nGuest Count: 300\nAssigned Vendors: undefined (undefined), undefined (undefined)\nAssigned Staff: undefined (undefined), undefined (undefined)\nCurrent Status: Pending",
+      "type": "Event Summary",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:47:19.008Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 93,
+      "title": "Vendors Assigned",
+      "message": "✅ Vendors assigned successfully.",
+      "type": "Assignment Confirmation",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:47:39.402Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 94,
+      "title": "Staffing Warning",
+      "message": "⚠ Only 0 helpers available.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:47:39.418Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 95,
+      "title": "Event Summary: TechCorp Annual Gala 2026",
+      "message": "Client: John Doe\nEvent Type: Corporate\nDate: 15/07/2026\nVenue: Grand Palace Hall, Bangalore\nBudget: $1,50,000.00\nGuest Count: 300\nAssigned Vendors: undefined (undefined), undefined (undefined), undefined (undefined)\nAssigned Staff: undefined (undefined), undefined (undefined)\nCurrent Status: Pending",
+      "type": "Event Summary",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:47:39.441Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 96,
+      "title": "Vendors Assigned",
+      "message": "✅ Vendors assigned successfully.",
+      "type": "Assignment Confirmation",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:47:55.903Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 97,
+      "title": "Staffing Warning",
+      "message": "⚠ Only 0 helpers available.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:47:55.918Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 98,
+      "title": "Event Summary: TechCorp Annual Gala 2026",
+      "message": "Client: John Doe\nEvent Type: Corporate\nDate: 15/07/2026\nVenue: Grand Palace Hall, Bangalore\nBudget: $1,50,000.00\nGuest Count: 300\nAssigned Vendors: undefined (undefined), undefined (undefined), undefined (undefined), undefined (undefined)\nAssigned Staff: undefined (undefined), undefined (undefined)\nCurrent Status: Pending",
+      "type": "Event Summary",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:47:55.950Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 99,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to In Progress.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:48:01.399Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 100,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Ready.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:48:03.493Z",
+      "is_deleted": 1
+    },
+    {
+      "id": 101,
+      "title": "Event Status Update",
+      "message": "Event \"undefined\" status changed to Completed.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-24T18:48:05.569Z",
       "is_deleted": 1
     }
   ],
@@ -817,6 +1105,453 @@
       "action": "CREATE_EVENT",
       "details": "Created event \"Wedding Reception\" (ID: 4) for client \"Rahul sharma\"",
       "timestamp": "2026-06-17T16:17:42.118Z"
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "CREATE_PAYMENT",
+      "details": "Added new client payment entry (ID: 5) for event 4",
+      "timestamp": "2026-06-24T16:30:27.140Z"
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "DELETE_INVENTORY",
+      "details": "Deleted inventory item \"Chairs (Banquet Gold)\" (ID: 1)",
+      "timestamp": "2026-06-24T16:30:36.058Z"
+    },
+    {
+      "id": 6,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "DELETE_EVENT",
+      "details": "Deleted event \"Wedding Reception\" (ID: 4)",
+      "timestamp": "2026-06-24T16:35:23.427Z"
+    },
+    {
+      "id": 7,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_PAYMENT",
+      "details": "Updated payment entry (ID: 2) status to \"Paid\"",
+      "timestamp": "2026-06-24T17:21:13.213Z"
+    },
+    {
+      "id": 8,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"Sarah Wedding Reception\" (ID: 2) details.",
+      "timestamp": "2026-06-24T17:34:59.214Z"
+    },
+    {
+      "id": 9,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"Sarah Wedding Reception\" (ID: 2) details.",
+      "timestamp": "2026-06-24T17:35:01.444Z"
+    },
+    {
+      "id": 10,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"Sarah Wedding Reception\" (ID: 2) details.",
+      "timestamp": "2026-06-24T17:35:04.934Z"
+    },
+    {
+      "id": 11,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"TechCorp Annual Gala 2026\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:00:49.849Z"
+    },
+    {
+      "id": 12,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"TechCorp Annual Gala 2026\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:00:59.082Z"
+    },
+    {
+      "id": 13,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"Sarah Wedding Reception\" (ID: 2) details.",
+      "timestamp": "2026-06-24T18:10:06.866Z"
+    },
+    {
+      "id": 14,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:34.201Z"
+    },
+    {
+      "id": 15,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:37.718Z"
+    },
+    {
+      "id": 16,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:39.814Z"
+    },
+    {
+      "id": 17,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:41.539Z"
+    },
+    {
+      "id": 18,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:44.286Z"
+    },
+    {
+      "id": 19,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:46.268Z"
+    },
+    {
+      "id": 20,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:48.119Z"
+    },
+    {
+      "id": 21,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:48.220Z"
+    },
+    {
+      "id": 22,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:49.804Z"
+    },
+    {
+      "id": 23,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:24:51.824Z"
+    },
+    {
+      "id": 24,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:25:24.456Z"
+    },
+    {
+      "id": 25,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"TechCorp Annual Gala 2026\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:39:21.841Z"
+    },
+    {
+      "id": 26,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:39:38.148Z"
+    },
+    {
+      "id": 27,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:39:40.764Z"
+    },
+    {
+      "id": 28,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:39:43.266Z"
+    },
+    {
+      "id": 29,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:39:45.263Z"
+    },
+    {
+      "id": 30,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:39:47.446Z"
+    },
+    {
+      "id": 31,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:39:47.512Z"
+    },
+    {
+      "id": 32,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:40:36.236Z"
+    },
+    {
+      "id": 33,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:40:38.417Z"
+    },
+    {
+      "id": 34,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:40:40.767Z"
+    },
+    {
+      "id": 35,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:40:42.405Z"
+    },
+    {
+      "id": 36,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:40:44.431Z"
+    },
+    {
+      "id": 37,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:40:46.898Z"
+    },
+    {
+      "id": 38,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:40:49.890Z"
+    },
+    {
+      "id": 39,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:40:52.206Z"
+    },
+    {
+      "id": 40,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:40:54.826Z"
+    },
+    {
+      "id": 41,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"TechCorp Annual Gala 2026\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:41:09.904Z"
+    },
+    {
+      "id": 42,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:27.574Z"
+    },
+    {
+      "id": 43,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:32.968Z"
+    },
+    {
+      "id": 44,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:35.562Z"
+    },
+    {
+      "id": 45,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:37.809Z"
+    },
+    {
+      "id": 46,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:39.736Z"
+    },
+    {
+      "id": 47,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:41.472Z"
+    },
+    {
+      "id": 48,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:47.277Z"
+    },
+    {
+      "id": 49,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:53.200Z"
+    },
+    {
+      "id": 50,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:55.624Z"
+    },
+    {
+      "id": 51,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:46:58.405Z"
+    },
+    {
+      "id": 52,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "SAVE_EVENT_ASSIGNMENT",
+      "details": "Saved consolidated assignments for event \"TechCorp Annual Gala 2026\" (ID: 1)",
+      "timestamp": "2026-06-24T18:47:19.148Z"
+    },
+    {
+      "id": 53,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "SAVE_EVENT_ASSIGNMENT",
+      "details": "Saved consolidated assignments for event \"TechCorp Annual Gala 2026\" (ID: 1)",
+      "timestamp": "2026-06-24T18:47:39.471Z"
+    },
+    {
+      "id": 54,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "SAVE_EVENT_ASSIGNMENT",
+      "details": "Saved consolidated assignments for event \"TechCorp Annual Gala 2026\" (ID: 1)",
+      "timestamp": "2026-06-24T18:47:56.071Z"
+    },
+    {
+      "id": 55,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:48:01.444Z"
+    },
+    {
+      "id": 56,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:48:03.664Z"
+    },
+    {
+      "id": 57,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "UPDATE_EVENT",
+      "details": "Updated event \"undefined\" (ID: 1) details.",
+      "timestamp": "2026-06-24T18:48:05.646Z"
+    }
+  ],
+  "event_assignments": [
+    {
+      "assignment_id": 1,
+      "event_id": 1,
+      "decorator_id": null,
+      "caterer_id": null,
+      "photographer_id": 3,
+      "anchor_id": 4,
+      "sound_team_id": 5,
+      "staff_ids": "",
+      "status": "Assigned",
+      "assigned_by": "Admin User",
+      "assigned_at": "2026-06-24T18:47:55.860Z"
     }
   ]
 }

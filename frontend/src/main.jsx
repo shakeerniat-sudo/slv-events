@@ -5,7 +5,7 @@ import App from './App.jsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // Initialize theme immediately to prevent layout flash
-const savedTheme = localStorage.getItem('theme') || 'light';
+const savedTheme = localStorage.getItem('theme') || 'dark';
 if (savedTheme === 'dark') {
   document.documentElement.classList.add('dark');
 } else {

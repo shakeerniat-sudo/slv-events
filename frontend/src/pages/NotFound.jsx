@@ -6,7 +6,7 @@ const NotFound = () => {
   const location = useLocation();
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-white text-slate-800 dark:bg-[#090D16] dark:text-slate-100 p-6 overflow-hidden transition-colors duration-200 font-sans">
+    <div className="relative min-h-screen flex items-center justify-center bg-white text-slate-800 dark:bg-[#0B1220] dark:text-slate-100 p-6 overflow-hidden transition-colors duration-200 font-sans">
       <div className="w-full max-w-lg z-10 text-left select-text">
         {/* Title */}
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 mb-6 border-b border-slate-100 dark:border-slate-850 pb-4">

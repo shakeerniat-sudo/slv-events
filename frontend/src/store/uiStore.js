@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export const useUIStore = create((set, get) => ({
   // Theme state
-  theme: localStorage.getItem('theme') || 'light',
+  theme: localStorage.getItem('theme') || 'dark',
   setTheme: (theme) => {
     localStorage.setItem('theme', theme);
     if (theme === 'dark') {

@@ -1,6 +1,137 @@
 const db = require('../config/db');
 const AutomationService = require('../services/automation.service');
 
+// Helper to sync event_assignments table from assignments table
+const syncEventAssignmentsTable = async (eventId) => {
+  try {
+    const currentAssignments = await db.query('SELECT * FROM assignments WHERE event_id = ?', [eventId]);
+    const [vendors, staff] = await Promise.all([
+      db.query('SELECT id, category FROM vendors'),
+      db.query('SELECT id, role FROM staff')
+    ]);
+
+    const vendorsMap = new Map(vendors.map(v => [v.id, v.category]));
+    const staffMap = new Map(staff.map(s => [s.id, s.role]));
+
+    let decorator_id = null;
+    let caterer_id = null;
+    let photographer_id = null;
+    let anchor_id = null;
+    let sound_team_id = null;
+    const staffIds = [];
+
+    currentAssignments.forEach(a => {
+      if (a.resource_type === 'vendor') {
+        const cat = vendorsMap.get(a.resource_id);
+        if (cat === 'Decorator') decorator_id = a.resource_id;
+        else if (cat === 'Caterer') caterer_id = a.resource_id;
+        else if (cat === 'Photographer') photographer_id = a.resource_id;
+        else if (cat === 'Anchor') anchor_id = a.resource_id;
+        else if (cat === 'Sound Team') sound_team_id = a.resource_id;
+      } else if (a.resource_type === 'staff') {
+        staffIds.push(a.resource_id);
+      }
+    });
+
+    const staffIdsStr = staffIds.join(',');
+
+    const existing = await db.query('SELECT * FROM event_assignments WHERE event_id = ?', [eventId]);
+
+    if (existing.length > 0) {
+      await db.query(
+        'UPDATE event_assignments SET decorator_id = ?, caterer_id = ?, photographer_id = ?, anchor_id = ?, sound_team_id = ?, staff_ids = ? WHERE event_id = ?',
+        [decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, staffIdsStr, eventId]
+      );
+    } else {
+      await db.query(
+        'INSERT INTO event_assignments (event_id, decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, staff_ids, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [eventId, decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, staffIdsStr, 'Assigned']
+      );
+    }
+  } catch (err) {
+    console.error('syncEventAssignmentsTable error:', err);
+  }
+};
+
+// Helper to check and set event workflow status based on assignment completeness
+const checkAndSetEventWorkflowStatus = async (eventId) => {
+  try {
+    // Pure manual workflow progression - return early and do not auto-calculate stage or status
+    return;
+    if (events.length === 0) return;
+    const event = events[0];
+
+    // If manual mode, do not auto-calculate stage or status
+    if (event.workflow_mode === 'Manual') {
+      return;
+    }
+
+    // If status is completed or cancelled, do not auto-change it
+    if (event.status === 'Completed' || event.status === 'Cancelled') {
+      return;
+    }
+
+    const allCurrentAssignments = await db.query('SELECT * FROM assignments WHERE event_id = ?', [eventId]);
+    const vendorsAssigned = allCurrentAssignments.filter(a => a.resource_type === 'vendor');
+    const staffAssigned = allCurrentAssignments.filter(a => a.resource_type === 'staff');
+
+    const [allVendors, allStaff] = await Promise.all([
+      db.query('SELECT id, category FROM vendors'),
+      db.query('SELECT id, role FROM staff')
+    ]);
+
+    const vendorsMap = new Map(allVendors.map(v => [v.id, v.category]));
+    const staffMap = new Map(allStaff.map(s => [s.id, s.role]));
+
+    const currentCategories = vendorsAssigned.map(a => vendorsMap.get(a.resource_id)).filter(Boolean);
+    const currentRoles = staffAssigned.map(a => staffMap.get(a.resource_id)).filter(Boolean);
+
+    const requiredCategories = ['Decorator', 'Caterer', 'Photographer', 'Anchor', 'Sound Team'];
+    const requiredRoles = ['Supervisor', 'Coordinator', 'Technician', 'Helper'];
+
+    const hasAllVendors = requiredCategories.every(cat => currentCategories.includes(cat));
+    const hasAllStaff = requiredRoles.every(role => currentRoles.includes(role));
+
+    let newStage = 1;
+    let newStatus = event.status;
+
+    if (event.status === 'Completed') {
+      newStage = 5;
+    } else if (hasAllVendors && hasAllStaff) {
+      newStage = 4;
+      newStatus = 'Ready';
+    } else if (hasAllStaff) {
+      newStage = 3;
+      newStatus = 'In Progress';
+    } else if (hasAllVendors) {
+      newStage = 2;
+      newStatus = 'In Progress';
+    } else {
+      newStage = 1;
+      if (event.status === 'Ready' || event.status === 'Completed') {
+        newStatus = 'Pending';
+      }
+    }
+
+    if (newStage !== event.workflow_stage || newStatus !== event.status) {
+      await db.query(
+        'UPDATE events SET workflow_stage = ?, status = ? WHERE id = ?',
+        [newStage, newStatus, eventId]
+      );
+      await db.query(
+        'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+        [
+          'Event Status Auto Update',
+          `Event "${event.name}" status automatically changed to ${newStatus} (Stage ${newStage}).`,
+          'Upcoming Event'
+        ]
+      );
+    }
+  } catch (err) {
+    console.error('checkAndSetEventWorkflowStatus error:', err);
+  }
+};
+
 // Helper to check if resource is assigned on a specific date
 const checkResourceConflict = async (resourceType, resourceId, dateString, excludeEventId = null) => {
   let queryStr = `
@@ -127,6 +258,10 @@ exports.createAssignment = async (req, res) => {
 
       // Sync automated notifications
       await AutomationService.syncAutomatedNotifications();
+
+      // Sync consolidated table and workflow status
+      await syncEventAssignmentsTable(eventId);
+      await checkAndSetEventWorkflowStatus(eventId);
     }
 
     // 4. Update vendor/staff availability cache if necessary (or leave dynamic)
@@ -178,6 +313,10 @@ exports.deleteAssignment = async (req, res) => {
 
     // Sync automated warnings to update missing assignment alerts / helper count warnings
     await AutomationService.syncAutomatedNotifications();
+
+    // Sync consolidated table and workflow status
+    await syncEventAssignmentsTable(eventId);
+    await checkAndSetEventWorkflowStatus(eventId);
 
     return res.status(200).json({ message: 'Assignment removed successfully' });
   } catch (err) {
@@ -655,11 +794,8 @@ exports.saveEventAssignment = async (req, res) => {
       }
     }
 
-    // 4. Update Event Status to "Assigned" if all major elements are present
-    const isAllVendorsAssigned = decorator_id && caterer_id && photographer_id && anchor_id && sound_team_id;
-    if (isAllVendorsAssigned && event.status === 'Pending') {
-      await db.query('UPDATE events SET status = ? WHERE id = ?', ['Assigned', eventId]);
-    }
+    // 4. Run automated workflow status checker
+    await checkAndSetEventWorkflowStatus(eventId);
 
     // 5. Generate Notifications
     if (vendorIds.length > 0) {

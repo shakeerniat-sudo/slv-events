@@ -240,7 +240,10 @@ exports.updateEvent = async (req, res) => {
       guestCount,
       themePreference,
       notes,
-      status
+      status,
+      workflow_stage,
+      workflow_mode,
+      event_time
     } = req.body;
 
     const events = await db.query('SELECT * FROM events WHERE id = ?', [eventId]);
@@ -248,18 +251,23 @@ exports.updateEvent = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
 
+    const currentEvent = events[0];
+
     await db.query(
-      'UPDATE events SET name = ?, event_type = ?, event_date = ?, venue = ?, budget = ?, guest_count = ?, theme_preference = ?, notes = ?, status = ? WHERE id = ?',
+      'UPDATE events SET name = ?, event_type = ?, event_date = ?, venue = ?, budget = ?, guest_count = ?, theme_preference = ?, notes = ?, status = ?, workflow_stage = ?, workflow_mode = ?, event_time = ? WHERE id = ?',
       [
-        name,
-        eventType,
-        formatDateString(eventDate),
-        venue,
-        parseFloat(budget),
-        parseInt(guestCount),
-        themePreference || '',
-        notes || '',
-        status,
+        name || currentEvent.name,
+        eventType || currentEvent.event_type,
+        formatDateString(eventDate || currentEvent.event_date),
+        venue || currentEvent.venue,
+        parseFloat(budget !== undefined ? budget : currentEvent.budget),
+        parseInt(guestCount !== undefined ? guestCount : currentEvent.guest_count),
+        themePreference !== undefined ? themePreference : (currentEvent.theme_preference || ''),
+        notes !== undefined ? notes : (currentEvent.notes || ''),
+        status || currentEvent.status,
+        workflow_stage !== undefined ? parseInt(workflow_stage) : (currentEvent.workflow_stage || 1),
+        workflow_mode || currentEvent.workflow_mode || 'Automatic',
+        event_time || currentEvent.event_time || '10:00 AM - 04:00 PM',
         eventId
       ]
     );

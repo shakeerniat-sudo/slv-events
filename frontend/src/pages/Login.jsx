@@ -43,10 +43,10 @@ const Login = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 p-4 overflow-hidden transition-colors duration-200">
+    <div className="relative min-h-screen flex items-center justify-center bg-slate-50 text-slate-900 dark:bg-[#0B1220] dark:text-slate-100 p-4 overflow-hidden transition-colors duration-200">
       {/* Background decorative glows */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sky-500/5 dark:bg-primary-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sky-500/5 dark:bg-sky-500/10 rounded-full blur-3xl animate-soft-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-full blur-3xl animate-soft-pulse" style={{ animationDelay: '1s' }} />
 
       {/* Login Portal Container */}
       <div className="w-full max-w-md z-10 animate-fade-in-up">
@@ -60,7 +60,7 @@ const Login = () => {
         </div>
 
         {/* Login Card */}
-        <div className="glass-card p-8 rounded-3xl bg-white dark:bg-[#111C30]/60 border-slate-200 dark:border-slate-850">
+        <div className="glass-card p-8 rounded-3xl">
           <h3 className="font-bold text-base text-slate-800 dark:text-slate-200 mb-6">Sign In</h3>
 
           {error && (

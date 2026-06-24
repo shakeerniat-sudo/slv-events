@@ -102,50 +102,60 @@ const Dashboard = () => {
       value: kpi.totalEvents,
       subtitle: `${kpi.activeEvents} Active Events`,
       icon: Calendar,
-      color: 'from-sky-500/10 to-sky-500/5 text-sky-600 border-sky-200/60 dark:from-sky-500/20 dark:to-sky-500/10 dark:text-sky-400 dark:border-sky-500/20',
-      glow: 'glow-primary'
+      gradient: 'from-[#0284C7] to-[#38BDF8]',
+      glowClass: 'glow-blue',
+      iconColor: 'text-sky-500 dark:text-[#38BDF8]',
+      iconGlow: 'dark:shadow-[0_0_15px_rgba(14,165,233,0.2)] dark:bg-sky-500/10'
     },
     {
       title: 'Total Vendors',
       value: kpi.totalVendors,
       subtitle: 'Partner Companies',
       icon: Briefcase,
-      color: 'from-indigo-500/10 to-indigo-500/5 text-indigo-600 border-indigo-200/60 dark:from-indigo-500/20 dark:to-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/20',
-      glow: 'glow-accent'
+      gradient: 'from-[#7C3AED] to-[#A78BFA]',
+      glowClass: 'glow-purple',
+      iconColor: 'text-violet-500 dark:text-[#A78BFA]',
+      iconGlow: 'dark:shadow-[0_0_15px_rgba(124,58,237,0.2)] dark:bg-violet-500/10'
     },
     {
       title: 'Active Staff',
       value: kpi.totalStaff,
       subtitle: 'Rostered Crew',
       icon: Users,
-      color: 'from-emerald-500/10 to-emerald-500/5 text-emerald-600 border-emerald-200/60 dark:from-emerald-500/20 dark:to-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20',
-      glow: 'glow-primary'
+      gradient: 'from-[#059669] to-[#34D399]',
+      glowClass: 'glow-green',
+      iconColor: 'text-emerald-500 dark:text-[#34D399]',
+      iconGlow: 'dark:shadow-[0_0_15px_rgba(5,150,105,0.2)] dark:bg-emerald-500/10'
     },
     {
       title: 'Conflict Alerts',
       value: kpi.conflictAlerts,
       subtitle: 'Requires Resolution',
       icon: AlertTriangle,
-      color: kpi.conflictAlerts > 0 
-        ? 'from-rose-500/10 to-rose-500/5 text-rose-600 border-rose-300 dark:from-rose-500/20 dark:to-rose-500/10 dark:text-rose-450 dark:border-rose-500/30' 
-        : 'from-slate-500/10 to-slate-600/5 text-slate-500 border-slate-200 dark:from-slate-500/20 dark:to-slate-600/10 dark:text-slate-400 dark:border-slate-800',
-      glow: kpi.conflictAlerts > 0 ? 'shadow-rose-950/20' : ''
+      gradient: kpi.conflictAlerts > 0 ? 'from-[#DC2626] to-[#F87171]' : 'from-slate-400 to-slate-500',
+      glowClass: kpi.conflictAlerts > 0 ? 'glow-red animate-shake-conflict' : '',
+      iconColor: kpi.conflictAlerts > 0 ? 'text-rose-550 dark:text-[#F87171]' : 'text-slate-500 dark:text-slate-400',
+      iconGlow: kpi.conflictAlerts > 0 ? 'dark:shadow-[0_0_15px_rgba(220,38,38,0.25)] dark:bg-rose-500/10' : 'dark:bg-slate-500/10'
     },
     {
       title: 'Pending Staffing',
       value: kpi.pendingAssignments,
       subtitle: 'Awaiting Crewing',
       icon: Layers,
-      color: 'from-amber-500/10 to-amber-500/5 text-amber-600 border-amber-200/60 dark:from-amber-500/20 dark:to-amber-500/10 dark:text-amber-400 dark:border-amber-500/20',
-      glow: 'glow-accent'
+      gradient: 'from-[#D97706] to-[#FBBF24]',
+      glowClass: 'glow-orange',
+      iconColor: 'text-amber-500 dark:text-[#FBBF24]',
+      iconGlow: 'dark:shadow-[0_0_15px_rgba(217,119,6,0.2)] dark:bg-amber-500/10'
     },
     {
       title: 'Payments Pending',
       value: kpi.paymentsPending,
       subtitle: 'Collections & Dues',
       icon: CreditCard,
-      color: 'from-violet-500/10 to-violet-500/5 text-violet-600 border-violet-200/60 dark:from-violet-500/20 dark:to-violet-500/10 dark:text-violet-400 dark:border-violet-500/20',
-      glow: ''
+      gradient: 'from-[#9333EA] to-[#C084FC]',
+      glowClass: 'glow-violet',
+      iconColor: 'text-purple-500 dark:text-[#C084FC]',
+      iconGlow: 'dark:shadow-[0_0_15px_rgba(147,51,234,0.2)] dark:bg-purple-500/10'
     }
   ];
 
@@ -154,10 +164,11 @@ const Dashboard = () => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
-      className="flex-1 flex flex-col gap-6 overflow-y-auto pb-6 pr-2"
+      className="flex-1 flex flex-col gap-6 overflow-y-auto pb-6 pr-2 animate-fade-in-up"
     >
       {/* Welcome Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#111C30]/40 border border-slate-250/70 dark:border-slate-850 p-6 rounded-2xl shadow-sm dark:shadow-premium relative overflow-hidden transition-all duration-200">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-card p-6 relative overflow-hidden transition-all duration-200">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/5 rounded-full blur-3xl" />
         <div className="z-10">
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             Welcome back, {user?.name}!
@@ -180,23 +191,28 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: idx * 0.04 }}
-              whileHover={{ scale: 1.03 }}
+              whileHover={{ y: -4, scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`glass-card p-5 flex flex-col justify-between relative overflow-hidden bg-gradient-to-tr ${c.color} ${c.glow} cursor-default`}
+              className={`glass-card p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300 cursor-default ${c.glowClass}`}
             >
+              {/* Subtle top indicator line using requested gradient */}
+              <div className={`absolute top-0 left-0 right-0 h-[3.5px] bg-gradient-to-r ${c.gradient}`} />
+              
               <div className="flex justify-between items-start">
-                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{c.title}</span>
-                <Icon className="w-4.5 h-4.5 shrink-0 opacity-70" />
+                <span className="text-[10px] font-bold text-slate-450 dark:text-slate-400 uppercase tracking-widest">{c.title}</span>
+                <div className={`p-1.5 rounded-lg bg-slate-100/80 ${c.iconGlow}`}>
+                  <Icon className={`w-4 h-4 shrink-0 ${c.iconColor}`} />
+                </div>
               </div>
               <div className="mt-4">
-                <h4 className="text-2xl font-bold font-sans tracking-tight text-slate-900 dark:text-slate-100 min-h-[32px] flex items-center">
+                <h4 className="text-2xl font-bold font-sans tracking-tight text-slate-800 dark:text-slate-100 min-h-[32px] flex items-center">
                   {kpiLoading ? (
                     <Loader className="w-5 h-5 animate-spin-loader text-sky-500" />
                   ) : (
                     <AnimatedCounter value={c.value} />
                   )}
                 </h4>
-                <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-1 font-semibold">{c.subtitle}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">{c.subtitle}</p>
               </div>
             </motion.div>
           );
@@ -206,7 +222,7 @@ const Dashboard = () => {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Line Chart */}
-        <div className="lg:col-span-8 glass-card p-6 bg-white dark:bg-[#111C30]/40">
+        <div className="lg:col-span-8 glass-card p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">Monthly Bookings Trend</h3>
@@ -224,19 +240,20 @@ const Dashboard = () => {
                 <AreaChart data={charts.monthlyEvents} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.2} />
+                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.25} />
                       <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#e2e8f0'} />
-                  <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} />
-                  <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} />
+                  <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} />
+                  <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} allowDecimals={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ 
-                      backgroundColor: isDark ? '#0f172a' : '#ffffff', 
-                      borderColor: isDark ? '#1e293b' : '#e2e8f0', 
+                      backgroundColor: isDark ? '#111F35' : '#ffffff', 
+                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0', 
                       borderRadius: '12px',
-                      color: isDark ? '#f8fafc' : '#0f172a'
+                      color: isDark ? '#f8fafc' : '#0f172a',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
                     }}
                     labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '11px', fontWeight: '600' }}
                     itemStyle={{ color: '#0ea5e9', fontSize: '11px' }}
@@ -249,7 +266,7 @@ const Dashboard = () => {
         </div>
 
         {/* Right Column: Resource Utilization Rates */}
-        <div className="lg:col-span-4 glass-card p-6 flex flex-col justify-between bg-white dark:bg-[#111C30]/40">
+        <div className="lg:col-span-4 glass-card p-6 flex flex-col justify-between">
           <div>
             <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">Resource Utilization</h3>
             <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Percentage of assigned vendors & staff by categories</p>
@@ -263,19 +280,26 @@ const Dashboard = () => {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={charts.vendorUtilization} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#e2e8f0'} horizontal={false} />
-                  <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} />
-                  <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={65} />
+                  <defs>
+                    <linearGradient id="colorUtilization" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} horizontal={false} />
+                  <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} tickLine={false} />
+                  <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={65} tickLine={false} />
                   <Tooltip
                     contentStyle={{ 
-                      backgroundColor: isDark ? '#0f172a' : '#ffffff', 
-                      borderColor: isDark ? '#1e293b' : '#e2e8f0', 
+                      backgroundColor: isDark ? '#111F35' : '#ffffff', 
+                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0', 
                       borderRadius: '12px',
-                      color: isDark ? '#f8fafc' : '#0f172a'
+                      color: isDark ? '#f8fafc' : '#0f172a',
+                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
                     }}
                     itemStyle={{ fontSize: '10px' }}
                   />
-                  <Bar dataKey="utilizationRate" name="Utilization %" fill="#6366f1" radius={[0, 4, 4, 0]} barSize={12} />
+                  <Bar dataKey="utilizationRate" name="Utilization %" fill="url(#colorUtilization)" radius={[0, 4, 4, 0]} barSize={10} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -288,7 +312,7 @@ const Dashboard = () => {
       </div>
 
       {/* Activity Logs & Brief Feed */}
-      <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40">
+      <div className="glass-card p-6">
         <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
           <Clock className="w-4 h-4 text-indigo-500" />
           <span>Recent Activity Logs</span>

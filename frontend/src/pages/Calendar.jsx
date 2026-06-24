@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
-
 import { useNavigate } from 'react-router-dom';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -9,11 +8,12 @@ const Calendar = () => {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
 
-
-  // Filters
+  // Filters State
   const [showEvents, setShowEvents] = useState(true);
   const [showVendors, setShowVendors] = useState(true);
   const [showStaff, setShowStaff] = useState(true);
+  const [filterUpcomingOnly, setFilterUpcomingOnly] = useState(false);
+  const [filterCompletedOnly, setFilterCompletedOnly] = useState(false);
 
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDayActivities, setSelectedDayActivities] = useState([]);
@@ -54,6 +54,14 @@ const Calendar = () => {
 
   const loading = eventsLoading || assignmentsLoading || vendorsLoading || staffLoading;
 
+  const handleClearFilters = () => {
+    setShowEvents(true);
+    setShowVendors(true);
+    setShowStaff(true);
+    setFilterUpcomingOnly(false);
+    setFilterCompletedOnly(false);
+  };
+
   // Get days in month
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
@@ -92,15 +100,32 @@ const Calendar = () => {
     const dateStr = `${year}-${month}-${day}`;
     const dayItems = [];
 
+    const todayStr = new Date().toISOString().split('T')[0];
+
     // Filter events
     if (showEvents) {
       events.forEach(e => {
         const evDateStr = e.event_date ? e.event_date.split('T')[0] : '';
         if (evDateStr === dateStr) {
+          // Check upcoming filter
+          if (filterUpcomingOnly && evDateStr < todayStr) return;
+
+          // Check completed filter
+          if (filterCompletedOnly) {
+            const isCompleted = (e.status || '').toLowerCase() === 'completed' || e.workflow_stage === 5;
+            if (!isCompleted) return;
+          }
+
+          const isCancelled = (e.status || '').toLowerCase() === 'cancelled' || e.workflow_stage === 6;
+          const colorClass = isCancelled 
+            ? 'bg-rose-55 border-rose-200 text-rose-700 dark:bg-red-950/45 dark:border-red-900/30 dark:text-red-400' 
+            : 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/30';
+          const prefix = isCancelled ? '❌' : '🎉';
+
           dayItems.push({ 
             type: 'event', 
-            label: `🎉 ${e.name}`, 
-            color: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/30', 
+            label: `${prefix} ${e.name}`, 
+            color: colorClass, 
             detail: e 
           });
         }
@@ -113,6 +138,15 @@ const Calendar = () => {
       const ev = events.find(e => e.id === as.event_id);
       const evDateStr = ev && ev.event_date ? ev.event_date.split('T')[0] : '';
       if (ev && evDateStr === dateStr) {
+        // Check upcoming filter
+        if (filterUpcomingOnly && evDateStr < todayStr) return;
+
+        // Check completed filter
+        if (filterCompletedOnly) {
+          const isCompleted = (ev.status || '').toLowerCase() === 'completed' || ev.workflow_stage === 5;
+          if (!isCompleted) return;
+        }
+
         if (as.resource_type === 'vendor' && showVendors) {
           const v = vendors.find(vd => vd.id === as.resource_id);
           if (v) {
@@ -161,6 +195,8 @@ const Calendar = () => {
 
   const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+  const hasActiveFilters = !showEvents || !showVendors || !showStaff || filterUpcomingOnly || filterCompletedOnly;
+
   return (
     <div className="flex-1 flex flex-col gap-6 overflow-y-auto pb-6 pr-2">
       {/* Calendar Header with Controls */}
@@ -185,6 +221,47 @@ const Calendar = () => {
               <input type="checkbox" checked={showStaff} onChange={(e) => setShowStaff(e.target.checked)} className="accent-emerald-500 w-3.5 h-3.5" />
               <span className="text-emerald-600 dark:text-emerald-400 font-bold">Staff Shifts</span>
             </label>
+
+            {/* Divider */}
+            <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-800"></div>
+
+            {/* Upcoming Events Filter */}
+            <label className="flex items-center gap-2 cursor-pointer px-2.5 py-1 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg select-none">
+              <input 
+                type="checkbox" 
+                checked={filterUpcomingOnly} 
+                onChange={(e) => {
+                  setFilterUpcomingOnly(e.target.checked);
+                  if (e.target.checked) setFilterCompletedOnly(false);
+                }} 
+                className="accent-sky-500 w-3.5 h-3.5" 
+              />
+              <span className="text-sky-600 dark:text-sky-400 font-bold">Upcoming Only</span>
+            </label>
+
+            {/* Completed Events Filter */}
+            <label className="flex items-center gap-2 cursor-pointer px-2.5 py-1 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg select-none">
+              <input 
+                type="checkbox" 
+                checked={filterCompletedOnly} 
+                onChange={(e) => {
+                  setFilterCompletedOnly(e.target.checked);
+                  if (e.target.checked) setFilterUpcomingOnly(false);
+                }} 
+                className="accent-indigo-500 w-3.5 h-3.5" 
+              />
+              <span className="text-indigo-600 dark:text-indigo-400 font-bold">Completed Only</span>
+            </label>
+
+            {/* Clear Filters button */}
+            {hasActiveFilters && (
+              <button 
+                onClick={handleClearFilters}
+                className="ml-1 text-[10px] font-bold text-sky-500 hover:text-sky-655 transition-colors uppercase cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
           </div>
           
           <button

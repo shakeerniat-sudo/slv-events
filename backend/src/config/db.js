@@ -19,9 +19,9 @@ const defaultSeedData = {
     { id: 2, name: 'Sarah Jenkins', phone: '+91 98765 12345', email: 'sarah@example.com', company_name: 'Jenkins & Co', created_at: new Date().toISOString() }
   ],
   events: [
-    { id: 1, name: 'TechCorp Annual Gala 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-07-15', venue: 'Grand Palace Hall, Bangalore', budget: 150000.00, guest_count: 300, theme_preference: 'Gold & Black Premium', status: 'Assigned', notes: 'Needs top decorators and anchors.', created_at: new Date().toISOString() },
-    { id: 2, name: 'Sarah Wedding Reception', client_id: 2, event_type: 'Wedding', event_date: '2026-07-20', venue: 'Lakeside Pavilion', budget: 350000.00, guest_count: 500, theme_preference: 'Floral Fantasy', status: 'Pending', notes: 'Provide custom catering preferences.', created_at: new Date().toISOString() },
-    { id: 3, name: 'Product Launch 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-08-05', venue: 'Sheraton Convention Center', budget: 80000.00, guest_count: 150, theme_preference: 'Futuristic Tech', status: 'Pending', notes: 'Requires high quality sound and technicians.', created_at: new Date().toISOString() }
+    { id: 1, name: 'TechCorp Annual Gala 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-07-15', venue: 'Grand Palace Hall, Bangalore', budget: 150000.00, guest_count: 300, theme_preference: 'Gold & Black Premium', status: 'Assigned', notes: 'Needs top decorators and anchors.', workflow_stage: 3, workflow_mode: 'Automatic', event_time: '10:00 AM - 04:00 PM', created_at: new Date().toISOString() },
+    { id: 2, name: 'Sarah Wedding Reception', client_id: 2, event_type: 'Wedding', event_date: '2026-07-20', venue: 'Lakeside Pavilion', budget: 350000.00, guest_count: 500, theme_preference: 'Floral Fantasy', status: 'Pending', notes: 'Provide custom catering preferences.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '04:00 PM - 11:00 PM', created_at: new Date().toISOString() },
+    { id: 3, name: 'Product Launch 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-08-05', venue: 'Sheraton Convention Center', budget: 80000.00, guest_count: 150, theme_preference: 'Futuristic Tech', status: 'Pending', notes: 'Requires high quality sound and technicians.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '09:00 AM - 05:00 PM', created_at: new Date().toISOString() }
   ],
   vendors: [
     { id: 1, name: 'Royal Decorators', category: 'Decorator', contact_person: 'Ramesh Kumar', phone: '+91 91111 22222', email: 'royal@decors.com', service_type: 'Premium Decor', price_range: 'High', rating: 4.8, availability_status: 'Available', created_at: new Date().toISOString() },
@@ -180,6 +180,16 @@ function runJsonQuery(sql, params = []) {
     return { insertId: newId };
   }
 
+  // 7b. SELECT events
+  if (sqlClean.startsWith('select * from events')) {
+    if (sqlClean.includes('where id = ?')) {
+      const eventId = parseInt(params[0]);
+      const ev = db.events.find(e => e.id === eventId);
+      return ev ? [ev] : [];
+    }
+    return db.events;
+  }
+
   // 8. INSERT INTO events
   if (sqlClean.startsWith('insert into events')) {
     const newId = db.events.reduce((max, e) => Math.max(max, e.id), 0) + 1;
@@ -195,6 +205,9 @@ function runJsonQuery(sql, params = []) {
       theme_preference: params[7],
       notes: params[8],
       status: params[9] || 'Pending',
+      workflow_stage: 1,
+      workflow_mode: 'Automatic',
+      event_time: '10:00 AM - 04:00 PM',
       created_at: new Date().toISOString()
     };
     db.events.push(event);
@@ -202,25 +215,26 @@ function runJsonQuery(sql, params = []) {
     return { insertId: newId };
   }
 
-  // 9. UPDATE events
+  // 9. UPDATE events dynamically
   if (sqlClean.startsWith('update events set')) {
     const eventId = parseInt(params[params.length - 1]);
     const evIdx = db.events.findIndex(e => e.id === eventId);
     if (evIdx !== -1) {
-      db.events[evIdx] = {
-        ...db.events[evIdx],
-        name: params[0],
-        event_type: params[1],
-        event_date: params[2],
-        venue: params[3],
-        budget: parseFloat(params[4]),
-        guest_count: parseInt(params[5]),
-        theme_preference: params[6],
-        notes: params[7],
-        status: params[8]
-      };
-      writeJsonDb(db);
-      return { affectedRows: 1 };
+      const setStartIndex = sqlClean.indexOf('set') + 3;
+      const setEndIndex = sqlClean.indexOf('where');
+      if (setStartIndex !== -1 && setEndIndex !== -1) {
+        const setPart = sqlClean.substring(setStartIndex, setEndIndex).trim();
+        const assignments = setPart.split(',').map(item => item.trim());
+        assignments.forEach((assignment, idx) => {
+          const colName = assignment.split('=')[0].trim().replace(/`/g, '');
+          let val = params[idx];
+          if (colName === 'budget') val = parseFloat(val);
+          if (colName === 'guest_count' || colName === 'workflow_stage') val = parseInt(val);
+          db.events[evIdx][colName] = val;
+        });
+        writeJsonDb(db);
+        return { affectedRows: 1 };
+      }
     }
     return { affectedRows: 0 };
   }
@@ -386,6 +400,60 @@ function runJsonQuery(sql, params = []) {
     return list;
   }
 
+  // 20b. SELECT assignments JOIN events (vendor/staff dates check)
+  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id')) {
+    const type = sqlClean.includes("resource_type = 'vendor'") ? 'vendor' : 'staff';
+    const list = db.assignments
+      .filter(a => a.resource_type === type)
+      .map(a => {
+        const ev = db.events.find(e => e.id === a.event_id);
+        return {
+          resource_id: a.resource_id,
+          event_date: ev ? ev.event_date : null
+        };
+      });
+    return list;
+  }
+
+  // 20c. SELECT assignments JOIN events JOIN vendors/staff (conflicts/rosters list)
+  if (sqlClean.includes('join vendors v on a.resource_id = v.id') && sqlClean.includes("resource_type = 'vendor'")) {
+    const list = db.assignments
+      .filter(a => a.resource_type === 'vendor')
+      .map(a => {
+        const ev = db.events.find(e => e.id === a.event_id) || {};
+        const v = db.vendors.find(vd => vd.id === a.resource_id) || {};
+        return {
+          id: a.id,
+          event_id: a.event_id,
+          resource_id: a.resource_id,
+          event_name: ev.name || '',
+          event_date: ev.event_date || '',
+          resource_name: v.name || '',
+          resource_phone: v.phone || ''
+        };
+      });
+    return list;
+  }
+
+  if (sqlClean.includes('join staff s on a.resource_id = s.id') && sqlClean.includes("resource_type = 'staff'")) {
+    const list = db.assignments
+      .filter(a => a.resource_type === 'staff')
+      .map(a => {
+        const ev = db.events.find(e => e.id === a.event_id) || {};
+        const s = db.staff.find(st => st.id === a.resource_id) || {};
+        return {
+          id: a.id,
+          event_id: a.event_id,
+          resource_id: a.resource_id,
+          event_name: ev.name || '',
+          event_date: ev.event_date || '',
+          resource_name: s.name || '',
+          resource_phone: s.phone || ''
+        };
+      });
+    return list;
+  }
+
   // 21. SELECT * FROM assignments
   if (sqlClean.startsWith('select * from assignments')) {
     if (sqlClean.includes('where event_id = ?')) {
@@ -433,6 +501,20 @@ function runJsonQuery(sql, params = []) {
     db.assignments = db.assignments.filter(a => !(a.event_id === evId && a.resource_type === type && a.resource_id === resId));
     writeJsonDb(db);
     return { affectedRows: len - db.assignments.length };
+  }
+
+  // 23b. SELECT payments
+  if (sqlClean.startsWith('select * from payments')) {
+    if (sqlClean.includes('where event_id = ?')) {
+      const eventId = parseInt(params[0]);
+      return db.payments.filter(p => p.event_id === eventId);
+    }
+    if (sqlClean.includes('where id = ?')) {
+      const id = parseInt(params[0]);
+      const pay = db.payments.find(p => p.id === id);
+      return pay ? [pay] : [];
+    }
+    return db.payments;
   }
 
   // 24. SELECT payments JOIN events LEFT JOIN vendors
@@ -786,6 +868,24 @@ async function connectDb() {
       if (migErr.code !== 'ER_DUP_FIELDNAME') {
         console.warn('⚠️ Notification table add column warning:', migErr.message);
       }
+    }
+    try {
+      await conn.query('ALTER TABLE events ADD COLUMN workflow_stage INT DEFAULT 1');
+      console.log('✅ Schema migration: Added workflow_stage column to events table.');
+    } catch (migErr) {
+      if (migErr.code !== 'ER_DUP_FIELDNAME') console.warn('⚠️ Events table workflow_stage column warning:', migErr.message);
+    }
+    try {
+      await conn.query("ALTER TABLE events ADD COLUMN workflow_mode VARCHAR(20) DEFAULT 'Automatic'");
+      console.log('✅ Schema migration: Added workflow_mode column to events table.');
+    } catch (migErr) {
+      if (migErr.code !== 'ER_DUP_FIELDNAME') console.warn('⚠️ Events table workflow_mode column warning:', migErr.message);
+    }
+    try {
+      await conn.query("ALTER TABLE events ADD COLUMN event_time VARCHAR(50) DEFAULT '10:00 AM - 04:00 PM'");
+      console.log('✅ Schema migration: Added event_time column to events table.');
+    } catch (migErr) {
+      if (migErr.code !== 'ER_DUP_FIELDNAME') console.warn('⚠️ Events table event_time column warning:', migErr.message);
     }
     try {
       await conn.query(`

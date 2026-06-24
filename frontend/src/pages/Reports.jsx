@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { useUIStore } from '../store/uiStore';
 import { FileBarChart, FileText, Download, ArrowUpRight } from 'lucide-react';
 
@@ -8,33 +9,108 @@ const Reports = () => {
   const [reportType, setReportType] = useState('Event');
   const [format, setFormat] = useState('PDF');
 
-  const handleExport = (type, fmt) => {
+  const handleExport = async (type, fmt) => {
     setDownloadingReport(`${type}_${fmt}`);
-    setTimeout(() => {
-      // Simulate CSV file download trigger
-      const dummyData = {
-        Event: "Event ID,Event Name,Client Name,Date,Venue,Budget\n1,Annual Gala 2026,John Doe,2026-07-15,Grand Palace,150000\n2,Sarah Reception,Sarah Jenkins,2026-07-20,Lakeside Pavilion,350000",
-        Vendor: "Vendor ID,Vendor Name,Category,Rating,Phone\n1,Royal Decorators,Decorator,4.8,+91 91111 22222\n2,Spice Route Catering,Caterer,4.5,+91 92222 33333",
-        Staff: "Staff ID,Staff Name,Role,Experience,Phone\n1,Rohan Sharma,Supervisor,5 years,+91 81111 11111",
-        Assignment: "Assignment ID,Event Name,Resource Type,Resource Name,Status\n1,Annual Gala 2026,vendor,Royal Decorators,Confirmed",
-        Payment: "Payment ID,Event Name,Type,Amount,Due Date,Status\n1,Annual Gala 2026,client,50000,2026-07-01,Paid"
-      };
+    try {
+      let csvContent = "";
+      let filename = `SLV_Events_${type}_Report`;
+
+      if (type === 'Event') {
+        const res = await axios.get('/events');
+        const events = res.data || [];
+        csvContent = "Event ID,Event Name,Client,Event Date,Venue,Budget,Workflow Stage,Status,Notes\n" +
+          events.map(e => {
+            const cleanNotes = (e.notes || '').replace(/"/g, '""').replace(/\n/g, ' ');
+            return `${e.id},"${(e.name || '').replace(/"/g, '""')}","${(e.client_name || '').replace(/"/g, '""')}","${e.event_date ? e.event_date.split('T')[0] : ''}","${(e.venue || '').replace(/"/g, '""')}",${e.budget || 0},${e.workflow_stage || 1},"${e.status || ''}","${cleanNotes}"`;
+          }).join("\n");
+      } else if (type === 'Vendor') {
+        const res = await axios.get('/vendors');
+        const vendors = res.data || [];
+        csvContent = "Vendor ID,Vendor Name,Category,Contact Person,Phone,Email,Service Type,Price Range,Rating,Availability\n" +
+          vendors.map(v => {
+            return `${v.id},"${(v.name || '').replace(/"/g, '""')}","${(v.category || '').replace(/"/g, '""')}","${(v.contact_person || '').replace(/"/g, '""')}","${v.phone || ''}","${v.email || ''}","${(v.service_type || '').replace(/"/g, '""')}","${v.price_range || ''}",${v.rating || 0},"${v.availability_status || ''}"`;
+          }).join("\n");
+      } else if (type === 'Staff') {
+        const res = await axios.get('/staff');
+        const staff = res.data || [];
+        csvContent = "Staff ID,Staff Name,Role,Phone,Experience (Years),Availability\n" +
+          staff.map(s => {
+            return `${s.id},"${(s.name || '').replace(/"/g, '""')}","${(s.role || '').replace(/"/g, '""')}","${s.phone || ''}",${s.experience_years || 0},"${s.availability_status || ''}"`;
+          }).join("\n");
+      } else if (type === 'Assignment') {
+        const [assRes, evRes, venRes, stRes] = await Promise.all([
+          axios.get('/assignments'),
+          axios.get('/events'),
+          axios.get('/vendors'),
+          axios.get('/staff')
+        ]);
+        const assignments = assRes.data || [];
+        const events = evRes.data || [];
+        const vendors = venRes.data || [];
+        const staff = stRes.data || [];
+
+        const eventsMap = new Map(events.map(e => [e.id, e.name]));
+        const vendorsMap = new Map(vendors.map(v => [v.id, v]));
+        const staffMap = new Map(staff.map(s => [s.id, s]));
+
+        csvContent = "Assignment ID,Event ID,Event Name,Resource Type,Resource Name,Role/Category,Status\n" +
+          assignments.map(a => {
+            const eventName = eventsMap.get(a.event_id) || 'Unknown Event';
+            let resourceName = 'Unknown';
+            let roleOrCat = 'Unknown';
+            if (a.resource_type === 'vendor') {
+              const v = vendorsMap.get(a.resource_id);
+              if (v) {
+                resourceName = v.name;
+                roleOrCat = v.category;
+              }
+            } else if (a.resource_type === 'staff') {
+              const s = staffMap.get(a.resource_id);
+              if (s) {
+                resourceName = s.name;
+                roleOrCat = s.role;
+              }
+            }
+            return `${a.id},${a.event_id},"${eventName.replace(/"/g, '""')}","${a.resource_type}","${resourceName.replace(/"/g, '""')}","${roleOrCat.replace(/"/g, '""')}","${a.status}"`;
+          }).join("\n");
+      } else if (type === 'Payment') {
+        const [payRes, evRes] = await Promise.all([
+          axios.get('/payments'),
+          axios.get('/events')
+        ]);
+        const payments = payRes.data || [];
+        const events = evRes.data || [];
+        const eventsMap = new Map(events.map(e => [e.id, e.name]));
+
+        csvContent = "Payment ID,Event ID,Event Name,Type,Total Budget,Paid Advance,Balance,Amount,Due Date,Status,Notes\n" +
+          payments.map(p => {
+            const eventName = eventsMap.get(p.event_id) || 'Unknown Event';
+            return `${p.id},${p.event_id},"${eventName.replace(/"/g, '""')}","${p.type}",${p.total_amount || 0},${p.advance || 0},${p.balance || 0},${p.amount || 0},"${p.due_date ? p.due_date.split('T')[0] : ''}","${p.status}","${(p.notes || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+          }).join("\n");
+      }
 
       if (fmt === 'CSV') {
-        const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(dummyData[type]);
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.setAttribute("href", csvContent);
-        link.setAttribute("download", `SLV_Events_${type}_Report.csv`);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${filename}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         addToast(`${type} report successfully downloaded as CSV.`);
       } else {
+        // PDF or Excel mockup
         addToast(`Downloaded ${type} Report successfully in ${fmt} format.`);
       }
+    } catch (err) {
+      console.error(err);
+      addToast('Failed to compile live report.', 'error');
+    } finally {
       setDownloadingReport(null);
-    }, 1500);
+    }
   };
+
 
   const reportsList = [
     { name: 'Event Roster Report', type: 'Event', desc: 'Lists event date rosters, venues, and status metrics.' },

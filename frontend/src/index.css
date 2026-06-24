@@ -6,14 +6,24 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 dark:bg-[#090D16] dark:text-slate-100 font-sans antialiased overflow-x-hidden transition-colors duration-200;
+    @apply bg-slate-50 text-slate-900 dark:bg-[#0B1220] dark:text-slate-100 font-sans antialiased overflow-x-hidden transition-colors duration-200 relative;
+  }
+  
+  body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -10;
+    background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.12) 0%, rgba(99, 102, 241, 0.05) 50%, transparent 100%);
+    pointer-events: none;
+    @apply opacity-0 dark:opacity-100 transition-opacity duration-300;
   }
 }
 
-/* Custom Scrollbar - Adapts to Theme */
+/* Custom Scrollbar - Premium & Minimalist */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -21,43 +31,51 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300 dark:bg-slate-800 rounded-full hover:bg-slate-400 dark:hover:bg-slate-700 transition-colors;
+  @apply bg-slate-300 dark:bg-slate-800/80 rounded-full hover:bg-slate-400 dark:hover:bg-slate-700/90 transition-all duration-200;
 }
 
-/* Premium Shadows & Glassmorphism Adapters */
+/* Premium Shadows, Glows & Glassmorphism */
 .glass-panel {
-  @apply bg-white/70 dark:bg-[#111C30]/60 backdrop-blur-md border border-slate-200/50 dark:border-white/5 shadow-lg dark:shadow-glass;
+  @apply bg-white/70 dark:bg-[#111F35]/45 backdrop-blur-xl border border-slate-200/50 dark:border-white/5 shadow-lg dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)];
 }
 
 .glass-card {
-  @apply bg-white dark:bg-[#111C30]/40 backdrop-blur-lg border border-slate-200 dark:border-slate-800/80 rounded-2xl shadow-sm dark:shadow-premium hover:border-slate-300 dark:hover:border-slate-800/80 transition-all duration-300;
+  @apply bg-white dark:bg-[#111F35]/25 backdrop-blur-xl border border-slate-200 dark:border-white/[0.06] rounded-2xl shadow-sm dark:shadow-[0_4px_20px_rgba(0,0,0,0.2)] hover:border-slate-300 dark:hover:border-white/[0.12] transition-all duration-300;
 }
 
-.glow-primary {
-  box-shadow: 0 4px 20px -2px rgba(14, 165, 233, 0.08), 0 0 40px -5px rgba(14, 165, 233, 0.05);
+.glow-blue {
+  @apply dark:shadow-[0_0_30px_rgba(14,165,233,0.12)] dark:border-sky-500/25;
 }
 
-.dark .glow-primary {
-  box-shadow: 0 0 40px -5px rgba(14, 165, 233, 0.15);
+.glow-purple {
+  @apply dark:shadow-[0_0_30px_rgba(124,58,237,0.12)] dark:border-violet-500/25;
 }
 
-.glow-accent {
-  box-shadow: 0 4px 20px -2px rgba(234, 179, 8, 0.06), 0 0 40px -5px rgba(234, 179, 8, 0.04);
+.glow-green {
+  @apply dark:shadow-[0_0_30px_rgba(5,150,105,0.12)] dark:border-emerald-500/25;
 }
 
-.dark .glow-accent {
-  box-shadow: 0 0 40px -5px rgba(234, 179, 8, 0.12);
+.glow-red {
+  @apply dark:shadow-[0_0_30px_rgba(220,38,38,0.15)] dark:border-rose-500/25;
 }
 
-/* Hide default calendar picker icon and invert for dark theme */
+.glow-orange {
+  @apply dark:shadow-[0_0_30px_rgba(217,119,6,0.12)] dark:border-amber-500/25;
+}
+
+.glow-violet {
+  @apply dark:shadow-[0_0_30px_rgba(147,51,234,0.12)] dark:border-purple-500/25;
+}
+
+/* Hide default calendar picker icon and style nicely */
 input[type="date"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  @apply opacity-70 dark:invert;
+  @apply opacity-60 hover:opacity-100 dark:invert transition-opacity;
 }
 
 /* Form inputs styling */
 .form-input {
-  @apply w-full bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus:border-primary-500 dark:focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-200 outline-none transition-all placeholder-slate-400 dark:placeholder-slate-500;
+  @apply w-full bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.12] focus:border-sky-500 dark:focus:border-sky-500 focus:ring-1 focus:ring-sky-500/40 rounded-xl px-4 py-2.5 text-xs text-slate-800 dark:text-slate-100 outline-none transition-all placeholder-slate-400 dark:placeholder-slate-500 shadow-inner;
 }
 
 /* Tables styling */
@@ -66,15 +84,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .modern-table th {
-  @apply py-3 px-4 text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-200 dark:border-slate-800;
+  @apply py-3.5 px-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-200/60 dark:border-white/[0.04];
 }
 
 .modern-table td {
-  @apply py-3.5 px-4 text-xs border-b border-slate-100 dark:border-slate-800/60 text-slate-700 dark:text-slate-300;
+  @apply py-4 px-4 text-xs border-b border-slate-100 dark:border-white/[0.03] text-slate-700 dark:text-slate-300 font-medium;
 }
 
 .modern-table tr {
-  @apply hover:bg-slate-50/70 dark:hover:bg-slate-900/35 transition-colors duration-150;
+  @apply hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors duration-150;
+}
+
+/* Custom linear gradient animations for text/headers */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-500 font-sans;
 }
 
 /* Animations classes */
@@ -112,7 +135,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @keyframes modalZoom {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
@@ -125,11 +148,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .animate-fade-in-up {
-  animation: fadeInUp 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeInUp 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-slide-in-right {
-  animation: slideInRight 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideInRight 350ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-modal-zoom {
@@ -169,7 +192,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* Dual pulsing ring for unread notification dots */
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4);
+    box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.45);
   }
   70% {
     box-shadow: 0 0 0 6px rgba(14, 165, 233, 0);
@@ -197,7 +220,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* Soft pulse for Available status */
 @keyframes soft-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.02); }
+  50% { opacity: 0.85; transform: scale(1.02); }
 }
 
 .animate-soft-pulse {
@@ -222,3 +245,67 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .stagger-4 { animation-delay: 200ms; }
 .stagger-5 { animation-delay: 250ms; }
 .stagger-6 { animation-delay: 300ms; }
+
+/* Sidebar Navigation Link Style Overrides */
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-left: 3px solid transparent;
+  border-radius: 0 0.75rem 0.75rem 0;
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  color: #64748b !important;
+  background-color: transparent;
+  text-decoration: none;
+}
+
+/* Hover State */
+.sidebar-link:hover {
+  border-left-color: #2196F3 !important;
+  color: #2196F3 !important;
+  background-color: #F5F9FF !important;
+}
+
+.sidebar-link:hover svg {
+  color: #2196F3 !important;
+}
+
+/* Active State */
+.sidebar-link.active {
+  border-left-color: #1976D2 !important;
+  color: #1976D2 !important;
+  background-color: #F5F9FF !important;
+  font-weight: 600;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03) !important;
+}
+
+.sidebar-link.active svg {
+  color: #1976D2 !important;
+}
+
+/* Dark Mode Overrides */
+.dark {
+  & .sidebar-link {
+    color: #94a3b8 !important;
+  }
+  & .sidebar-link:hover {
+    border-left-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+    background-color: rgba(56, 189, 248, 0.08) !important;
+  }
+  & .sidebar-link:hover svg {
+    color: #38bdf8 !important;
+  }
+  & .sidebar-link.active {
+    border-left-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+    background-color: rgba(56, 189, 248, 0.12) !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3) !important;
+  }
+  & .sidebar-link.active svg {
+    color: #38bdf8 !important;
+  }
+}
+
