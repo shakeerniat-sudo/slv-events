@@ -114,7 +114,11 @@ exports.getEventDetail = async (req, res) => {
       ...event,
       assignedVendors: vendors,
       assignedStaff: staff,
-      payments
+      payments,
+      tasks: event.tasks ? JSON.parse(event.tasks) : [],
+      inventory: event.inventory ? JSON.parse(event.inventory) : [],
+      ops_logs: event.ops_logs ? JSON.parse(event.ops_logs) : [],
+      photos: event.photos ? JSON.parse(event.photos) : []
     });
   } catch (err) {
     console.error('Get event detail error:', err);
@@ -162,7 +166,7 @@ exports.createEvent = async (req, res) => {
 
     // 2. Create Event
     const eventResult = await db.query(
-      'INSERT INTO events (name, client_id, event_type, event_date, venue, budget, guest_count, theme_preference, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO events (name, client_id, event_type, event_date, venue, budget, guest_count, theme_preference, notes, status, tasks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         name,
         clientId,
@@ -173,7 +177,8 @@ exports.createEvent = async (req, res) => {
         parseInt(guestCount) || 0,
         themePreference || '',
         notes || '',
-        'Pending'
+        'Pending',
+        JSON.stringify([])
       ]
     );
     const newEventId = eventResult.insertId;
@@ -243,7 +248,11 @@ exports.updateEvent = async (req, res) => {
       status,
       workflow_stage,
       workflow_mode,
-      event_time
+      event_time,
+      tasks,
+      inventory,
+      ops_logs,
+      photos
     } = req.body;
 
     const events = await db.query('SELECT * FROM events WHERE id = ?', [eventId]);
@@ -252,9 +261,13 @@ exports.updateEvent = async (req, res) => {
     }
 
     const currentEvent = events[0];
+    const tasksString = tasks !== undefined ? (typeof tasks === 'string' ? tasks : JSON.stringify(tasks)) : (currentEvent.tasks || null);
+    const inventoryString = inventory !== undefined ? (typeof inventory === 'string' ? inventory : JSON.stringify(inventory)) : (currentEvent.inventory || null);
+    const opsLogsString = ops_logs !== undefined ? (typeof ops_logs === 'string' ? ops_logs : JSON.stringify(ops_logs)) : (currentEvent.ops_logs || null);
+    const photosString = photos !== undefined ? (typeof photos === 'string' ? photos : JSON.stringify(photos)) : (currentEvent.photos || null);
 
     await db.query(
-      'UPDATE events SET name = ?, event_type = ?, event_date = ?, venue = ?, budget = ?, guest_count = ?, theme_preference = ?, notes = ?, status = ?, workflow_stage = ?, workflow_mode = ?, event_time = ? WHERE id = ?',
+      'UPDATE events SET name = ?, event_type = ?, event_date = ?, venue = ?, budget = ?, guest_count = ?, theme_preference = ?, notes = ?, status = ?, workflow_stage = ?, workflow_mode = ?, event_time = ?, tasks = ?, inventory = ?, ops_logs = ?, photos = ? WHERE id = ?',
       [
         name || currentEvent.name,
         eventType || currentEvent.event_type,
@@ -268,6 +281,10 @@ exports.updateEvent = async (req, res) => {
         workflow_stage !== undefined ? parseInt(workflow_stage) : (currentEvent.workflow_stage || 1),
         workflow_mode || currentEvent.workflow_mode || 'Automatic',
         event_time || currentEvent.event_time || '10:00 AM - 04:00 PM',
+        tasksString,
+        inventoryString,
+        opsLogsString,
+        photosString,
         eventId
       ]
     );

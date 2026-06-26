@@ -1,13 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useUIStore } from '../store/uiStore';
+import { useAuth } from '../context/AuthContext';
 import { FileBarChart, FileText, Download, ArrowUpRight } from 'lucide-react';
 
 const Reports = () => {
   const { addToast } = useUIStore();
+  const { user } = useAuth();
   const [downloadingReport, setDownloadingReport] = useState(null);
   const [reportType, setReportType] = useState('Event');
   const [format, setFormat] = useState('PDF');
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'Vendor Coordinator') setReportType('Vendor');
+      else if (user.role === 'Finance Team') setReportType('Payment');
+      else setReportType('Event');
+    }
+  }, [user]);
 
   const handleExport = async (type, fmt) => {
     setDownloadingReport(`${type}_${fmt}`);
@@ -112,13 +122,21 @@ const Reports = () => {
   };
 
 
-  const reportsList = [
+  const allReportsList = [
     { name: 'Event Roster Report', type: 'Event', desc: 'Lists event date rosters, venues, and status metrics.' },
     { name: 'Vendor Utilization Report', type: 'Vendor', desc: 'Vendor bookings tracking and feedback performance indices.' },
     { name: 'Employee Staffing Report', type: 'Staff', desc: 'Crew labor details, shift records, and experiences.' },
     { name: 'Roster Assignments Report', type: 'Assignment', desc: 'Detailed log of assigned assets and override alerts.' },
     { name: 'Payments & Collections Ledger', type: 'Payment', desc: 'Client invoice summaries, collections, and vendor balances.' }
   ];
+
+  const reportsList = allReportsList.filter(rep => {
+    if (user?.role === 'Admin') return true;
+    if (user?.role === 'Vendor Coordinator') return rep.type === 'Vendor';
+    if (user?.role === 'Finance Team') return rep.type === 'Payment';
+    if (user?.role === 'Operations Lead') return ['Event', 'Staff', 'Assignment'].includes(rep.type);
+    return false;
+  });
 
   return (
     <div className="flex-1 flex flex-col gap-6 overflow-y-auto pb-6 animate-fade-in-up pr-2">
@@ -147,11 +165,16 @@ const Reports = () => {
                   onChange={(e) => setReportType(e.target.value)}
                   className="form-input cursor-pointer pr-8"
                 >
-                  <option value="Event">Event Registrations</option>
-                  <option value="Vendor">Vendor Database</option>
-                  <option value="Staff">Crew Roster</option>
-                  <option value="Assignment">Roster Assignments</option>
-                  <option value="Payment">Payments & Dues Ledger</option>
+                  {reportsList.map(rep => (
+                    <option key={rep.type} value={rep.type}>
+                      {rep.type === 'Event' ? 'Event Registrations' :
+                       rep.type === 'Vendor' ? 'Vendor Database' :
+                       rep.type === 'Staff' ? 'Crew Roster' :
+                       rep.type === 'Assignment' ? 'Roster Assignments' :
+                       rep.type === 'Payment' ? 'Payments & Dues Ledger' :
+                       rep.name}
+                    </option>
+                  ))}
                 </select>
               </div>
 

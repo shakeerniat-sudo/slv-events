@@ -224,7 +224,7 @@ const Layout = ({ children }) => {
   // Define sidebar links with roles
   const menuItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['Admin', 'Vendor Coordinator', 'Operations Lead', 'Finance Team'] },
-    { name: 'Events', path: '/events', icon: Calendar, roles: ['Admin', 'Vendor Coordinator', 'Operations Lead', 'Finance Team'] },
+    { name: 'Events', path: '/events', icon: Calendar, roles: ['Admin', 'Vendor Coordinator', 'Operations Lead'] },
     { name: 'Assignment Center', path: '/assignments', icon: ClipboardList, roles: ['Admin', 'Vendor Coordinator'] },
     { name: 'Vendors', path: '/vendors', icon: Briefcase, roles: ['Admin', 'Vendor Coordinator'] },
     { name: 'Staff', path: '/staff', icon: Users, roles: ['Admin', 'Operations Lead'] },
@@ -232,7 +232,7 @@ const Layout = ({ children }) => {
     { name: 'Conflicts', path: '/conflicts', icon: AlertTriangle, roles: ['Admin', 'Vendor Coordinator'] },
     { name: 'Payments', path: '/payments', icon: CreditCard, roles: ['Admin', 'Finance Team'] },
     { name: 'Inventory', path: '/inventory', icon: Boxes, roles: ['Admin', 'Operations Lead'] },
-    { name: 'Reports', path: '/reports', icon: FileBarChart, roles: ['Admin', 'Finance Team'] },
+    { name: 'Reports', path: '/reports', icon: FileBarChart, roles: ['Admin', 'Finance Team', 'Vendor Coordinator', 'Operations Lead'] },
     { name: 'Notifications', path: '/notifications', icon: Bell, roles: ['Admin', 'Vendor Coordinator', 'Operations Lead', 'Finance Team'] },
     { name: 'Settings', path: '/settings', icon: Settings, roles: ['Admin'] },
   ];
@@ -280,7 +280,7 @@ const Layout = ({ children }) => {
       <motion.aside 
         animate={{ width: sidebarCollapsed ? 80 : 256 }}
         transition={{ duration: 0.2, ease: "easeInOut" }}
-        className="hidden md:flex flex-col bg-white dark:bg-[#111F35] border-r border-slate-200/80 dark:border-white/[0.06] p-4 shrink-0 relative z-10 theme-transition"
+        className="hidden md:flex flex-col h-screen sticky top-0 bg-white dark:bg-[#111F35] border-r border-slate-200/80 dark:border-white/[0.06] p-4 shrink-0 relative z-10 theme-transition"
       >
         {/* Collapse Button */}
         <button

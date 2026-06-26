@@ -84,8 +84,22 @@ function App() {
           {/* Protected Main Routes sharing layout wrapper */}
           <Route element={<ProtectedRoute><LayoutWrapper /></ProtectedRoute>}>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/events/:id" element={<EventDetail />} />
+            <Route
+              path="/events"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Operations Lead', 'Vendor Coordinator']}>
+                  <Events />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/events/:id"
+              element={
+                <RoleProtectedRoute allowedRoles={['Admin', 'Operations Lead', 'Vendor Coordinator']}>
+                  <EventDetail />
+                </RoleProtectedRoute>
+              }
+            />
             
             <Route
               path="/assignments"
@@ -153,7 +167,7 @@ function App() {
             <Route
               path="/reports"
               element={
-                <RoleProtectedRoute allowedRoles={['Admin', 'Finance Team']}>
+                <RoleProtectedRoute allowedRoles={['Admin', 'Finance Team', 'Vendor Coordinator', 'Operations Lead']}>
                   <Reports />
                 </RoleProtectedRoute>
               }

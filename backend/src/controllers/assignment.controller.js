@@ -886,3 +886,45 @@ exports.saveEventAssignment = async (req, res) => {
     return res.status(500).json({ message: 'Error saving event assignments' });
   }
 };
+
+// Update individual assignment status (check-in / attendance)
+exports.updateAssignmentStatus = async (req, res) => {
+  try {
+    const assignmentId = parseInt(req.params.id);
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ message: 'status is required' });
+    }
+
+    const assignments = await db.query('SELECT * FROM assignments WHERE id = ?', [assignmentId]);
+    if (assignments.length === 0) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+
+    const assignment = assignments[0];
+
+    await db.query(
+      'UPDATE assignments SET status = ? WHERE id = ?',
+      [status, assignmentId]
+    );
+
+    // Sync event assignment if vendor
+    if (assignment.resource_type === 'vendor') {
+      await syncEventAssignmentsTable(assignment.event_id);
+    }
+
+    // Log action
+    const userName = req.user ? req.user.name : 'System';
+    const userId = req.user ? req.user.id : null;
+    await db.query(
+      'INSERT INTO activity_logs (user_id, user_name, action, details) VALUES (?, ?, ?, ?)',
+      [userId, userName, 'UPDATE_ASSIGNMENT_STATUS', `Updated status of assignment #${assignmentId} (Resource Type: ${assignment.resource_type}, ID: ${assignment.resource_id}) to "${status}"`]
+    );
+
+    return res.status(200).json({ message: 'Assignment status updated successfully' });
+  } catch (err) {
+    console.error('Update assignment status error:', err);
+    return res.status(500).json({ message: 'Error updating assignment status' });
+  }
+};

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, ShieldAlert, Sparkles } from 'lucide-react';
+import { Mail, Lock, ShieldAlert } from 'lucide-react';
 
 const Login = () => {
   const { login } = useAuth();
@@ -26,21 +26,7 @@ const Login = () => {
     }
   };
 
-  // Quick login helper to help user test roles out of the box
-  const handleQuickLogin = (role) => {
-    const credentials = {
-      'Admin': { email: 'admin@slvevents.com', password: 'admin123' },
-      'Vendor Coordinator': { email: 'coordinator@slvevents.com', password: 'admin123' },
-      'Operations Lead': { email: 'operations@slvevents.com', password: 'admin123' },
-      'Finance Team': { email: 'finance@slvevents.com', password: 'admin123' }
-    };
 
-    const target = credentials[role];
-    if (target) {
-      setEmail(target.email);
-      setPassword(target.password);
-    }
-  };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-slate-50 text-slate-900 dark:bg-[#0B1220] dark:text-slate-100 p-4 overflow-hidden transition-colors duration-200">
@@ -129,24 +115,7 @@ const Login = () => {
             </button>
           </form>
 
-          {/* Quick Sandbox Login Shortcuts */}
-          <div className="mt-8 pt-6 border-t border-slate-150 dark:border-slate-850">
-            <p className="text-[10px] font-bold text-slate-455 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Sandbox Access Shortcuts</span>
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              {['Admin', 'Vendor Coordinator', 'Operations Lead', 'Finance Team'].map(role => (
-                <button
-                  key={role}
-                  onClick={() => handleQuickLogin(role)}
-                  className="px-3 py-2 text-[10px] bg-slate-50 hover:bg-slate-100 dark:bg-slate-950/60 dark:hover:bg-slate-850 hover:text-sky-500 dark:hover:text-sky-400 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-800 text-left truncate transition-all font-semibold cursor-pointer"
-                >
-                  Log in as {role}
-                </button>
-              ))}
-            </div>
-          </div>
+
         </div>
       </div>
     </div>

@@ -11,7 +11,7 @@ exports.getKpiStats = async (req, res) => {
 
     // 1. KPI Counts
     const totalEvents = events.length;
-    const activeEvents = events.filter(e => ['Pending', 'Assigned', 'In Progress'].includes(e.status)).length;
+    const activeEvents = events.filter(e => !['Completed', 'Cancelled'].includes(e.status)).length;
     const totalVendors = vendors.length;
     const totalStaff = staff.length;
     

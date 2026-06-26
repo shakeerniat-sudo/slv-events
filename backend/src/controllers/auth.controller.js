@@ -109,3 +109,69 @@ exports.getMe = async (req, res) => {
     return res.status(500).json({ message: 'Server error fetching profile' });
   }
 };
+
+exports.listUsers = async (req, res) => {
+  try {
+    const users = await db.query('SELECT id, name, email, role, created_at FROM users');
+    return res.status(200).json(users);
+  } catch (err) {
+    console.error('List users error:', err);
+    return res.status(500).json({ message: 'Error retrieving users list' });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { name, email, role, password } = req.body;
+
+    const users = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const currentUser = users[0];
+    let passwordHash = currentUser.password_hash;
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      passwordHash = await bcrypt.hash(password, salt);
+    }
+
+    await db.query(
+      'UPDATE users SET name = ?, email = ?, role = ?, password_hash = ? WHERE id = ?',
+      [
+        name || currentUser.name,
+        email || currentUser.email,
+        role || currentUser.role,
+        passwordHash,
+        id
+      ]
+    );
+
+    return res.status(200).json({ message: 'User updated successfully' });
+  } catch (err) {
+    console.error('Update user error:', err);
+    return res.status(500).json({ message: 'Error updating user' });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+
+    if (req.user && req.user.id === id) {
+      return res.status(400).json({ message: 'Cannot delete your own active admin account' });
+    }
+
+    const users = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    await db.query('DELETE FROM users WHERE id = ?', [id]);
+    return res.status(200).json({ message: 'User deleted successfully' });
+  } catch (err) {
+    console.error('Delete user error:', err);
+    return res.status(500).json({ message: 'Error deleting user' });
+  }
+};

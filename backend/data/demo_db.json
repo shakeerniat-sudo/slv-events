@@ -75,7 +75,8 @@
       "created_at": "2026-06-13T16:50:37.487Z",
       "workflow_stage": 5,
       "workflow_mode": "Manual",
-      "event_time": "10:00 AM - 04:00 PM"
+      "event_time": "10:00 AM - 04:00 PM",
+      "tasks": "[{\"id\":1,\"title\":\"Confirm decorator contract\",\"status\":\"Completed\"},{\"id\":2,\"title\":\"Verify audio-visual setup\",\"status\":\"Pending\"}]"
     },
     {
       "id": 2,
@@ -89,7 +90,8 @@
       "theme_preference": "Floral Fantasy",
       "status": "Ready",
       "notes": "Provide custom catering preferences.",
-      "created_at": "2026-06-13T16:50:37.487Z"
+      "created_at": "2026-06-13T16:50:37.487Z",
+      "tasks": "[{\"id\":1,\"title\":\"Finalize catering menu\",\"status\":\"Pending\"},{\"id\":2,\"title\":\"Confirm photographer booking\",\"status\":\"Completed\"}]"
     },
     {
       "id": 3,
@@ -103,7 +105,8 @@
       "theme_preference": "Futuristic Tech",
       "status": "Pending",
       "notes": "Requires high quality sound and technicians.",
-      "created_at": "2026-06-13T16:50:37.487Z"
+      "created_at": "2026-06-13T16:50:37.487Z",
+      "tasks": "[{\"id\":1,\"title\":\"Arrange sound equipment delivery\",\"status\":\"Pending\"}]"
     }
   ],
   "vendors": [

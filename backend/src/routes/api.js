@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Middleware
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 
 // Controllers
 const authController = require('../controllers/auth.controller');
@@ -15,11 +15,16 @@ const inventoryController = require('../controllers/inventory.controller');
 const notificationController = require('../controllers/notification.controller');
 
 // ==========================================
-// Authentication Routes
+// Authentication & User Management Routes
 // ==========================================
 router.post('/auth/login', authController.login);
-router.post('/auth/register', authController.register);
+router.post('/auth/register', authenticateToken, authorizeRoles('Admin'), authController.register);
 router.get('/auth/me', authenticateToken, authController.getMe);
+
+// Admin-only User CRUD
+router.get('/users', authenticateToken, authorizeRoles('Admin'), authController.listUsers);
+router.put('/users/:id', authenticateToken, authorizeRoles('Admin'), authController.updateUser);
+router.delete('/users/:id', authenticateToken, authorizeRoles('Admin'), authController.deleteUser);
 
 // ==========================================
 // Dashboard Routes
@@ -31,54 +36,55 @@ router.get('/dashboard/activities', authenticateToken, dashboardController.getRe
 // ==========================================
 // Events Routes
 // ==========================================
-router.get('/events', authenticateToken, eventController.listEvents);
-router.get('/events/:id', authenticateToken, eventController.getEventDetail);
-router.post('/events', authenticateToken, eventController.createEvent);
-router.put('/events/:id', authenticateToken, eventController.updateEvent);
-router.delete('/events/:id', authenticateToken, eventController.deleteEvent);
+router.get('/events', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator'), eventController.listEvents);
+router.get('/events/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator'), eventController.getEventDetail);
+router.post('/events', authenticateToken, authorizeRoles('Admin'), eventController.createEvent);
+router.put('/events/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator'), eventController.updateEvent);
+router.delete('/events/:id', authenticateToken, authorizeRoles('Admin'), eventController.deleteEvent);
 
 // ==========================================
 // Resource (Vendors & Staff) Routes
 // ==========================================
-router.get('/vendors', authenticateToken, resourceController.listVendors);
-router.get('/vendors/:id', authenticateToken, resourceController.getVendorDetail);
-router.post('/vendors', authenticateToken, resourceController.createVendor);
-router.put('/vendors/:id', authenticateToken, resourceController.updateVendor);
-router.delete('/vendors/:id', authenticateToken, resourceController.deleteVendor);
+router.get('/vendors', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), resourceController.listVendors);
+router.get('/vendors/:id', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), resourceController.getVendorDetail);
+router.post('/vendors', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator'), resourceController.createVendor);
+router.put('/vendors/:id', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator'), resourceController.updateVendor);
+router.delete('/vendors/:id', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator'), resourceController.deleteVendor);
 
-router.get('/staff', authenticateToken, resourceController.listStaff);
-router.get('/staff/:id', authenticateToken, resourceController.getStaffDetail);
-router.post('/staff', authenticateToken, resourceController.createStaff);
-router.put('/staff/:id', authenticateToken, resourceController.updateStaff);
-router.delete('/staff/:id', authenticateToken, resourceController.deleteStaff);
+router.get('/staff', authenticateToken, authorizeRoles('Admin', 'Operations Lead'), resourceController.listStaff);
+router.get('/staff/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead'), resourceController.getStaffDetail);
+router.post('/staff', authenticateToken, authorizeRoles('Admin', 'Operations Lead'), resourceController.createStaff);
+router.put('/staff/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead'), resourceController.updateStaff);
+router.delete('/staff/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead'), resourceController.deleteStaff);
 
 // ==========================================
 // Assignment & Conflicts Routes
 // ==========================================
-router.get('/assignments', authenticateToken, assignmentController.listAssignments);
-router.post('/assignments', authenticateToken, assignmentController.createAssignment);
-router.post('/assignments/delete', authenticateToken, assignmentController.deleteAssignment);
-router.get('/assignments/conflicts', authenticateToken, assignmentController.getConflicts);
-router.get('/assignments/availability', authenticateToken, assignmentController.checkAvailability);
-router.get('/assignments/recommendations/:eventId', authenticateToken, assignmentController.getRecommendations);
-router.get('/assignments/event/:eventId', authenticateToken, assignmentController.getEventAssignment);
-router.post('/assignments/event/:eventId', authenticateToken, assignmentController.saveEventAssignment);
+router.get('/assignments', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), assignmentController.listAssignments);
+router.post('/assignments', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), assignmentController.createAssignment);
+router.post('/assignments/delete', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), assignmentController.deleteAssignment);
+router.put('/assignments/:id/status', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), assignmentController.updateAssignmentStatus);
+router.get('/assignments/conflicts', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator'), assignmentController.getConflicts);
+router.get('/assignments/availability', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), assignmentController.checkAvailability);
+router.get('/assignments/recommendations/:eventId', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), assignmentController.getRecommendations);
+router.get('/assignments/event/:eventId', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), assignmentController.getEventAssignment);
+router.post('/assignments/event/:eventId', authenticateToken, authorizeRoles('Admin', 'Vendor Coordinator', 'Operations Lead'), assignmentController.saveEventAssignment);
 
 // ==========================================
 // Payments Routes
 // ==========================================
-router.get('/payments', authenticateToken, paymentController.listPayments);
-router.post('/payments', authenticateToken, paymentController.createPayment);
-router.put('/payments/:id', authenticateToken, paymentController.updatePayment);
-router.delete('/payments/:id', authenticateToken, paymentController.deletePayment);
+router.get('/payments', authenticateToken, authorizeRoles('Admin', 'Finance Team'), paymentController.listPayments);
+router.post('/payments', authenticateToken, authorizeRoles('Admin', 'Finance Team'), paymentController.createPayment);
+router.put('/payments/:id', authenticateToken, authorizeRoles('Admin', 'Finance Team'), paymentController.updatePayment);
+router.delete('/payments/:id', authenticateToken, authorizeRoles('Admin', 'Finance Team'), paymentController.deletePayment);
 
 // ==========================================
 // Inventory Routes
 // ==========================================
-router.get('/inventory', authenticateToken, inventoryController.listInventory);
-router.post('/inventory', authenticateToken, inventoryController.createInventoryItem);
-router.put('/inventory/:id', authenticateToken, inventoryController.updateInventoryItem);
-router.delete('/inventory/:id', authenticateToken, inventoryController.deleteInventoryItem);
+router.get('/inventory', authenticateToken, authorizeRoles('Admin', 'Operations Lead'), inventoryController.listInventory);
+router.post('/inventory', authenticateToken, authorizeRoles('Admin', 'Operations Lead'), inventoryController.createInventoryItem);
+router.put('/inventory/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead'), inventoryController.updateInventoryItem);
+router.delete('/inventory/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead'), inventoryController.deleteInventoryItem);
 
 // ==========================================
 // Notifications Routes

@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, animate } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   Calendar,
   AlertTriangle,
@@ -14,6 +15,12 @@ import {
   Clock,
   TrendingUp,
   Loader,
+  CheckCircle,
+  ClipboardList,
+  Boxes,
+  ArrowUpRight,
+  ShieldAlert,
+  Award
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -50,10 +57,107 @@ const AnimatedCounter = ({ value, duration = 0.8 }) => {
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const { theme } = useUIStore();
+  const { theme, addToast } = useUIStore();
+  const queryClient = useQueryClient();
   const isDark = theme === 'dark';
 
-  // Fetch KPI Stats
+  const isVendorCoordinator = user?.role === 'Vendor Coordinator';
+  const isOperationsLead = user?.role === 'Operations Lead';
+  const isFinanceTeam = user?.role === 'Finance Team';
+  const isAdmin = user?.role === 'Admin';
+
+  const [incidentForm, setIncidentForm] = useState({ eventId: '', type: 'Vendor Delay', details: '' });
+  const [reportingIncident, setReportingIncident] = useState(false);
+
+  // New query for assignments (Ops Lead only)
+  const { data: allAssignments = [] } = useQuery({
+    queryKey: ['assignments-all-dashboard'],
+    queryFn: async () => {
+      const res = await axios.get('/assignments');
+      return res.data || [];
+    },
+    enabled: !!user && isOperationsLead
+  });
+
+  // Report Incident Mutation
+  const reportIncidentMutation = useMutation({
+    mutationFn: async ({ eventId, type, details }) => {
+      // 1. Fetch current event details
+      const evRes = await axios.get(`/events/${eventId}`);
+      const eventDetail = evRes.data;
+      const currentLogs = eventDetail.ops_logs || [];
+      const newLog = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        type: 'Incident',
+        category: type,
+        details: details,
+        user: user.name
+      };
+      
+      // 2. Update event with log
+      await axios.put(`/events/${eventId}`, {
+        name: eventDetail.name,
+        status: eventDetail.status,
+        ops_logs: [...currentLogs, newLog]
+      });
+
+      // 3. Create conflict warning notification
+      await axios.post('/notifications', {
+        title: `${type} reported`,
+        message: `🚨 Incident at "${eventDetail.name}": ${details}`,
+        type: 'Conflict Alert'
+      });
+    },
+    onSuccess: () => {
+      addToast('Incident logged and system notified!');
+      setIncidentForm({ eventId: '', type: 'Vendor Delay', details: '' });
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
+    },
+    onError: () => {
+      addToast('Failed to report incident.', 'error');
+    }
+  });
+
+  // Event status quick change mutation
+  const eventStatusMutation = useMutation({
+    mutationFn: async ({ eventId, name, status }) => {
+      await axios.put(`/events/${eventId}`, {
+        name,
+        status
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
+      addToast('Event milestone updated!');
+    },
+    onError: () => {
+      addToast('Failed to update event milestone.', 'error');
+    }
+  });
+
+  // Crew attendance status check-in mutation
+  const staffStatusMutation = useMutation({
+    mutationFn: async ({ assignmentId, status }) => {
+      await axios.put(`/assignments/${assignmentId}/status`, { status });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assignments-all-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['staff-all'] });
+      addToast('Crew check-in updated!');
+    },
+    onError: () => {
+      addToast('Failed to update crew check-in.', 'error');
+    }
+  });
+
+  // ==========================================
+  // Role-Aware Data Queries
+  // ==========================================
+
+  // 1. Fetch KPI Stats (Only for Admin/general counts)
   const { data: kpi = {
     totalEvents: 0,
     activeEvents: 0,
@@ -68,10 +172,11 @@ const Dashboard = () => {
       const res = await axios.get('/dashboard/kpi');
       return res.data;
     },
-    refetchInterval: 20000,
+    enabled: !!user,
+    refetchInterval: 30000,
   });
 
-  // Fetch Charts Data
+  // 2. Fetch Charts Data
   const { data: charts = {
     monthlyEvents: [],
     vendorUtilization: [],
@@ -82,82 +187,201 @@ const Dashboard = () => {
       const res = await axios.get('/dashboard/charts');
       return res.data;
     },
-    refetchInterval: 20000,
+    enabled: !!user && (isAdmin || isVendorCoordinator || isOperationsLead),
+    refetchInterval: 30000,
   });
 
-  // Fetch Recent Activities
+  // 3. Fetch Recent Activities (Admin only)
   const { data: activities = [], isLoading: activitiesLoading } = useQuery({
     queryKey: ['dashboardActivities'],
     queryFn: async () => {
       const res = await axios.get('/dashboard/activities');
       return res.data;
     },
-    refetchInterval: 20000,
+    enabled: !!user && isAdmin,
+    refetchInterval: 30000,
   });
 
-  // Stat Card Configs
-  const statCards = [
-    {
-      title: 'Total Events',
-      value: kpi.totalEvents,
-      subtitle: `${kpi.activeEvents} Active Events`,
-      icon: Calendar,
-      gradient: 'from-[#0284C7] to-[#38BDF8]',
-      glowClass: 'glow-blue',
-      iconColor: 'text-sky-500 dark:text-[#38BDF8]',
-      iconGlow: 'dark:shadow-[0_0_15px_rgba(14,165,233,0.2)] dark:bg-sky-500/10'
+  // 4. Fetch All Events (Admin, Ops, Coordinator)
+  const { data: allEvents = [], isLoading: eventsLoading } = useQuery({
+    queryKey: ['events-all'],
+    queryFn: async () => {
+      const res = await axios.get('/events');
+      return res.data || [];
     },
-    {
-      title: 'Total Vendors',
-      value: kpi.totalVendors,
-      subtitle: 'Partner Companies',
-      icon: Briefcase,
-      gradient: 'from-[#7C3AED] to-[#A78BFA]',
-      glowClass: 'glow-purple',
-      iconColor: 'text-violet-500 dark:text-[#A78BFA]',
-      iconGlow: 'dark:shadow-[0_0_15px_rgba(124,58,237,0.2)] dark:bg-violet-500/10'
+    enabled: !!user && (isAdmin || isVendorCoordinator || isOperationsLead)
+  });
+
+  // 5. Fetch All Vendors (Admin, Coordinator)
+  const { data: allVendors = [], isLoading: vendorsLoading } = useQuery({
+    queryKey: ['vendors-all'],
+    queryFn: async () => {
+      const res = await axios.get('/vendors');
+      return res.data || [];
     },
-    {
-      title: 'Active Staff',
-      value: kpi.totalStaff,
-      subtitle: 'Rostered Crew',
-      icon: Users,
-      gradient: 'from-[#059669] to-[#34D399]',
-      glowClass: 'glow-green',
-      iconColor: 'text-emerald-500 dark:text-[#34D399]',
-      iconGlow: 'dark:shadow-[0_0_15px_rgba(5,150,105,0.2)] dark:bg-emerald-500/10'
+    enabled: !!user && (isAdmin || isVendorCoordinator)
+  });
+
+  // 6. Fetch All Staff (Admin, Ops)
+  const { data: allStaff = [], isLoading: staffLoading } = useQuery({
+    queryKey: ['staff-all'],
+    queryFn: async () => {
+      const res = await axios.get('/staff');
+      return res.data || [];
     },
-    {
-      title: 'Conflict Alerts',
-      value: kpi.conflictAlerts,
-      subtitle: 'Requires Resolution',
-      icon: AlertTriangle,
-      gradient: kpi.conflictAlerts > 0 ? 'from-[#DC2626] to-[#F87171]' : 'from-slate-400 to-slate-500',
-      glowClass: kpi.conflictAlerts > 0 ? 'glow-red animate-shake-conflict' : '',
-      iconColor: kpi.conflictAlerts > 0 ? 'text-rose-550 dark:text-[#F87171]' : 'text-slate-500 dark:text-slate-400',
-      iconGlow: kpi.conflictAlerts > 0 ? 'dark:shadow-[0_0_15px_rgba(220,38,38,0.25)] dark:bg-rose-500/10' : 'dark:bg-slate-500/10'
+    enabled: !!user && (isAdmin || isOperationsLead)
+  });
+
+  // 7. Fetch All Payments (Admin, Finance)
+  const { data: allPayments = [], isLoading: paymentsLoading } = useQuery({
+    queryKey: ['payments-all-dashboard'],
+    queryFn: async () => {
+      const res = await axios.get('/payments');
+      return res.data || [];
     },
-    {
-      title: 'Pending Staffing',
-      value: kpi.pendingAssignments,
-      subtitle: 'Awaiting Crewing',
-      icon: Layers,
-      gradient: 'from-[#D97706] to-[#FBBF24]',
-      glowClass: 'glow-orange',
-      iconColor: 'text-amber-500 dark:text-[#FBBF24]',
-      iconGlow: 'dark:shadow-[0_0_15px_rgba(217,119,6,0.2)] dark:bg-amber-500/10'
+    enabled: !!user && (isAdmin || isFinanceTeam)
+  });
+
+  // Mark payment as paid mutation for Finance Dashboard quick links
+  const payMutation = useMutation({
+    mutationFn: async (id) => {
+      await axios.put(`/payments/${id}`, { status: 'Paid' });
     },
-    {
-      title: 'Payments Pending',
-      value: kpi.paymentsPending,
-      subtitle: 'Collections & Dues',
-      icon: CreditCard,
-      gradient: 'from-[#9333EA] to-[#C084FC]',
-      glowClass: 'glow-violet',
-      iconColor: 'text-purple-500 dark:text-[#C084FC]',
-      iconGlow: 'dark:shadow-[0_0_15px_rgba(147,51,234,0.2)] dark:bg-purple-500/10'
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments-all-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
+      addToast('Invoice marked as paid.');
     }
-  ];
+  });
+
+  // ==========================================
+  // Role-Specific Computations & Configuration
+  // ==========================================
+
+  let dashboardTitle = 'SLV Control Console';
+  let dashboardSubtitle = 'Operations overview and planning diagnostics';
+  let statCards = [];
+
+  // --- ADMIN ROLE ---
+  if (isAdmin) {
+    dashboardTitle = 'Enterprise Control Center';
+    dashboardSubtitle = 'Full-scale planning diagnostics and administrative operations';
+    statCards = [
+      { title: 'Total Events', value: kpi.totalEvents, subtitle: `${kpi.activeEvents} Active Events`, icon: Calendar, gradient: 'from-[#0284C7] to-[#38BDF8]', glowClass: 'glow-blue', iconColor: 'text-sky-500', iconGlow: 'dark:bg-sky-500/10' },
+      { title: 'Total Vendors', value: kpi.totalVendors, subtitle: 'Partner Directory', icon: Briefcase, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', iconColor: 'text-violet-550', iconGlow: 'dark:bg-violet-500/10' },
+      { title: 'Active Staff', value: kpi.totalStaff, subtitle: 'Rostered Crew', icon: Users, gradient: 'from-[#059669] to-[#34D399]', glowClass: 'glow-green', iconColor: 'text-emerald-500', iconGlow: 'dark:bg-emerald-500/10' },
+      { title: 'Conflict Alerts', value: kpi.conflictAlerts, subtitle: 'Requires Resolution', icon: AlertTriangle, gradient: kpi.conflictAlerts > 0 ? 'from-[#DC2626] to-[#F87171]' : 'from-slate-400 to-slate-550', glowClass: kpi.conflictAlerts > 0 ? 'glow-red' : '', iconColor: kpi.conflictAlerts > 0 ? 'text-rose-500' : 'text-slate-550', iconGlow: kpi.conflictAlerts > 0 ? 'dark:bg-rose-500/10' : 'dark:bg-slate-500/10' },
+      { title: 'Pending Staffing', value: kpi.pendingAssignments, subtitle: 'Awaiting Crewing', icon: Layers, gradient: 'from-[#D97706] to-[#FBBF24]', glowClass: 'glow-orange', iconColor: 'text-amber-500', iconGlow: 'dark:bg-amber-500/10' },
+      { title: 'Payments Pending', value: kpi.paymentsPending, subtitle: 'Installment Collections', icon: CreditCard, gradient: 'from-[#9333EA] to-[#C084FC]', glowClass: 'glow-violet', iconColor: 'text-purple-500', iconGlow: 'dark:bg-purple-500/10' }
+    ];
+  }
+
+  // --- VENDOR COORDINATOR ROLE ---
+  if (isVendorCoordinator) {
+    dashboardTitle = 'Vendor Relations Portal';
+    dashboardSubtitle = 'Roster scheduling, outsource logistics, and vendor assignments';
+
+    const assignedEventsCount = allEvents.filter(e => ['Assigned', 'In Progress', 'Ready'].includes(e.status)).length;
+    const availableVendors = allVendors.filter(v => v.availability_status === 'Available').length;
+    const busyVendors = allVendors.filter(v => v.availability_status === 'Busy').length;
+    const upcomingEventsCount = allEvents.filter(e => new Date(e.event_date) >= new Date()).length;
+
+    statCards = [
+      { title: 'Assigned Events', value: assignedEventsCount, subtitle: 'Logistics ongoing', icon: Calendar, gradient: 'from-[#0284C7] to-[#38BDF8]', glowClass: 'glow-blue', iconColor: 'text-sky-500', iconGlow: 'dark:bg-sky-500/10' },
+      { title: 'Available Vendors', value: availableVendors, subtitle: 'Ready for placement', icon: Briefcase, gradient: 'from-[#059669] to-[#34D399]', glowClass: 'glow-green', iconColor: 'text-emerald-500', iconGlow: 'dark:bg-emerald-500/10' },
+      { title: 'Busy Vendors', value: busyVendors, subtitle: 'Reserved or booked', icon: ShieldAlert, gradient: 'from-[#DC2626] to-[#F87171]', glowClass: 'glow-red', iconColor: 'text-rose-500', iconGlow: 'dark:bg-rose-500/10' },
+      { title: 'Upcoming Bookings', value: upcomingEventsCount, subtitle: 'Requires sourcing', icon: Clock, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', iconColor: 'text-violet-500', iconGlow: 'dark:bg-violet-500/10' }
+    ];
+  }
+
+  // --- OPERATIONS LEAD ROLE ---
+  if (isOperationsLead) {
+    dashboardTitle = 'Operations Management Desk';
+    dashboardSubtitle = 'Internal staffing allocations, setup checklists, and event timelines';
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayEvents = allEvents.filter(e => e.event_date.split('T')[0] === todayStr).length;
+    const activeStaffCount = allStaff.filter(s => s.availability_status === 'Available').length;
+    
+    // Extract task checklist stats
+    let pendingTasks = 0;
+    let completedTasks = 0;
+    allEvents.forEach(e => {
+      const tasks = e.tasks ? (typeof e.tasks === 'string' ? JSON.parse(e.tasks) : e.tasks) : [];
+      tasks.forEach(t => {
+        if (t.status === 'Completed') completedTasks++;
+        else pendingTasks++;
+      });
+    });
+
+    statCards = [
+      { title: 'Today\'s Events', value: todayEvents, subtitle: 'Execution today', icon: Calendar, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', iconColor: 'text-violet-550', iconGlow: 'dark:bg-violet-500/10' },
+      { title: 'Available Crew', value: activeStaffCount, subtitle: 'Available helpers', icon: Users, gradient: 'from-[#059669] to-[#34D399]', glowClass: 'glow-green', iconColor: 'text-emerald-500', iconGlow: 'dark:bg-emerald-500/10' },
+      { title: 'Pending Tasks', value: pendingTasks, subtitle: 'Checklists open', icon: ClipboardList, gradient: 'from-[#D97706] to-[#FBBF24]', glowClass: 'glow-orange', iconColor: 'text-amber-500', iconGlow: 'dark:bg-amber-500/10' },
+      { title: 'Completed Tasks', value: completedTasks, subtitle: 'Milestones met', icon: CheckCircle, gradient: 'from-[#0284C7] to-[#38BDF8]', glowClass: 'glow-blue', iconColor: 'text-sky-500', iconGlow: 'dark:bg-sky-500/10' }
+    ];
+  }
+
+  // --- FINANCE TEAM ROLE ---
+  if (isFinanceTeam) {
+    dashboardTitle = 'Financial Collections Console';
+    dashboardSubtitle = 'Contract budgeting, client invoice ledgers, and payout tracking';
+
+    // Calculate revenue metrics
+    let totalRevenue = 0;
+    let collectionsReceived = 0;
+    let pendingPaymentsCount = 0;
+    let totalPaidInvoices = 0;
+    let totalVendorPayouts = 0;
+
+    allPayments.forEach(p => {
+      const amt = parseFloat(p.amount || 0);
+      if (p.type === 'client') {
+        if (p.status === 'Paid') {
+          collectionsReceived += amt;
+          totalPaidInvoices++;
+        } else {
+          pendingPaymentsCount++;
+        }
+        totalRevenue += parseFloat(p.total_amount || 0);
+      } else if (p.type === 'vendor') {
+        totalVendorPayouts += amt;
+      }
+    });
+
+    statCards = [
+      { title: 'Paid Collections', value: collectionsReceived, subtitle: `From ${totalPaidInvoices} invoices`, icon: CreditCard, gradient: 'from-[#059669] to-[#34D399]', glowClass: 'glow-green', isMoney: true, iconColor: 'text-emerald-500', iconGlow: 'dark:bg-emerald-500/10' },
+      { title: 'Pending Invoices', value: pendingPaymentsCount, subtitle: 'Awaiting checks', icon: Clock, gradient: 'from-[#D97706] to-[#FBBF24]', glowClass: 'glow-orange', iconColor: 'text-amber-500', iconGlow: 'dark:bg-amber-500/10' },
+      { title: 'Outsource Payouts', value: totalVendorPayouts, subtitle: 'Vendor costs allocated', icon: Briefcase, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', isMoney: true, iconColor: 'text-violet-550', iconGlow: 'dark:bg-violet-500/10' },
+      { title: 'Gross Budget Booked', value: totalRevenue, subtitle: 'Gross pipeline contracts', icon: Layers, gradient: 'from-[#0284C7] to-[#38BDF8]', glowClass: 'glow-blue', isMoney: true, iconColor: 'text-sky-500', iconGlow: 'dark:bg-sky-500/10' }
+    ];
+  }
+
+  // --- Live Monthly Finance Revenue Calculation for Line Graph ---
+  const getFinanceChartData = () => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
+    const monthlyRev = Array(12).fill(0);
+    const monthlyPayout = Array(12).fill(0);
+
+    allPayments.forEach(p => {
+      const amt = parseFloat(p.amount || p.total_amount || 0);
+      const d = new Date(p.due_date || p.paid_at);
+      if (d.getFullYear() === currentYear && !isNaN(d.getTime())) {
+        if (p.type === 'client' && p.status === 'Paid') {
+          monthlyRev[d.getMonth()] += amt;
+        } else if (p.type === 'vendor' && p.status === 'Paid') {
+          monthlyPayout[d.getMonth()] += amt;
+        }
+      }
+    });
+
+    return months.map((m, idx) => ({
+      name: m,
+      Revenue: monthlyRev[idx],
+      Payout: monthlyPayout[idx]
+    }));
+  };
 
   return (
     <motion.div
@@ -173,16 +397,16 @@ const Dashboard = () => {
           <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
             Welcome back, {user?.name}!
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Here is the latest planning health status for SLV Events assignments.</p>
+          <p className="text-xs text-slate-550 dark:text-slate-400 mt-1 font-medium">{dashboardSubtitle}</p>
         </div>
-        <div className="text-xs text-slate-650 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl flex items-center gap-2 shadow-inner transition-colors">
+        <div className="text-xs text-slate-650 dark:text-slate-455 bg-slate-55/5 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-850 px-4 py-2 rounded-xl flex items-center gap-2 shadow-inner transition-colors font-semibold">
           <Clock className="w-4 h-4 text-sky-500" />
           <span>Local Time: {new Date().toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
         </div>
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${isAdmin ? 'lg:grid-cols-3 xl:grid-cols-6' : 'lg:grid-cols-4'}`}>
         {statCards.map((c, idx) => {
           const Icon = c.icon;
           return (
@@ -195,21 +419,24 @@ const Dashboard = () => {
               whileTap={{ scale: 0.98 }}
               className={`glass-card p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300 cursor-default ${c.glowClass}`}
             >
-              {/* Subtle top indicator line using requested gradient */}
               <div className={`absolute top-0 left-0 right-0 h-[3.5px] bg-gradient-to-r ${c.gradient}`} />
               
               <div className="flex justify-between items-start">
                 <span className="text-[10px] font-bold text-slate-450 dark:text-slate-400 uppercase tracking-widest">{c.title}</span>
-                <div className={`p-1.5 rounded-lg bg-slate-100/80 ${c.iconGlow}`}>
+                <div className={`p-1.5 rounded-lg bg-slate-100/80 dark:bg-slate-900 ${c.iconGlow}`}>
                   <Icon className={`w-4 h-4 shrink-0 ${c.iconColor}`} />
                 </div>
               </div>
+              
               <div className="mt-4">
                 <h4 className="text-2xl font-bold font-sans tracking-tight text-slate-800 dark:text-slate-100 min-h-[32px] flex items-center">
                   {kpiLoading ? (
                     <Loader className="w-5 h-5 animate-spin-loader text-sky-500" />
                   ) : (
-                    <AnimatedCounter value={c.value} />
+                    <>
+                      {c.isMoney && <span className="text-lg mr-0.5">₹</span>}
+                      <AnimatedCounter value={c.value} />
+                    </>
                   )}
                 </h4>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-semibold">{c.subtitle}</p>
@@ -219,151 +446,612 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* Charts Grid */}
+      {/* Main Double Column Panels */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Line Chart */}
+        
+        {/* --- LEFT SIDE CHART WIDGET --- */}
         <div className="lg:col-span-8 glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">Monthly Bookings Trend</h3>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Total events managed month-by-month in {new Date().getFullYear()}</p>
-            </div>
-            <TrendingUp className="w-4 h-4 text-sky-500" />
-          </div>
-          <div className="h-72 w-full text-xs">
-            {chartsLoading ? (
-              <div className="h-full w-full flex items-center justify-center">
-                <Loader className="w-8 h-8 animate-spin-loader text-sky-500" />
+          {isFinanceTeam ? (
+            // Finance Revenue Line/Area Chart
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">Collections vs Payouts Trend</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Realized revenue collections compared to vendor payouts</p>
+                </div>
+                <TrendingUp className="w-4 h-4 text-emerald-500" />
               </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={charts.monthlyEvents} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.25} />
-                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} />
-                  <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} />
-                  <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} allowDecimals={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ 
-                      backgroundColor: isDark ? '#111F35' : '#ffffff', 
-                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0', 
-                      borderRadius: '12px',
-                      color: isDark ? '#f8fafc' : '#0f172a',
-                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
-                    }}
-                    labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '11px', fontWeight: '600' }}
-                    itemStyle={{ color: '#0ea5e9', fontSize: '11px' }}
-                  />
-                  <Area type="monotone" dataKey="events" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colorEvents)" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+              <div className="h-72 w-full text-xs">
+                {paymentsLoading ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <Loader className="w-8 h-8 animate-spin-loader text-emerald-500" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={getFinanceChartData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorPay" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.15} />
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} />
+                      <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} />
+                      <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} />
+                      <Tooltip
+                        formatter={(val) => `₹${val.toLocaleString()}`}
+                        contentStyle={{
+                          backgroundColor: isDark ? '#111F35' : '#ffffff',
+                          borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+                          borderRadius: '12px',
+                          color: isDark ? '#f8fafc' : '#0f172a'
+                        }}
+                      />
+                      <Area type="monotone" dataKey="Revenue" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
+                      <Area type="monotone" dataKey="Payout" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorPay)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </>
+          ) : (
+            // Default Bookings Volume Area Chart
+            <>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">Monthly Bookings Volume</h3>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Monthly event bookings scheduled in {new Date().getFullYear()}</p>
+                </div>
+                <TrendingUp className="w-4 h-4 text-sky-500" />
+              </div>
+              <div className="h-72 w-full text-xs">
+                {chartsLoading ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <Loader className="w-8 h-8 animate-spin-loader text-sky-500" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={charts.monthlyEvents} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorEvents" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} />
+                      <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} />
+                      <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} allowDecimals={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDark ? '#111F35' : '#ffffff',
+                          borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+                          borderRadius: '12px',
+                          color: isDark ? '#f8fafc' : '#0f172a'
+                        }}
+                      />
+                      <Area type="monotone" dataKey="events" name="Events Count" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colorEvents)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Right Column: Resource Utilization Rates */}
+        {/* --- RIGHT SIDE ANALYSIS WIDGET --- */}
         <div className="lg:col-span-4 glass-card p-6 flex flex-col justify-between">
-          <div>
-            <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">Resource Utilization</h3>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Percentage of assigned vendors & staff by categories</p>
-          </div>
-
-          <div className="h-64 w-full mt-4 text-xs">
-            {chartsLoading ? (
-              <div className="h-full w-full flex items-center justify-center">
-                <Loader className="w-8 h-8 animate-spin-loader text-indigo-500" />
+          {isOperationsLead ? (
+            // Operations Staff Utilization Rate
+            <>
+              <div>
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">Staff Utilization</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Rostered crew active rates by roles</p>
               </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={charts.vendorUtilization} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorUtilization" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.4} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} horizontal={false} />
-                  <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} tickLine={false} />
-                  <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={65} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ 
-                      backgroundColor: isDark ? '#111F35' : '#ffffff', 
-                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0', 
-                      borderRadius: '12px',
-                      color: isDark ? '#f8fafc' : '#0f172a',
-                      boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)'
-                    }}
-                    itemStyle={{ fontSize: '10px' }}
-                  />
-                  <Bar dataKey="utilizationRate" name="Utilization %" fill="url(#colorUtilization)" radius={[0, 4, 4, 0]} barSize={10} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+              <div className="h-64 w-full mt-4 text-xs">
+                {chartsLoading ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <Loader className="w-8 h-8 animate-spin-loader text-[#10b981]" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={charts.staffUtilization} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorStaff" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="#34d399" stopOpacity={0.4} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} horizontal={false} />
+                      <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} tickLine={false} />
+                      <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={65} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDark ? '#111F35' : '#ffffff',
+                          borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+                          borderRadius: '12px',
+                          color: isDark ? '#f8fafc' : '#0f172a'
+                        }}
+                      />
+                      <Bar dataKey="utilizationRate" name="Utilization Rate %" fill="url(#colorStaff)" radius={[0, 4, 4, 0]} barSize={10} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </>
+          ) : (
+            // Default Vendor Utilization Rate
+            <>
+              <div>
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200">Vendor Utilization</h3>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Assigned vendor outsource booking rates by categories</p>
+              </div>
+              <div className="h-64 w-full mt-4 text-xs">
+                {chartsLoading ? (
+                  <div className="h-full w-full flex items-center justify-center">
+                    <Loader className="w-8 h-8 animate-spin-loader text-indigo-500" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={charts.vendorUtilization} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorUtilization" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} horizontal={false} />
+                      <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} tickLine={false} />
+                      <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={65} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: isDark ? '#111F35' : '#ffffff',
+                          borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+                          borderRadius: '12px',
+                          color: isDark ? '#f8fafc' : '#0f172a'
+                        }}
+                      />
+                      <Bar dataKey="utilizationRate" name="Utilization Rate %" fill="url(#colorUtilization)" radius={[0, 4, 4, 0]} barSize={10} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </>
+          )}
 
-          <div className="text-[9px] text-slate-450 dark:text-slate-400 text-center border-t border-slate-150 dark:border-slate-850 pt-3 mt-2">
+          <div className="text-[9px] text-slate-450 dark:text-slate-400 text-center border-t border-slate-150 dark:border-slate-850 pt-3 mt-2 font-medium">
             Active/Assigned rates calculate upcoming conflict reservations.
           </div>
         </div>
       </div>
 
-      {/* Activity Logs & Brief Feed */}
-      <div className="glass-card p-6">
-        <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
-          <Clock className="w-4 h-4 text-indigo-500" />
-          <span>Recent Activity Logs</span>
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="modern-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Action</th>
-                <th>Details</th>
-                <th className="text-right">Time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {activitiesLoading ? (
+      {/* --- ROLE-SPECIFIC DETAIL PANELS (GRID OR LISTS) --- */}
+
+      {/* --- ADMIN: RECENT ACTIVITIES --- */}
+      {isAdmin && (
+        <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40">
+          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-indigo-500" />
+            <span>Recent System Activity Logs</span>
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="modern-table">
+              <thead>
                 <tr>
-                  <td colSpan={4} className="py-12 text-center">
-                    <Loader className="w-6 h-6 animate-spin-loader text-sky-500 mx-auto" />
-                  </td>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Details</th>
+                  <th className="text-right">Time</th>
                 </tr>
-              ) : activities.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="py-4 text-center text-slate-450 dark:text-slate-500">No activity logged yet</td>
-                </tr>
-              ) : (
-                activities.map(log => (
-                  <tr key={log.id}>
-                    <td className="font-bold text-slate-800 dark:text-slate-350">{log.user_name}</td>
-                    <td>
-                      <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide ${
-                        log.action.includes('CREATE') ? 'bg-emerald-50 text-emerald-600 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/35' :
-                        log.action.includes('DELETE') ? 'bg-rose-50 text-rose-600 border border-rose-200 dark:bg-rose-955/40 dark:text-rose-455 dark:border-rose-900/35' :
-                        'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-350 dark:border-slate-700/50'
-                      }`}>
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="text-slate-700 dark:text-slate-300 leading-normal max-w-sm truncate" title={log.details}>
-                      {log.details}
-                    </td>
-                    <td className="text-right text-slate-450 dark:text-slate-400">
-                      {new Date(log.timestamp).toLocaleDateString('en-GB')} {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </thead>
+              <tbody>
+                {activitiesLoading ? (
+                  <tr>
+                    <td colSpan={4} className="py-12 text-center">
+                      <Loader className="w-6 h-6 animate-spin-loader text-sky-500 mx-auto" />
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : activities.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-slate-455">No logs found</td>
+                  </tr>
+                ) : (
+                  activities.map(log => (
+                    <tr key={log.id}>
+                      <td className="font-bold text-slate-800 dark:text-slate-350">{log.user_name}</td>
+                      <td>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold tracking-wide ${
+                          log.action.includes('CREATE') ? 'bg-emerald-55 text-emerald-600 border border-emerald-250 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/35' :
+                          log.action.includes('DELETE') ? 'bg-rose-50 text-rose-600 border border-rose-250 dark:bg-rose-955/40 dark:text-rose-455 dark:border-rose-900/35' :
+                          'bg-slate-100 text-slate-600 border border-slate-200 dark:bg-slate-800 dark:text-slate-350 dark:border-slate-700/50'
+                        }`}>
+                          {log.action}
+                        </span>
+                      </td>
+                      <td className="text-slate-700 dark:text-slate-300 leading-normal max-w-sm truncate" title={log.details}>
+                        {log.details}
+                      </td>
+                      <td className="text-right text-slate-455">
+                        {new Date(log.timestamp).toLocaleDateString('en-GB')} {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* --- VENDOR COORDINATOR: ASSIGNED EVENTS LOGS --- */}
+      {isVendorCoordinator && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* Sourcing events */}
+          <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40 border-slate-200 dark:border-slate-850">
+            <h3 className="font-bold text-sm text-slate-805 dark:text-slate-200 mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-slate-850 pb-2">
+              <Calendar className="w-4 h-4 text-sky-500" />
+              <span>Upcoming Events Requiring Vendors</span>
+            </h3>
+            {eventsLoading ? (
+              <div className="py-12 flex justify-center"><Loader className="w-6 h-6 animate-spin text-sky-500" /></div>
+            ) : allEvents.filter(e => e.status === 'Pending').length === 0 ? (
+              <p className="text-xs text-slate-500 text-center py-8">All upcoming events fully assigned!</p>
+            ) : (
+              <div className="space-y-3.5 max-h-80 overflow-y-auto pr-1">
+                {allEvents.filter(e => e.status === 'Pending').map(e => (
+                  <div key={e.id} className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl flex justify-between items-center text-xs">
+                    <div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-250">{e.name}</h4>
+                      <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-1">Date: {new Date(e.event_date).toLocaleDateString('en-GB')} | Venue: {e.venue}</p>
+                    </div>
+                    <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-250 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/40 rounded-full font-bold text-[9px] uppercase tracking-wide">
+                      Pending
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Vendors availability status directory */}
+          <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40 border-slate-200 dark:border-slate-850">
+            <h3 className="font-bold text-sm text-slate-805 dark:text-slate-200 mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-slate-850 pb-2">
+              <Briefcase className="w-4 h-4 text-emerald-500" />
+              <span>Vendors Roster Availability</span>
+            </h3>
+            {vendorsLoading ? (
+              <div className="py-12 flex justify-center"><Loader className="w-6 h-6 animate-spin text-emerald-550" /></div>
+            ) : (
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+                {allVendors.slice(0, 5).map(v => (
+                  <div key={v.id} className="p-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl flex justify-between items-center text-xs">
+                    <div>
+                      <h4 className="font-bold text-slate-800 dark:text-slate-250">{v.name}</h4>
+                      <p className="text-[10px] text-slate-455 dark:text-slate-400 mt-1 font-medium">Category: {v.category} | Contact: {v.contact_person}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="flex items-center gap-0.5 text-amber-500 font-bold text-[10px] bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+                        ★ {v.rating}
+                      </span>
+                      <span className={`px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-lg border ${
+                        v.availability_status === 'Available'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/40'
+                          : 'bg-rose-50 text-rose-700 border-rose-250 dark:bg-rose-955/30 dark:text-rose-455 dark:border-rose-900/40'
+                      }`}>
+                        {v.availability_status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* --- OPERATIONS LEAD: OPERATIONAL CONTROL CENTER --- */}
+      {isOperationsLead && (
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          {/* Today's Events Timeline Controls */}
+          <div className="xl:col-span-8 flex flex-col gap-6">
+            <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40 border-slate-200 dark:border-slate-850">
+              <h3 className="font-bold text-sm text-slate-805 dark:text-slate-200 mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-slate-850 pb-2">
+                <Calendar className="w-4.5 h-4.5 text-sky-500" />
+                <span>Today's Event Status Board</span>
+              </h3>
+              {eventsLoading ? (
+                <div className="py-12 flex justify-center"><Loader className="w-6 h-6 animate-spin text-sky-500" /></div>
+              ) : (
+                <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
+                  {(() => {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const todayEvents = allEvents.filter(e => e.event_date.split('T')[0] === todayStr);
+
+                    if (todayEvents.length === 0) {
+                      return (
+                        <div className="text-center py-12 text-slate-500 font-medium text-xs">
+                          🎉 No events scheduled for execution today.
+                        </div>
+                      );
+                    }
+
+                    return todayEvents.map(e => {
+                      const tasks = e.tasks ? (typeof e.tasks === 'string' ? JSON.parse(e.tasks) : e.tasks) : [];
+                      const totalTasks = tasks.length;
+                      const completedTasks = tasks.filter(t => t.status === 'Completed').length;
+                      const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+                      return (
+                        <div key={e.id} className="p-4 bg-slate-55/40 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 rounded-2xl space-y-4 text-xs">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h4 className="font-bold text-sm text-slate-850 dark:text-slate-250 hover:text-sky-500 transition-colors">
+                                <Link to={`/events/${e.id}`}>{e.name}</Link>
+                              </h4>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Venue: {e.venue} | Client: {e.client_name}</p>
+                            </div>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide border ${
+                              e.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/20 dark:text-emerald-400' :
+                              e.status === 'Cancelled' ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-955/20 dark:text-rose-455' :
+                              'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/20 dark:text-amber-400'
+                            }`}>
+                              {e.status}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[10px] text-slate-455 font-bold uppercase tracking-wider">
+                              <span>Event Tasks Readiness</span>
+                              <span>{completedTasks}/{totalTasks} Tasks ({percent}%)</span>
+                            </div>
+                            <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                              <div className="bg-sky-500 h-full transition-all duration-300" style={{ width: `${percent}%` }} />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-150 dark:border-slate-850">
+                            <span className="text-[9px] font-bold text-slate-450 dark:text-slate-400 uppercase tracking-widest mr-2">Set Milestone:</span>
+                            {['Setup Started', 'Ready', 'In Progress', 'Completed'].map(statusOption => (
+                              <button
+                                key={statusOption}
+                                disabled={eventStatusMutation.isPending}
+                                onClick={() => eventStatusMutation.mutate({ eventId: e.id, name: e.name, status: statusOption })}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                  e.status === statusOption
+                                    ? 'bg-sky-500 text-white shadow-sm'
+                                    : 'bg-slate-100 hover:bg-slate-205 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-350'
+                                }`}
+                              >
+                                {statusOption}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+            </div>
+
+            {/* Crew Attendance Check-in */}
+            <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40 border-slate-200 dark:border-slate-850">
+              <h3 className="font-bold text-sm text-slate-805 dark:text-slate-200 mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-slate-850 pb-2">
+                <Users className="w-4.5 h-4.5 text-emerald-500" />
+                <span>Today's Crew Attendance Check-in</span>
+              </h3>
+              {eventsLoading ? (
+                <div className="py-12 flex justify-center"><Loader className="w-6 h-6 animate-spin text-emerald-500" /></div>
+              ) : (
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+                  {(() => {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const todayEvents = allEvents.filter(e => e.event_date.split('T')[0] === todayStr);
+                    const todayEventIds = todayEvents.map(e => e.id);
+
+                    // Filter assignments for staff assigned to today's events
+                    const todayCrewAssignments = allAssignments.filter(a =>
+                      todayEventIds.includes(a.event_id) && a.resource_type === 'staff'
+                    );
+
+                    if (todayCrewAssignments.length === 0) {
+                      return (
+                        <div className="text-center py-8 text-slate-500 font-medium text-xs">
+                          No rostered crew assigned for today. Use the event planning screen to assign helpers.
+                        </div>
+                      );
+                    }
+
+                    return todayCrewAssignments.map(a => {
+                      const crewMember = allStaff.find(s => s.id === a.resource_id);
+                      const currentEvent = todayEvents.find(e => e.id === a.event_id);
+                      if (!crewMember) return null;
+
+                      return (
+                        <div key={a.id} className="p-3.5 bg-slate-55/35 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-800 dark:text-slate-250">{crewMember.name}</span>
+                              <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-[9px] text-slate-500 dark:text-slate-400 rounded-md font-semibold">{crewMember.role}</span>
+                            </div>
+                            <p className="text-[10px] text-slate-455 mt-1">Assigned to: <strong className="text-slate-655 dark:text-slate-350">{currentEvent ? currentEvent.name : 'Unknown Event'}</strong></p>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-slate-450 dark:text-slate-450 font-bold uppercase mr-1">Roster Status:</span>
+                            {['Confirmed', 'Present', 'Absent'].map(statusOption => (
+                              <button
+                                key={statusOption}
+                                disabled={staffStatusMutation.isPending}
+                                onClick={() => staffStatusMutation.mutate({ assignmentId: a.id, status: statusOption })}
+                                className={`px-2.5 py-1 rounded-lg text-[9px] font-bold uppercase transition-all cursor-pointer ${
+                                  a.status === statusOption
+                                    ? statusOption === 'Present' ? 'bg-emerald-500 text-white shadow-sm' :
+                                      statusOption === 'Absent' ? 'bg-rose-500 text-white shadow-sm' :
+                                      'bg-sky-500 text-white shadow-sm'
+                                    : 'bg-slate-100 dark:bg-slate-900 text-slate-600 dark:text-slate-455 hover:bg-slate-200'
+                                }`}
+                              >
+                                {statusOption}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Quick Incident Reporting Form */}
+          <div className="xl:col-span-4 glass-card p-6 bg-white dark:bg-[#111C30]/40 border-slate-200 dark:border-slate-850 h-fit">
+            <h3 className="font-bold text-sm text-slate-805 dark:text-slate-200 mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-slate-850 pb-2">
+              <ShieldAlert className="w-4.5 h-4.5 text-rose-500" />
+              <span>Report Active Incident</span>
+            </h3>
+            
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!incidentForm.eventId || !incidentForm.details.trim()) {
+                  addToast('Please select an event and describe the incident.', 'error');
+                  return;
+                }
+                reportIncidentMutation.mutate(incidentForm);
+              }}
+              className="space-y-4 text-xs"
+            >
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Select Target Event</label>
+                <select
+                  value={incidentForm.eventId}
+                  onChange={(e) => setIncidentForm(prev => ({ ...prev, eventId: e.target.value }))}
+                  className="form-input cursor-pointer pr-8"
+                >
+                  <option value="">-- Select Event --</option>
+                  {allEvents.filter(e => e.status !== 'Completed' && e.status !== 'Cancelled').map(e => (
+                    <option key={e.id} value={e.id}>{e.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Incident Type</label>
+                <select
+                  value={incidentForm.type}
+                  onChange={(e) => setIncidentForm(prev => ({ ...prev, type: e.target.value }))}
+                  className="form-input cursor-pointer pr-8"
+                >
+                  <option value="Vendor Delay">Vendor Delay</option>
+                  <option value="Equipment Failure">Equipment Failure</option>
+                  <option value="Staff Shortage">Staff Shortage</option>
+                  <option value="Logistics Issue">Logistics Issue</option>
+                  <option value="Emergency Incident">Emergency Incident</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-550 dark:text-slate-400 mb-1.5 uppercase">Description Details</label>
+                <textarea
+                  placeholder="Provide precise incident details, affected resources, and immediate steps taken..."
+                  value={incidentForm.details}
+                  onChange={(e) => setIncidentForm(prev => ({ ...prev, details: e.target.value }))}
+                  className="form-input h-28 resize-none py-2"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={reportIncidentMutation.isPending}
+                className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.99] cursor-pointer disabled:opacity-50"
+              >
+                {reportIncidentMutation.isPending ? 'Logging incident warning...' : 'Report Incident Alert'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* --- FINANCE TEAM: PENDING PAYMENTS LEDGER & QUICK ACTIONS --- */}
+      {isFinanceTeam && (
+        <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40 border-slate-200 dark:border-slate-850">
+          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-850">
+            <CreditCard className="w-4 h-4 text-emerald-550" />
+            <span>Active Invoice Collections Checklist</span>
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="modern-table">
+              <thead>
+                <tr>
+                  <th>Event Description</th>
+                  <th>Category</th>
+                  <th>Amount Due</th>
+                  <th>Invoice Due Date</th>
+                  <th>Status</th>
+                  <th className="text-right">Collection Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paymentsLoading ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center">
+                      <Loader className="w-6 h-6 animate-spin-loader text-emerald-500 mx-auto" />
+                    </td>
+                  </tr>
+                ) : allPayments.filter(p => p.status !== 'Paid').length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-4 text-center text-slate-455">No pending payments ledgered!</td>
+                  </tr>
+                ) : (
+                  allPayments.filter(p => p.status !== 'Paid').slice(0, 5).map(pay => (
+                    <tr key={pay.id}>
+                      <td className="font-bold text-slate-800 dark:text-slate-350">{pay.event_name}</td>
+                      <td>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide border ${
+                          pay.type === 'client'
+                            ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/20 dark:text-sky-400 dark:border-sky-900/35'
+                            : 'bg-[#7C3AED]/10 text-[#7C3AED] border-[#7C3AED]/20 dark:text-[#A78BFA] dark:border-[#A78BFA]/20'
+                        }`}>
+                          {pay.type === 'client' ? 'Client Installment' : `Vendor Payout (${pay.vendor_name || 'Partner'})`}
+                        </span>
+                      </td>
+                      <td className="font-bold text-slate-900 dark:text-slate-200">₹{parseFloat(pay.amount).toLocaleString()}</td>
+                      <td className="text-slate-500 dark:text-slate-450">{new Date(pay.due_date).toLocaleDateString('en-GB')}</td>
+                      <td>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
+                          pay.status === 'Overdue'
+                            ? 'bg-rose-50 text-rose-700 border-rose-250 dark:bg-rose-955/20 dark:text-rose-455 dark:border-rose-900/35'
+                            : 'bg-amber-50 text-amber-700 border-amber-250 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/35'
+                        }`}>
+                          {pay.status}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Mark payment of ₹${parseFloat(pay.amount).toLocaleString()} as PAID?`)) {
+                              payMutation.mutate(pay.id);
+                            }
+                          }}
+                          disabled={payMutation.isPending}
+                          className="px-3 py-1 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-[10px] font-bold shadow-sm transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
+                        >
+                          Mark Paid
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

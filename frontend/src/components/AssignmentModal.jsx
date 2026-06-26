@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 import { useUIStore } from '../store/uiStore';
+import { useAuth } from '../context/AuthContext';
 import {
   X,
   Search,
@@ -17,7 +18,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const AssignmentModal = ({ event, onClose }) => {
   const { addToast } = useUIStore();
+  const { user, isAdmin } = useAuth();
   const queryClient = useQueryClient();
+
+  const isVendorCoordinator = user?.role === 'Vendor Coordinator';
+  const isOperationsLead = user?.role === 'Operations Lead';
 
   // Search input filters
   const [decoratorSearch, setDecoratorSearch] = useState('');
@@ -50,6 +55,7 @@ const AssignmentModal = ({ event, onClose }) => {
   const [staffList, setStaffList] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [allEvents, setAllEvents] = useState([]);
+  const [currentAssignment, setCurrentAssignment] = useState(null);
 
   // Fetch initial data from live modules
   useEffect(() => {
@@ -59,46 +65,83 @@ const AssignmentModal = ({ event, onClose }) => {
         setLoading(true);
         setError(null);
 
-        const [vendorsRes, staffRes, assignmentsRes, eventsRes, currentRes] = await Promise.all([
-          axios.get('/vendors'),
-          axios.get('/staff'),
-          axios.get('/assignments'),
-          axios.get('/events'),
-          axios.get(`/assignments/event/${event.id}`)
-        ]);
+        const fetches = [];
+
+        // 1. Vendors (Admin or Vendor Coordinator)
+        if (isAdmin || isVendorCoordinator) {
+          fetches.push(axios.get('/vendors').then(r => ({ type: 'vendors', data: r.data })));
+        } else {
+          fetches.push(Promise.resolve({ type: 'vendors', data: [] }));
+        }
+
+        // 2. Staff (Admin or Operations Lead)
+        if (isAdmin || isOperationsLead) {
+          fetches.push(axios.get('/staff').then(r => ({ type: 'staff', data: r.data })));
+        } else {
+          fetches.push(Promise.resolve({ type: 'staff', data: [] }));
+        }
+
+        // 3. Assignments (all roles need this to check availability/conflicts)
+        fetches.push(axios.get('/assignments').then(r => ({ type: 'assignments', data: r.data })));
+
+        // 4. Events
+        fetches.push(axios.get('/events').then(r => ({ type: 'events', data: r.data })));
+
+        // 5. Current Event details
+        fetches.push(axios.get(`/assignments/event/${event.id}`).then(r => ({ type: 'current', data: r.data })).catch(() => ({ type: 'current', data: null })));
+
+        const results = await Promise.all(fetches);
 
         if (!active) return;
 
-        setVendorsList(vendorsRes.data || []);
-        setStaffList(staffRes.data || []);
-        setAssignments(assignmentsRes.data || []);
-        setAllEvents(eventsRes.data || []);
+        let loadedVendors = [];
+        let loadedStaff = [];
+        let loadedCurrent = null;
 
-        const current = currentRes.data;
-        if (current) {
-          setSelectedDecorator(current.decorator_id ? current.decorator_id.toString() : '');
-          setSelectedCaterer(current.caterer_id ? current.caterer_id.toString() : '');
-          setSelectedPhotographer(current.photographer_id ? current.photographer_id.toString() : '');
-          setSelectedAnchor(current.anchor_id ? current.anchor_id.toString() : '');
-          setSelectedSoundTeam(current.sound_team_id ? current.sound_team_id.toString() : '');
+        results.forEach(res => {
+          if (res.type === 'vendors') {
+            loadedVendors = res.data || [];
+            setVendorsList(loadedVendors);
+          }
+          if (res.type === 'staff') {
+            loadedStaff = res.data || [];
+            setStaffList(loadedStaff);
+          }
+          if (res.type === 'assignments') setAssignments(res.data || []);
+          if (res.type === 'events') setAllEvents(res.data || []);
+          if (res.type === 'current') {
+            loadedCurrent = res.data;
+            setCurrentAssignment(loadedCurrent);
+          }
+        });
 
-          const allStaffIds = current.staff_ids
-            ? current.staff_ids.split(',').map(id => parseInt(id)).filter(Boolean)
-            : [];
+        if (loadedCurrent) {
+          setSelectedDecorator(loadedCurrent.decorator_id ? loadedCurrent.decorator_id.toString() : '');
+          setSelectedCaterer(loadedCurrent.caterer_id ? loadedCurrent.caterer_id.toString() : '');
+          setSelectedPhotographer(loadedCurrent.photographer_id ? loadedCurrent.photographer_id.toString() : '');
+          setSelectedAnchor(loadedCurrent.anchor_id ? loadedCurrent.anchor_id.toString() : '');
+          setSelectedSoundTeam(loadedCurrent.sound_team_id ? loadedCurrent.sound_team_id.toString() : '');
 
-          const staffRolesMap = new Map(staffRes.data.map(s => [s.id, s.role]));
+          // Map staff details if we have the staff list
+          if (loadedStaff.length > 0) {
+            const allStaffIds = loadedCurrent.staff_ids
+              ? loadedCurrent.staff_ids.split(',').map(id => parseInt(id)).filter(Boolean)
+              : [];
 
-          const coord = allStaffIds.find(id => staffRolesMap.get(id) === 'Coordinator');
-          const superv = allStaffIds.find(id => staffRolesMap.get(id) === 'Supervisor');
-          const helpers = allStaffIds.filter(id => staffRolesMap.get(id) === 'Helper');
+            const staffRolesMap = new Map(loadedStaff.map(s => [s.id, s.role]));
 
-          setSelectedCoordinator(coord ? coord.toString() : '');
-          setSelectedSupervisor(superv ? superv.toString() : '');
-          setSelectedHelpers(helpers);
+            const coord = allStaffIds.find(id => staffRolesMap.get(id) === 'Coordinator');
+            const superv = allStaffIds.find(id => staffRolesMap.get(id) === 'Supervisor');
+            const helpers = allStaffIds.filter(id => staffRolesMap.get(id) === 'Helper');
+
+            setSelectedCoordinator(coord ? coord.toString() : '');
+            setSelectedSupervisor(superv ? superv.toString() : '');
+            setSelectedHelpers(helpers);
+          }
         }
       } catch (err) {
         console.error('Error loading assignments data:', err);
-        setError('Failed to query live modules and availability databases.');
+        setError('Failed to fetch staffing rosters. Try again.');
       } finally {
         if (active) setLoading(false);
       }
@@ -108,7 +151,7 @@ const AssignmentModal = ({ event, onClose }) => {
     return () => {
       active = false;
     };
-  }, [event.id]);
+  }, [event.id, isAdmin, isVendorCoordinator, isOperationsLead]);
 
   // Compute live availability and double-bookings dynamically
   const getResourceAvailability = (resourceType, resourceId) => {
@@ -180,18 +223,38 @@ const AssignmentModal = ({ event, onClose }) => {
       setSaving(true);
       setError(null);
 
-      const combinedStaffIds = [
+      let decoratorVal = selectedDecorator ? parseInt(selectedDecorator) : null;
+      let catererVal = selectedCaterer ? parseInt(selectedCaterer) : null;
+      let photographerVal = selectedPhotographer ? parseInt(selectedPhotographer) : null;
+      let anchorVal = selectedAnchor ? parseInt(selectedAnchor) : null;
+      let soundTeamVal = selectedSoundTeam ? parseInt(selectedSoundTeam) : null;
+
+      let combinedStaffIds = [
         selectedCoordinator ? parseInt(selectedCoordinator) : null,
         selectedSupervisor ? parseInt(selectedSupervisor) : null,
         ...selectedHelpers
       ].filter(Boolean);
 
+      // Preserve values for fields current role is not authorized to edit
+      if (isVendorCoordinator && currentAssignment) {
+        combinedStaffIds = currentAssignment.staff_ids
+          ? currentAssignment.staff_ids.split(',').map(id => parseInt(id)).filter(Boolean)
+          : [];
+      }
+      if (isOperationsLead && currentAssignment) {
+        decoratorVal = currentAssignment.decorator_id ? parseInt(currentAssignment.decorator_id) : null;
+        catererVal = currentAssignment.caterer_id ? parseInt(currentAssignment.caterer_id) : null;
+        photographerVal = currentAssignment.photographer_id ? parseInt(currentAssignment.photographer_id) : null;
+        anchorVal = currentAssignment.anchor_id ? parseInt(currentAssignment.anchor_id) : null;
+        soundTeamVal = currentAssignment.sound_team_id ? parseInt(currentAssignment.sound_team_id) : null;
+      }
+
       const payload = {
-        decorator_id: selectedDecorator ? parseInt(selectedDecorator) : null,
-        caterer_id: selectedCaterer ? parseInt(selectedCaterer) : null,
-        photographer_id: selectedPhotographer ? parseInt(selectedPhotographer) : null,
-        anchor_id: selectedAnchor ? parseInt(selectedAnchor) : null,
-        sound_team_id: selectedSoundTeam ? parseInt(selectedSoundTeam) : null,
+        decorator_id: decoratorVal,
+        caterer_id: catererVal,
+        photographer_id: photographerVal,
+        anchor_id: anchorVal,
+        sound_team_id: soundTeamVal,
         staff_ids: combinedStaffIds,
         status: event.status === 'Pending' ? 'Assigned' : event.status
       };
@@ -209,12 +272,15 @@ const AssignmentModal = ({ event, onClose }) => {
       addToast('Event assignments saved successfully!');
 
       setSuccessSummary({
-        decorator: getVendorName(selectedDecorator),
-        caterer: getVendorName(selectedCaterer),
-        photographer: getVendorName(selectedPhotographer),
-        anchor: getVendorName(selectedAnchor),
-        soundTeam: getVendorName(selectedSoundTeam),
-        helpers: getStaffNames(selectedHelpers)
+        decorator: getVendorName(decoratorVal),
+        caterer: getVendorName(catererVal),
+        photographer: getVendorName(photographerVal),
+        anchor: getVendorName(anchorVal),
+        soundTeam: getVendorName(soundTeamVal),
+        helpers: getStaffNames(combinedStaffIds.filter(id => {
+          const s = staffList.find(st => st.id === id);
+          return s && s.role === 'Helper';
+        }))
       });
     } catch (err) {
       console.error('Error saving assignments:', err);
@@ -337,7 +403,7 @@ const AssignmentModal = ({ event, onClose }) => {
               <div>
                 <h3 className="font-bold text-lg text-slate-800 flex items-center gap-2">
                   <ClipboardCheck className="w-5 h-5 text-sky-500" />
-                  <span>Assign Vendors & Staff</span>
+                  <span>{isOperationsLead && !isAdmin ? 'Assign Staff' : 'Assign Vendors & Staff'}</span>
                 </h3>
                 <p className="text-[10px] text-slate-500 font-medium mt-0.5">
                   Event: <strong className="text-slate-700">{event.name}</strong> ({new Date(event.event_date).toLocaleDateString('en-GB')})
@@ -357,294 +423,297 @@ const AssignmentModal = ({ event, onClose }) => {
                 <span>{error}</span>
               </div>
             )}
-
-            {/* Form */}
+                      {/* Form */}
             <form onSubmit={handleSave} className="flex-1 overflow-y-auto pr-1 space-y-6">
               {/* Vendor Assignment Section */}
-              <div className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-sky-500 shrink-0" />
-                  <span>Vendor Assignment</span>
-                </h4>
+              {(isAdmin || isVendorCoordinator) && (
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-sky-500 shrink-0" />
+                    <span>Vendor Assignment</span>
+                  </h4>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Decorator */}
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Decorator</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <Search className="w-3.5 h-3.5" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search Decorators..."
-                        value={decoratorSearch}
-                        onChange={(e) => setDecoratorSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Decorator */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Decorator</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                          <Search className="w-3.5 h-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search Decorators..."
+                          value={decoratorSearch}
+                          onChange={(e) => setDecoratorSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
+                        />
+                      </div>
+                      <select
+                        value={selectedDecorator}
+                        onChange={(e) => setSelectedDecorator(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Decorator --</option>
+                        {decorators.map(d => (
+                          <option key={d.id} value={d.id} disabled={d.status === 'Unavailable'}>
+                            {d.name} ({d.reason})
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <select
-                      value={selectedDecorator}
-                      onChange={(e) => setSelectedDecorator(e.target.value)}
-                      className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
-                    >
-                      <option value="">-- Select Decorator --</option>
-                      {decorators.map(d => (
-                        <option key={d.id} value={d.id} disabled={d.status === 'Unavailable'}>
-                          {d.name} ({d.reason})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  {/* Caterer */}
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Caterer</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <Search className="w-3.5 h-3.5" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search Caterers..."
-                        value={catererSearch}
-                        onChange={(e) => setCatererSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
-                      />
+                    {/* Caterer */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Caterer</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                          <Search className="w-3.5 h-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search Caterers..."
+                          value={catererSearch}
+                          onChange={(e) => setCatererSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
+                        />
+                      </div>
+                      <select
+                        value={selectedCaterer}
+                        onChange={(e) => setSelectedCaterer(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Caterer --</option>
+                        {caterers.map(c => (
+                          <option key={c.id} value={c.id} disabled={c.status === 'Unavailable'}>
+                            {c.name} ({c.reason})
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <select
-                      value={selectedCaterer}
-                      onChange={(e) => setSelectedCaterer(e.target.value)}
-                      className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
-                    >
-                      <option value="">-- Select Caterer --</option>
-                      {caterers.map(c => (
-                        <option key={c.id} value={c.id} disabled={c.status === 'Unavailable'}>
-                          {c.name} ({c.reason})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  {/* Photographer */}
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Photographer</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <Search className="w-3.5 h-3.5" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search Photographers..."
-                        value={photographerSearch}
-                        onChange={(e) => setPhotographerSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
-                      />
+                    {/* Photographer */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Photographer</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                          <Search className="w-3.5 h-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search Photographers..."
+                          value={photographerSearch}
+                          onChange={(e) => setPhotographerSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
+                        />
+                      </div>
+                      <select
+                        value={selectedPhotographer}
+                        onChange={(e) => setSelectedPhotographer(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Photographer --</option>
+                        {photographers.map(p => (
+                          <option key={p.id} value={p.id} disabled={p.status === 'Unavailable'}>
+                            {p.name} ({p.reason})
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <select
-                      value={selectedPhotographer}
-                      onChange={(e) => setSelectedPhotographer(e.target.value)}
-                      className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
-                    >
-                      <option value="">-- Select Photographer --</option>
-                      {photographers.map(p => (
-                        <option key={p.id} value={p.id} disabled={p.status === 'Unavailable'}>
-                          {p.name} ({p.reason})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  {/* Anchor */}
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Anchor</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <Search className="w-3.5 h-3.5" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search Anchors..."
-                        value={anchorSearch}
-                        onChange={(e) => setAnchorSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
-                      />
+                    {/* Anchor */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Anchor</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                          <Search className="w-3.5 h-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search Anchors..."
+                          value={anchorSearch}
+                          onChange={(e) => setAnchorSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
+                        />
+                      </div>
+                      <select
+                        value={selectedAnchor}
+                        onChange={(e) => setSelectedAnchor(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Anchor --</option>
+                        {anchors.map(a => (
+                          <option key={a.id} value={a.id} disabled={a.status === 'Unavailable'}>
+                            {a.name} ({a.reason})
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <select
-                      value={selectedAnchor}
-                      onChange={(e) => setSelectedAnchor(e.target.value)}
-                      className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
-                    >
-                      <option value="">-- Select Anchor --</option>
-                      {anchors.map(a => (
-                        <option key={a.id} value={a.id} disabled={a.status === 'Unavailable'}>
-                          {a.name} ({a.reason})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  {/* Sound Team */}
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Sound Team</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <Search className="w-3.5 h-3.5" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search Sound Teams..."
-                        value={soundSearch}
-                        onChange={(e) => setSoundSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
-                      />
+                    {/* Sound Team */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Sound Team</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                          <Search className="w-3.5 h-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search Sound Teams..."
+                          value={soundSearch}
+                          onChange={(e) => setSoundSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
+                        />
+                      </div>
+                      <select
+                        value={selectedSoundTeam}
+                        onChange={(e) => setSelectedSoundTeam(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Sound Team --</option>
+                        {soundTeams.map(s => (
+                          <option key={s.id} value={s.id} disabled={s.status === 'Unavailable'}>
+                            {s.name} ({s.reason})
+                          </option>
+                        ))}
+                      </select>
                     </div>
-                    <select
-                      value={selectedSoundTeam}
-                      onChange={(e) => setSelectedSoundTeam(e.target.value)}
-                      className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
-                    >
-                      <option value="">-- Select Sound Team --</option>
-                      {soundTeams.map(s => (
-                        <option key={s.id} value={s.id} disabled={s.status === 'Unavailable'}>
-                          {s.name} ({s.reason})
-                        </option>
-                      ))}
-                    </select>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Staff Assignment Section */}
-              <div className="space-y-4 border-t border-slate-250 pt-5">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Staff Assignment</span>
-                </h4>
+              {(isAdmin || isOperationsLead) && (
+                <div className={`space-y-4 ${(isAdmin) ? 'border-t border-slate-250 pt-5' : ''}`}>
+                  <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>Staff Assignment</span>
+                  </h4>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Coordinator */}
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Event Coordinator</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <Search className="w-3.5 h-3.5" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search Coordinators..."
-                        value={coordinatorSearch}
-                        onChange={(e) => setCoordinatorSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
-                      />
-                    </div>
-                    <select
-                      value={selectedCoordinator}
-                      onChange={(e) => setSelectedCoordinator(e.target.value)}
-                      className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
-                    >
-                      <option value="">-- Select Coordinator --</option>
-                      {coordinators.map(c => (
-                        <option key={c.id} value={c.id} disabled={c.status === 'Unavailable'}>
-                          {c.name} ({c.reason})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Supervisor */}
-                  <div className="space-y-1">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Supervisor</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <Search className="w-3.5 h-3.5" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Search Supervisors..."
-                        value={supervisorSearch}
-                        onChange={(e) => setSupervisorSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
-                      />
-                    </div>
-                    <select
-                      value={selectedSupervisor}
-                      onChange={(e) => setSelectedSupervisor(e.target.value)}
-                      className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
-                    >
-                      <option value="">-- Select Supervisor --</option>
-                      {supervisors.map(s => (
-                        <option key={s.id} value={s.id} disabled={s.status === 'Unavailable'}>
-                          {s.name} ({s.reason})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Helpers Checklist Multi-Select */}
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Helpers (Multi-Select)</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
-                        <Search className="w-3.5 h-3.5" />
-                      </span>
-                      <input
-                        type="text"
-                        placeholder="Filter Helpers by name..."
-                        value={helperSearch}
-                        onChange={(e) => setHelperSearch(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 mb-2"
-                      />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Coordinator */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Event Coordinator</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                          <Search className="w-3.5 h-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search Coordinators..."
+                          value={coordinatorSearch}
+                          onChange={(e) => setCoordinatorSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
+                        />
+                      </div>
+                      <select
+                        value={selectedCoordinator}
+                        onChange={(e) => setSelectedCoordinator(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Coordinator --</option>
+                        {coordinators.map(c => (
+                          <option key={c.id} value={c.id} disabled={c.status === 'Unavailable'}>
+                            {c.name} ({c.reason})
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 max-h-48 overflow-y-auto space-y-2 shadow-inner">
-                      {helpers.length === 0 ? (
-                        <p className="text-center text-[11px] text-slate-400 italic py-4">No helper staff found matching criteria</p>
-                      ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                          {helpers.map(h => {
-                            const isChecked = selectedHelpers.includes(h.id);
-                            const isUnavailable = h.status === 'Unavailable';
+                    {/* Supervisor */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Supervisor</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                          <Search className="w-3.5 h-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search Supervisors..."
+                          value={supervisorSearch}
+                          onChange={(e) => setSupervisorSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
+                        />
+                      </div>
+                      <select
+                        value={selectedSupervisor}
+                        onChange={(e) => setSelectedSupervisor(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 cursor-pointer"
+                      >
+                        <option value="">-- Select Supervisor --</option>
+                        {supervisors.map(s => (
+                          <option key={s.id} value={s.id} disabled={s.status === 'Unavailable'}>
+                            {s.name} ({s.reason})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                            return (
-                              <label
-                                key={h.id}
-                                className={`flex items-center gap-3 p-2.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-colors duration-150 ${
-                                  isUnavailable
-                                    ? 'bg-slate-100/50 border-slate-200/50 opacity-40 cursor-not-allowed'
-                                    : isChecked
-                                      ? 'bg-emerald-50 border-emerald-250 text-emerald-800'
-                                      : 'bg-white border-slate-200 hover:border-slate-350'
-                                }`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isChecked}
-                                  disabled={isUnavailable}
-                                  onChange={() => handleHelperToggle(h.id)}
-                                  className="accent-emerald-500 w-4 h-4 cursor-pointer disabled:cursor-not-allowed"
-                                />
-                                <div className="overflow-hidden">
-                                  <span className="block truncate">{h.name}</span>
-                                  <span className={`text-[9px] font-extrabold uppercase mt-0.5 block ${
+                    {/* Helpers Checklist Multi-Select */}
+                    <div className="md:col-span-2 space-y-2">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Helpers (Multi-Select)</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                          <Search className="w-3.5 h-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Filter Helpers by name..."
+                          value={helperSearch}
+                          onChange={(e) => setHelperSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500 mb-2"
+                        />
+                      </div>
+
+                      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 max-h-48 overflow-y-auto space-y-2 shadow-inner">
+                        {helpers.length === 0 ? (
+                          <p className="text-center text-[11px] text-slate-400 italic py-4">No helper staff found matching criteria</p>
+                        ) : (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                            {helpers.map(h => {
+                              const isChecked = selectedHelpers.includes(h.id);
+                              const isUnavailable = h.status === 'Unavailable';
+
+                              return (
+                                <label
+                                  key={h.id}
+                                  className={`flex items-center gap-3 p-2.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-colors duration-150 ${
                                     isUnavailable
-                                      ? 'text-rose-500'
+                                      ? 'bg-slate-100/50 border-slate-200/50 opacity-40 cursor-not-allowed'
                                       : isChecked
-                                        ? 'text-emerald-500'
-                                        : 'text-slate-400'
-                                  }`}>
-                                    {h.reason}
-                                  </span>
-                                </div>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      )}
+                                        ? 'bg-emerald-50 border-emerald-250 text-emerald-800'
+                                        : 'bg-white border-slate-200 hover:border-slate-350'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    disabled={isUnavailable}
+                                    onChange={() => handleHelperToggle(h.id)}
+                                    className="accent-emerald-500 w-4 h-4 cursor-pointer disabled:cursor-not-allowed"
+                                  />
+                                  <div className="overflow-hidden">
+                                    <span className="block truncate">{h.name}</span>
+                                    <span className={`text-[9px] font-extrabold uppercase mt-0.5 block ${
+                                      isUnavailable
+                                        ? 'text-rose-500'
+                                        : isChecked
+                                          ? 'text-emerald-500'
+                                          : 'text-slate-400'
+                                    }`}>
+                                      {h.reason}
+                                    </span>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </form>
 
             {/* Footer controls */}
