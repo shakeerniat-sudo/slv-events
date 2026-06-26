@@ -223,7 +223,7 @@ const Layout = ({ children }) => {
 
   // Define sidebar links with roles
   const menuItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['Admin', 'Vendor Coordinator', 'Operations Lead', 'Finance Team'] },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, roles: ['Admin', 'Vendor Coordinator', 'Operations Lead', 'Finance Team'] },
     { name: 'Events', path: '/events', icon: Calendar, roles: ['Admin', 'Vendor Coordinator', 'Operations Lead'] },
     { name: 'Assignment Center', path: '/assignments', icon: ClipboardList, roles: ['Admin', 'Vendor Coordinator'] },
     { name: 'Vendors', path: '/vendors', icon: Briefcase, roles: ['Admin', 'Vendor Coordinator'] },

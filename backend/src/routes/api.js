@@ -21,6 +21,9 @@ router.post('/auth/login', authController.login);
 router.post('/auth/register', authenticateToken, authorizeRoles('Admin'), authController.register);
 router.get('/auth/me', authenticateToken, authController.getMe);
 
+// Public Client Booking Route
+router.post('/public/bookings', eventController.createPublicBooking);
+
 // Admin-only User CRUD
 router.get('/users', authenticateToken, authorizeRoles('Admin'), authController.listUsers);
 router.put('/users/:id', authenticateToken, authorizeRoles('Admin'), authController.updateUser);
@@ -37,10 +40,10 @@ router.delete('/dashboard/activities', authenticateToken, authorizeRoles('Admin'
 // ==========================================
 // Events Routes
 // ==========================================
-router.get('/events', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator'), eventController.listEvents);
-router.get('/events/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator'), eventController.getEventDetail);
+router.get('/events', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator', 'Finance Team'), eventController.listEvents);
+router.get('/events/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator', 'Finance Team'), eventController.getEventDetail);
 router.post('/events', authenticateToken, authorizeRoles('Admin'), eventController.createEvent);
-router.put('/events/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator'), eventController.updateEvent);
+router.put('/events/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator', 'Finance Team'), eventController.updateEvent);
 router.delete('/events/:id', authenticateToken, authorizeRoles('Admin'), eventController.deleteEvent);
 
 // ==========================================

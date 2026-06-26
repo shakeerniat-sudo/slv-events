@@ -37,8 +37,14 @@ CREATE TABLE IF NOT EXISTS `events` (
   `status` VARCHAR(50) DEFAULT 'Pending',
   `notes` TEXT NULL,
   `tasks` TEXT NULL,
+  `coordinator_id` INT DEFAULT NULL,
+  `operations_lead_id` INT DEFAULT NULL,
+  `finance_team_id` INT DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`client_id`) REFERENCES `clients`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`coordinator_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`operations_lead_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`finance_team_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
   INDEX `idx_event_date` (`event_date`),
   INDEX `idx_event_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

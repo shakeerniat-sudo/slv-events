@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useUIStore } from '../store/uiStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, animate } from 'framer-motion';
+import { motion, animate, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Calendar,
@@ -20,7 +20,9 @@ import {
   Boxes,
   ArrowUpRight,
   ShieldAlert,
-  Award
+  Award,
+  ShieldCheck,
+  X
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -89,6 +91,14 @@ const Dashboard = () => {
 
   const [incidentForm, setIncidentForm] = useState({ eventId: '', type: 'Vendor Delay', details: '' });
   const [reportingIncident, setReportingIncident] = useState(false);
+
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [reviewForm, setReviewForm] = useState({
+    status: 'Pending',
+    coordinator_id: '',
+    operations_lead_id: '',
+    finance_team_id: ''
+  });
 
   // New query for assignments (Ops Lead only)
   const { data: allAssignments = [] } = useQuery({
@@ -174,6 +184,59 @@ const Dashboard = () => {
     }
   });
 
+  // Process Booking Mutation (Admin Review & Assignment dispatch)
+  const processBookingMutation = useMutation({
+    mutationFn: async ({ eventId, status, coordinator_id, operations_lead_id, finance_team_id }) => {
+      await axios.put(`/events/${eventId}`, {
+        status,
+        coordinator_id: coordinator_id || null,
+        operations_lead_id: operations_lead_id || null,
+        finance_team_id: finance_team_id || null
+      });
+
+      // Insert assignment notification
+      await axios.post('/notifications', {
+        title: 'Team Dispatched for Event',
+        message: `📢 Planner team assigned for "${selectedBooking?.name}". Work begins immediately.`,
+        type: 'Assignment Confirmation'
+      });
+    },
+    onSuccess: () => {
+      addToast('Booking processed and planning team assigned!');
+      setSelectedBooking(null);
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
+    },
+    onError: (err) => {
+      console.error(err);
+      addToast(err.response?.data?.message || 'Failed to assign planner team.', 'error');
+    }
+  });
+
+  // Fetch All Users (for Admin Booking Review Assignments)
+  const { data: allUsers = [], isLoading: usersLoading } = useQuery({
+    queryKey: ['users-list-dashboard'],
+    queryFn: async () => {
+      const res = await axios.get('/users');
+      return res.data || [];
+    },
+    enabled: !!user && isAdmin
+  });
+
+  const vendorCoordinators = allUsers.filter(u => u.role === 'Vendor Coordinator');
+  const operationsLeads = allUsers.filter(u => u.role === 'Operations Lead');
+  const financeTeams = allUsers.filter(u => u.role === 'Finance Team');
+
+  const handleReviewBooking = (booking) => {
+    setSelectedBooking(booking);
+    setReviewForm({
+      status: 'Pending',
+      coordinator_id: booking.coordinator_id || '',
+      operations_lead_id: booking.operations_lead_id || '',
+      finance_team_id: booking.finance_team_id || ''
+    });
+  };
+
   // ==========================================
   // Role-Aware Data Queries
   // ==========================================
@@ -230,7 +293,7 @@ const Dashboard = () => {
       const res = await axios.get('/events');
       return res.data || [];
     },
-    enabled: !!user && (isAdmin || isVendorCoordinator || isOperationsLead)
+    enabled: !!user && (isAdmin || isVendorCoordinator || isOperationsLead || isFinanceTeam)
   });
 
   // 5. Fetch All Vendors (Admin, Coordinator)
@@ -307,7 +370,6 @@ const Dashboard = () => {
       { title: 'Active Staff', value: kpi.totalStaff, subtitle: 'Rostered Crew', icon: Users, gradient: 'from-[#059669] to-[#34D399]', glowClass: 'glow-green', iconColor: 'text-emerald-500', iconGlow: 'dark:bg-emerald-500/10' },
       { title: 'Conflict Alerts', value: kpi.conflictAlerts, subtitle: 'Requires Resolution', icon: AlertTriangle, gradient: kpi.conflictAlerts > 0 ? 'from-[#DC2626] to-[#F87171]' : 'from-slate-400 to-slate-550', glowClass: kpi.conflictAlerts > 0 ? 'glow-red' : '', iconColor: kpi.conflictAlerts > 0 ? 'text-rose-500' : 'text-slate-550', iconGlow: kpi.conflictAlerts > 0 ? 'dark:bg-rose-500/10' : 'dark:bg-slate-500/10' },
       { title: 'Pending Staffing', value: kpi.pendingAssignments, subtitle: 'Awaiting Crewing', icon: Layers, gradient: 'from-[#D97706] to-[#FBBF24]', glowClass: 'glow-orange', iconColor: 'text-amber-500', iconGlow: 'dark:bg-amber-500/10' },
-      { title: 'Payments Pending', value: kpi.paymentsPending, subtitle: 'Installment Collections', icon: CreditCard, gradient: 'from-[#9333EA] to-[#C084FC]', glowClass: 'glow-violet', iconColor: 'text-purple-500', iconGlow: 'dark:bg-purple-500/10' }
     ];
   }
 
@@ -316,10 +378,11 @@ const Dashboard = () => {
     dashboardTitle = 'Vendor Relations Portal';
     dashboardSubtitle = 'Roster scheduling, outsource logistics, and vendor assignments';
 
-    const assignedEventsCount = allEvents.filter(e => ['Assigned', 'In Progress', 'Ready'].includes(e.status)).length;
+    const coordinatorEvents = allEvents.filter(e => e.coordinator_id === user.id);
+    const assignedEventsCount = coordinatorEvents.filter(e => ['Assigned', 'In Progress', 'Ready'].includes(e.status)).length;
     const availableVendors = allVendors.filter(v => v.availability_status === 'Available').length;
     const busyVendors = allVendors.filter(v => v.availability_status === 'Busy').length;
-    const upcomingEventsCount = allEvents.filter(e => new Date(e.event_date) >= new Date()).length;
+    const upcomingEventsCount = coordinatorEvents.filter(e => new Date(e.event_date) >= new Date()).length;
 
     statCards = [
       { title: 'Assigned Events', value: assignedEventsCount, subtitle: 'Logistics ongoing', icon: Calendar, gradient: 'from-[#0284C7] to-[#38BDF8]', glowClass: 'glow-blue', iconColor: 'text-sky-500', iconGlow: 'dark:bg-sky-500/10' },
@@ -335,13 +398,14 @@ const Dashboard = () => {
     dashboardSubtitle = 'Internal staffing allocations, setup checklists, and event timelines';
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const todayEvents = allEvents.filter(e => e.event_date.split('T')[0] === todayStr).length;
+    const opsEvents = allEvents.filter(e => e.operations_lead_id === user.id);
+    const todayEvents = opsEvents.filter(e => e.event_date.split('T')[0] === todayStr).length;
     const activeStaffCount = allStaff.filter(s => s.availability_status === 'Available').length;
     
     // Extract task checklist stats
     let pendingTasks = 0;
     let completedTasks = 0;
-    allEvents.forEach(e => {
+    opsEvents.forEach(e => {
       const tasks = e.tasks ? (typeof e.tasks === 'string' ? JSON.parse(e.tasks) : e.tasks) : [];
       tasks.forEach(t => {
         if (t.status === 'Completed') completedTasks++;
@@ -350,7 +414,7 @@ const Dashboard = () => {
     });
 
     statCards = [
-      { title: 'Today\'s Events', value: todayEvents, subtitle: 'Execution today', icon: Calendar, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', iconColor: 'text-violet-550', iconGlow: 'dark:bg-violet-500/10' },
+      { title: 'Today\'s Events', value: todayEvents, subtitle: 'Execution today', icon: Calendar, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', iconColor: 'text-violet-555', iconGlow: 'dark:bg-violet-500/10' },
       { title: 'Available Crew', value: activeStaffCount, subtitle: 'Available helpers', icon: Users, gradient: 'from-[#059669] to-[#34D399]', glowClass: 'glow-green', iconColor: 'text-emerald-500', iconGlow: 'dark:bg-emerald-500/10' },
       { title: 'Pending Tasks', value: pendingTasks, subtitle: 'Checklists open', icon: ClipboardList, gradient: 'from-[#D97706] to-[#FBBF24]', glowClass: 'glow-orange', iconColor: 'text-amber-500', iconGlow: 'dark:bg-amber-500/10' },
       { title: 'Completed Tasks', value: completedTasks, subtitle: 'Milestones met', icon: CheckCircle, gradient: 'from-[#0284C7] to-[#38BDF8]', glowClass: 'glow-blue', iconColor: 'text-sky-500', iconGlow: 'dark:bg-sky-500/10' }
@@ -362,6 +426,9 @@ const Dashboard = () => {
     dashboardTitle = 'Financial Collections Console';
     dashboardSubtitle = 'Contract budgeting, client invoice ledgers, and payout tracking';
 
+    // Filter payments assigned to this finance user
+    const financePayments = allPayments.filter(p => allEvents.some(e => e.id === p.event_id && e.finance_team_id === user.id));
+
     // Calculate revenue metrics
     let totalRevenue = 0;
     let collectionsReceived = 0;
@@ -369,7 +436,7 @@ const Dashboard = () => {
     let totalPaidInvoices = 0;
     let totalVendorPayouts = 0;
 
-    allPayments.forEach(p => {
+    financePayments.forEach(p => {
       const amt = parseFloat(p.amount || 0);
       if (p.type === 'client') {
         if (p.status === 'Paid') {
@@ -387,7 +454,7 @@ const Dashboard = () => {
     statCards = [
       { title: 'Paid Collections', value: collectionsReceived, subtitle: `From ${totalPaidInvoices} invoices`, icon: CreditCard, gradient: 'from-[#059669] to-[#34D399]', glowClass: 'glow-green', isMoney: true, iconColor: 'text-emerald-500', iconGlow: 'dark:bg-emerald-500/10' },
       { title: 'Pending Invoices', value: pendingPaymentsCount, subtitle: 'Awaiting checks', icon: Clock, gradient: 'from-[#D97706] to-[#FBBF24]', glowClass: 'glow-orange', iconColor: 'text-amber-500', iconGlow: 'dark:bg-amber-500/10' },
-      { title: 'Outsource Payouts', value: totalVendorPayouts, subtitle: 'Vendor costs allocated', icon: Briefcase, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', isMoney: true, iconColor: 'text-violet-550', iconGlow: 'dark:bg-violet-500/10' },
+      { title: 'Outsource Payouts', value: totalVendorPayouts, subtitle: 'Vendor costs allocated', icon: Briefcase, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', isMoney: true, iconColor: 'text-violet-555', iconGlow: 'dark:bg-violet-500/10' },
       { title: 'Gross Budget Booked', value: totalRevenue, subtitle: 'Gross pipeline contracts', icon: Layers, gradient: 'from-[#0284C7] to-[#38BDF8]', glowClass: 'glow-blue', isMoney: true, iconColor: 'text-sky-500', iconGlow: 'dark:bg-sky-500/10' }
     ];
   }
@@ -399,7 +466,9 @@ const Dashboard = () => {
     const monthlyRev = Array(12).fill(0);
     const monthlyPayout = Array(12).fill(0);
 
-    allPayments.forEach(p => {
+    const financePayments = allPayments.filter(p => allEvents.some(e => e.id === p.event_id && e.finance_team_id === user.id));
+
+    financePayments.forEach(p => {
       const amt = parseFloat(p.amount || p.total_amount || 0);
       const d = new Date(p.due_date || p.paid_at);
       if (d.getFullYear() === currentYear && !isNaN(d.getTime())) {
@@ -439,6 +508,54 @@ const Dashboard = () => {
           <span>Local Time: {new Date().toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
         </div>
       </div>
+
+      {/* --- ADMIN: NEW BOOKINGS --- */}
+      {isAdmin && (
+        <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40 border-slate-200 dark:border-slate-850">
+          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-slate-850 pb-2">
+            <Calendar className="w-4.5 h-4.5 text-sky-500" />
+            <span>New Bookings Awaiting Action</span>
+            <span className="px-2 py-0.5 bg-sky-500/10 text-sky-500 dark:text-sky-400 rounded-full font-bold text-[10px] ml-1">
+              {allEvents.filter(e => e.status && e.status.toLowerCase() === 'new').length}
+            </span>
+          </h3>
+
+          {eventsLoading ? (
+            <div className="py-12 flex justify-center"><Loader className="w-6 h-6 animate-spin text-sky-500" /></div>
+          ) : allEvents.filter(e => e.status && e.status.toLowerCase() === 'new').length === 0 ? (
+            <p className="text-xs text-slate-550 text-center py-8">No new bookings awaiting action. All set!</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {allEvents.filter(e => e.status && e.status.toLowerCase() === 'new').map(e => (
+                <div key={e.id} className="p-4 bg-slate-55/35 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-850 rounded-2xl flex flex-col justify-between gap-4 text-xs">
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-bold text-slate-800 dark:text-slate-250 text-sm leading-tight">{e.name}</h4>
+                      <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-250 dark:bg-amber-955/30 dark:text-amber-400 dark:border-amber-900/40 rounded-full font-bold text-[9px] uppercase tracking-wide shrink-0">
+                        New
+                      </span>
+                    </div>
+                    <div className="mt-3 space-y-1.5 text-slate-555 dark:text-slate-400 font-medium">
+                      <p><strong>Client:</strong> {e.client_name} ({e.client_phone || 'N/A'})</p>
+                      <p><strong>Email:</strong> {e.client_email || 'N/A'}</p>
+                      <p><strong>Date:</strong> {new Date(e.event_date).toLocaleDateString('en-GB')}</p>
+                      <p><strong>Venue:</strong> {e.venue}</p>
+                      <p><strong>Budget:</strong> ₹{parseFloat(e.budget).toLocaleString()} | <strong>Guests:</strong> {e.guest_count || 'N/A'}</p>
+                      {e.notes && <p className="italic text-[11px] text-slate-455 bg-slate-100 dark:bg-slate-900/60 p-2 rounded-lg mt-2 line-clamp-2">" {e.notes} "</p>}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleReviewBooking(e)}
+                    className="w-full py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider shadow-sm transition-transform active:scale-[0.98] cursor-pointer mt-1"
+                  >
+                    Review & Assign Planner
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* KPI Stats Grid */}
       <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${isAdmin ? 'lg:grid-cols-3 xl:grid-cols-6' : 'lg:grid-cols-4'}`}>
@@ -716,11 +833,11 @@ const Dashboard = () => {
             </h3>
             {eventsLoading ? (
               <div className="py-12 flex justify-center"><Loader className="w-6 h-6 animate-spin text-sky-500" /></div>
-            ) : allEvents.filter(e => e.status === 'Pending').length === 0 ? (
-              <p className="text-xs text-slate-500 text-center py-8">All upcoming events fully assigned!</p>
+            ) : allEvents.filter(e => e.coordinator_id === user.id && e.status === 'Pending').length === 0 ? (
+              <p className="text-xs text-slate-550 text-center py-8">All upcoming events fully assigned!</p>
             ) : (
               <div className="space-y-3.5 max-h-80 overflow-y-auto pr-1">
-                {allEvents.filter(e => e.status === 'Pending').map(e => (
+                {allEvents.filter(e => e.coordinator_id === user.id && e.status === 'Pending').map(e => (
                   <div key={e.id} className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl flex justify-between items-center text-xs">
                     <div>
                       <h4 className="font-bold text-slate-800 dark:text-slate-250">{e.name}</h4>
@@ -787,7 +904,7 @@ const Dashboard = () => {
                 <div className="space-y-4 max-h-[400px] overflow-y-auto pr-1">
                   {(() => {
                     const todayStr = new Date().toISOString().split('T')[0];
-                    const todayEvents = allEvents.filter(e => e.event_date.split('T')[0] === todayStr);
+                    const todayEvents = allEvents.filter(e => e.operations_lead_id === user.id && e.event_date.split('T')[0] === todayStr);
 
                     if (todayEvents.length === 0) {
                       return (
@@ -953,7 +1070,7 @@ const Dashboard = () => {
                   className="form-input cursor-pointer pr-8"
                 >
                   <option value="">-- Select Event --</option>
-                  {allEvents.filter(e => e.status !== 'Completed' && e.status !== 'Cancelled').map(e => (
+                  {allEvents.filter(e => e.operations_lead_id === user.id && e.status !== 'Completed' && e.status !== 'Cancelled').map(e => (
                     <option key={e.id} value={e.id}>{e.name}</option>
                   ))}
                 </select>
@@ -1022,12 +1139,12 @@ const Dashboard = () => {
                       <Loader className="w-6 h-6 animate-spin-loader text-emerald-500 mx-auto" />
                     </td>
                   </tr>
-                ) : allPayments.filter(p => p.status !== 'Paid').length === 0 ? (
+                ) : allPayments.filter(p => p.status !== 'Paid' && allEvents.some(e => e.id === p.event_id && e.finance_team_id === user.id)).length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-4 text-center text-slate-455">No pending payments ledgered!</td>
+                    <td colSpan={6} className="py-4 text-center text-slate-455 font-medium">No pending payments ledgered!</td>
                   </tr>
                 ) : (
-                  allPayments.filter(p => p.status !== 'Paid').slice(0, 5).map(pay => (
+                  allPayments.filter(p => p.status !== 'Paid' && allEvents.some(e => e.id === p.event_id && e.finance_team_id === user.id)).slice(0, 5).map(pay => (
                     <tr key={pay.id}>
                       <td className="font-bold text-slate-800 dark:text-slate-350">{pay.event_name}</td>
                       <td>
@@ -1071,6 +1188,187 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
+      {/* Review & Assignment Modal/Drawer */}
+      <AnimatePresence>
+        {selectedBooking && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-2xl bg-white dark:bg-[#111F35] rounded-3xl border border-slate-205 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-white/[0.04] flex justify-between items-center bg-slate-50/50 dark:bg-slate-905/30">
+                <div>
+                  <span className="text-[10px] font-bold text-sky-500 dark:text-sky-400 uppercase tracking-widest">Review Booking Request</span>
+                  <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 mt-1">
+                    {selectedBooking.name}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedBooking(null)}
+                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                >
+                  <X className="w-4.5 h-4.5" />
+                </button>
+              </div>
+
+              {/* Body (Scrollable) */}
+              <div className="p-6 overflow-y-auto space-y-6 text-xs text-slate-655 dark:text-slate-350 font-medium">
+                
+                {/* Specs Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-950/40 p-5 rounded-2xl border border-slate-100 dark:border-white/[0.02]">
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Client Name</span>
+                    <p className="font-bold text-slate-800 dark:text-slate-205 mt-0.5">{selectedBooking.client_name}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mobile Number</span>
+                    <p className="font-bold text-slate-800 dark:text-slate-205 mt-0.5">{selectedBooking.client_phone || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Email</span>
+                    <p className="font-bold text-slate-800 dark:text-slate-205 mt-0.5 truncate" title={selectedBooking.client_email}>{selectedBooking.client_email || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Event Type</span>
+                    <p className="font-bold text-slate-800 dark:text-slate-205 mt-0.5">{selectedBooking.event_type}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Event Date</span>
+                    <p className="font-bold text-slate-800 dark:text-slate-205 mt-0.5">{new Date(selectedBooking.event_date).toLocaleDateString('en-GB')}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Location / Venue</span>
+                    <p className="font-bold text-slate-800 dark:text-slate-205 mt-0.5 truncate" title={selectedBooking.venue}>{selectedBooking.venue}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Number of Guests</span>
+                    <p className="font-bold text-slate-855 dark:text-slate-100 mt-0.5">{selectedBooking.guest_count || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Gross Budget</span>
+                    <p className="font-bold text-slate-855 dark:text-slate-100 mt-0.5">₹{parseFloat(selectedBooking.budget).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Current Status</span>
+                    <p className="font-extrabold text-amber-500 dark:text-amber-400 mt-0.5 uppercase">{selectedBooking.status}</p>
+                  </div>
+                </div>
+
+                {/* Additional Notes */}
+                {selectedBooking.notes && (
+                  <div>
+                    <h4 className="font-bold text-[10px] text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">Client Notes / Requirements</h4>
+                    <div className="p-3 bg-slate-50 dark:bg-slate-900/40 border border-slate-150 dark:border-white/[0.02] rounded-xl text-slate-700 dark:text-slate-300 leading-relaxed">
+                      {selectedBooking.notes}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assignment Controls */}
+                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-white/[0.04]">
+                  <h4 className="font-bold text-xs text-slate-800 dark:text-slate-250 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-sky-500" />
+                    <span>Assign Planning Team & Set Status</span>
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Workflow Status</label>
+                      <select
+                        value={reviewForm.status}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, status: e.target.value }))}
+                        className="form-input cursor-pointer"
+                      >
+                        <option value="Pending">Pending (Under Sourcing)</option>
+                        <option value="Assigned">Assigned (Teams Assigned)</option>
+                        <option value="In Progress">In Progress (Execution)</option>
+                        <option value="Completed">Completed (Finalized)</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Vendor Coordinator *</label>
+                      <select
+                        value={reviewForm.coordinator_id}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, coordinator_id: e.target.value }))}
+                        className="form-input cursor-pointer"
+                        required
+                      >
+                        <option value="">-- Select Coordinator --</option>
+                        {vendorCoordinators.map(u => (
+                          <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Operations Lead *</label>
+                      <select
+                        value={reviewForm.operations_lead_id}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, operations_lead_id: e.target.value }))}
+                        className="form-input cursor-pointer"
+                        required
+                      >
+                        <option value="">-- Select Operations Lead --</option>
+                        {operationsLeads.map(u => (
+                          <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Finance Lead *</label>
+                      <select
+                        value={reviewForm.finance_team_id}
+                        onChange={(e) => setReviewForm(prev => ({ ...prev, finance_team_id: e.target.value }))}
+                        className="form-input cursor-pointer"
+                        required
+                      >
+                        <option value="">-- Select Finance Personnel --</option>
+                        {financeTeams.map(u => (
+                          <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Action Footer */}
+              <div className="p-6 border-t border-slate-100 dark:border-white/[0.04] bg-slate-50/50 dark:bg-slate-900/30 flex justify-end gap-3">
+                <button
+                  onClick={() => setSelectedBooking(null)}
+                  className="px-4 py-2 border border-slate-205 hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/[0.04] text-slate-655 dark:text-slate-350 rounded-xl transition-all cursor-pointer text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={processBookingMutation.isPending || !reviewForm.coordinator_id || !reviewForm.operations_lead_id || !reviewForm.finance_team_id}
+                  onClick={() => {
+                    processBookingMutation.mutate({
+                      eventId: selectedBooking.id,
+                      status: reviewForm.status,
+                      coordinator_id: reviewForm.coordinator_id,
+                      operations_lead_id: reviewForm.operations_lead_id,
+                      finance_team_id: reviewForm.finance_team_id
+                    });
+                  }}
+                  className="px-5 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer text-xs font-bold disabled:opacity-50"
+                >
+                  {processBookingMutation.isPending ? 'Processing Assignments...' : 'Begin Planning & Dispatch Teams'}
+                </button>
+              </div>
+
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

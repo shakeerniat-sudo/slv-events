@@ -19,9 +19,9 @@ const defaultSeedData = {
     { id: 2, name: 'Sarah Jenkins', phone: '+91 98765 12345', email: 'sarah@example.com', company_name: 'Jenkins & Co', created_at: new Date().toISOString() }
   ],
   events: [
-    { id: 1, name: 'TechCorp Annual Gala 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-07-15', venue: 'Grand Palace Hall, Bangalore', budget: 150000.00, guest_count: 300, theme_preference: 'Gold & Black Premium', status: 'Assigned', notes: 'Needs top decorators and anchors.', workflow_stage: 3, workflow_mode: 'Automatic', event_time: '10:00 AM - 04:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Confirm decorator contract', status: 'Completed' }, { id: 2, title: 'Verify audio-visual setup', status: 'Pending' }]), created_at: new Date().toISOString() },
-    { id: 2, name: 'Sarah Wedding Reception', client_id: 2, event_type: 'Wedding', event_date: '2026-07-20', venue: 'Lakeside Pavilion', budget: 350000.00, guest_count: 500, theme_preference: 'Floral Fantasy', status: 'Pending', notes: 'Provide custom catering preferences.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '04:00 PM - 11:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Finalize catering menu', status: 'Pending' }, { id: 2, title: 'Confirm photographer booking', status: 'Completed' }]), created_at: new Date().toISOString() },
-    { id: 3, name: 'Product Launch 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-08-05', venue: 'Sheraton Convention Center', budget: 80000.00, guest_count: 150, theme_preference: 'Futuristic Tech', status: 'Pending', notes: 'Requires high quality sound and technicians.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '09:00 AM - 05:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Arrange sound equipment delivery', status: 'Pending' }]), created_at: new Date().toISOString() }
+    { id: 1, name: 'TechCorp Annual Gala 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-07-15', venue: 'Grand Palace Hall, Bangalore', budget: 150000.00, guest_count: 300, theme_preference: 'Gold & Black Premium', status: 'Assigned', notes: 'Needs top decorators and anchors.', workflow_stage: 3, workflow_mode: 'Automatic', event_time: '10:00 AM - 04:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Confirm decorator contract', status: 'Completed' }, { id: 2, title: 'Verify audio-visual setup', status: 'Pending' }]), coordinator_id: 2, operations_lead_id: 3, finance_team_id: 4, created_at: new Date().toISOString() },
+    { id: 2, name: 'Sarah Wedding Reception', client_id: 2, event_type: 'Wedding', event_date: '2026-07-20', venue: 'Lakeside Pavilion', budget: 350000.00, guest_count: 500, theme_preference: 'Floral Fantasy', status: 'Pending', notes: 'Provide custom catering preferences.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '04:00 PM - 11:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Finalize catering menu', status: 'Pending' }, { id: 2, title: 'Confirm photographer booking', status: 'Completed' }]), coordinator_id: null, operations_lead_id: null, finance_team_id: null, created_at: new Date().toISOString() },
+    { id: 3, name: 'Product Launch 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-08-05', venue: 'Sheraton Convention Center', budget: 80000.00, guest_count: 150, theme_preference: 'Futuristic Tech', status: 'Pending', notes: 'Requires high quality sound and technicians.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '09:00 AM - 05:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Arrange sound equipment delivery', status: 'Pending' }]), coordinator_id: null, operations_lead_id: null, finance_team_id: null, created_at: new Date().toISOString() }
   ],
   vendors: [
     { id: 1, name: 'Royal Decorators', category: 'Decorator', contact_person: 'Ramesh Kumar', phone: '+91 91111 22222', email: 'royal@decors.com', service_type: 'Premium Decor', price_range: 'High', rating: 4.8, availability_status: 'Available', created_at: new Date().toISOString() },
@@ -161,11 +161,17 @@ function runJsonQuery(sql, params = []) {
   if (sqlClean.startsWith('select e.*, c.name as client_name') && !sqlClean.includes('where e.id = ?')) {
     const list = db.events.map(ev => {
       const client = db.clients.find(c => c.id === ev.client_id) || {};
+      const coord = db.users.find(u => u.id === ev.coordinator_id) || {};
+      const ops = db.users.find(u => u.id === ev.operations_lead_id) || {};
+      const fin = db.users.find(u => u.id === ev.finance_team_id) || {};
       return {
         ...ev,
         client_name: client.name || '',
         client_phone: client.phone || '',
-        client_email: client.email || ''
+        client_email: client.email || '',
+        coordinator_name: coord.name || '',
+        operations_lead_name: ops.name || '',
+        finance_team_name: fin.name || ''
       };
     });
     return list;
@@ -177,11 +183,17 @@ function runJsonQuery(sql, params = []) {
     const ev = db.events.find(e => e.id === eventId);
     if (!ev) return [];
     const client = db.clients.find(c => c.id === ev.client_id) || {};
+    const coord = db.users.find(u => u.id === ev.coordinator_id) || {};
+    const ops = db.users.find(u => u.id === ev.operations_lead_id) || {};
+    const fin = db.users.find(u => u.id === ev.finance_team_id) || {};
     return [{
       ...ev,
       client_name: client.name || '',
       client_phone: client.phone || '',
-      client_email: client.email || ''
+      client_email: client.email || '',
+      coordinator_name: coord.name || '',
+      operations_lead_name: ops.name || '',
+      finance_team_name: fin.name || ''
     }];
   }
 
@@ -1066,6 +1078,24 @@ async function connectDb() {
       console.log('✅ Schema migration: Added photos column to events table.');
     } catch (migErr) {
       if (migErr.code !== 'ER_DUP_FIELDNAME') console.warn('⚠️ Events table photos column warning:', migErr.message);
+    }
+    try {
+      await conn.query("ALTER TABLE events ADD COLUMN coordinator_id INT DEFAULT NULL");
+      console.log('✅ Schema migration: Added coordinator_id column to events table.');
+    } catch (migErr) {
+      if (migErr.code !== 'ER_DUP_FIELDNAME') console.warn('⚠️ Events table coordinator_id column warning:', migErr.message);
+    }
+    try {
+      await conn.query("ALTER TABLE events ADD COLUMN operations_lead_id INT DEFAULT NULL");
+      console.log('✅ Schema migration: Added operations_lead_id column to events table.');
+    } catch (migErr) {
+      if (migErr.code !== 'ER_DUP_FIELDNAME') console.warn('⚠️ Events table operations_lead_id column warning:', migErr.message);
+    }
+    try {
+      await conn.query("ALTER TABLE events ADD COLUMN finance_team_id INT DEFAULT NULL");
+      console.log('✅ Schema migration: Added finance_team_id column to events table.');
+    } catch (migErr) {
+      if (migErr.code !== 'ER_DUP_FIELDNAME') console.warn('⚠️ Events table finance_team_id column warning:', migErr.message);
     }
     try {
       await conn.query(`

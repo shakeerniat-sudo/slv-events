@@ -252,7 +252,10 @@ exports.updateEvent = async (req, res) => {
       tasks,
       inventory,
       ops_logs,
-      photos
+      photos,
+      coordinator_id,
+      operations_lead_id,
+      finance_team_id
     } = req.body;
 
     const events = await db.query('SELECT * FROM events WHERE id = ?', [eventId]);
@@ -266,8 +269,18 @@ exports.updateEvent = async (req, res) => {
     const opsLogsString = ops_logs !== undefined ? (typeof ops_logs === 'string' ? ops_logs : JSON.stringify(ops_logs)) : (currentEvent.ops_logs || null);
     const photosString = photos !== undefined ? (typeof photos === 'string' ? photos : JSON.stringify(photos)) : (currentEvent.photos || null);
 
+    const parseAssignmentId = (val) => {
+      if (val === undefined) return undefined;
+      if (val === null || val === '' || val === 'null' || val === 'undefined') return null;
+      return parseInt(val) || null;
+    };
+
+    const coordId = parseAssignmentId(coordinator_id);
+    const opsId = parseAssignmentId(operations_lead_id);
+    const finId = parseAssignmentId(finance_team_id);
+
     await db.query(
-      'UPDATE events SET name = ?, event_type = ?, event_date = ?, venue = ?, budget = ?, guest_count = ?, theme_preference = ?, notes = ?, status = ?, workflow_stage = ?, workflow_mode = ?, event_time = ?, tasks = ?, inventory = ?, ops_logs = ?, photos = ? WHERE id = ?',
+      'UPDATE events SET name = ?, event_type = ?, event_date = ?, venue = ?, budget = ?, guest_count = ?, theme_preference = ?, notes = ?, status = ?, workflow_stage = ?, workflow_mode = ?, event_time = ?, tasks = ?, inventory = ?, ops_logs = ?, photos = ?, coordinator_id = ?, operations_lead_id = ?, finance_team_id = ? WHERE id = ?',
       [
         name || currentEvent.name,
         eventType || currentEvent.event_type,
@@ -285,6 +298,9 @@ exports.updateEvent = async (req, res) => {
         inventoryString,
         opsLogsString,
         photosString,
+        coordId !== undefined ? coordId : currentEvent.coordinator_id,
+        opsId !== undefined ? opsId : currentEvent.operations_lead_id,
+        finId !== undefined ? finId : currentEvent.finance_team_id,
         eventId
       ]
     );
@@ -341,5 +357,117 @@ exports.deleteEvent = async (req, res) => {
   } catch (err) {
     console.error('Delete event error:', err);
     return res.status(500).json({ message: 'Error deleting event' });
+  }
+};
+
+// Create Public Client Booking
+exports.createPublicBooking = async (req, res) => {
+  try {
+    const {
+      clientName,
+      clientPhone,
+      clientEmail,
+      eventType,
+      eventDate,
+      venue,
+      budget,
+      guestCount,
+      notes
+    } = req.body;
+
+    if (!clientName || !clientPhone || !eventType || !eventDate || !venue || !budget) {
+      return res.status(400).json({ message: 'Required booking fields are missing' });
+    }
+
+    // 1. Check or Create Client
+    let clientId;
+    const existingClients = await db.query(
+      'SELECT * FROM clients WHERE name = ? AND phone = ?',
+      [clientName, clientPhone]
+    );
+
+    if (existingClients.length > 0) {
+      clientId = existingClients[0].id;
+    } else {
+      const clientResult = await db.query(
+        'INSERT INTO clients (name, phone, email, company_name) VALUES (?, ?, ?, ?)',
+        [clientName, clientPhone, clientEmail || '', '']
+      );
+      clientId = clientResult.insertId;
+    }
+
+    // 2. Create Event (Status defaults to 'New')
+    const eventName = `${clientName}'s ${eventType}`;
+    const eventResult = await db.query(
+      'INSERT INTO events (name, client_id, event_type, event_date, venue, budget, guest_count, notes, status, tasks, workflow_stage, workflow_mode, event_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        eventName,
+        clientId,
+        eventType,
+        formatDateString(eventDate),
+        venue,
+        parseFloat(budget),
+        parseInt(guestCount) || 0,
+        notes || '',
+        'New',
+        JSON.stringify([]),
+        1,
+        'Automatic',
+        '10:00 AM - 04:00 PM'
+      ]
+    );
+    const newEventId = eventResult.insertId;
+
+    // 3. Create initial client payment tracker
+    await db.query(
+      'INSERT INTO payments (event_id, type, vendor_id, total_amount, advance, balance, amount, due_date, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [
+        newEventId,
+        'client',
+        null,
+        parseFloat(budget),
+        0.00,
+        parseFloat(budget),
+        parseFloat(budget),
+        formatDateString(eventDate),
+        'Pending',
+        'Initial event budget payment'
+      ]
+    );
+
+    // 4. Trigger notifications
+    await db.query(
+      'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+      [
+        'New Event Booking',
+        `A new booking "${eventName}" has been submitted for ${eventDate} at ${venue}.`,
+        'Upcoming Event'
+      ]
+    );
+
+    try {
+      if (AutomationService && typeof AutomationService.generateEventSummary === 'function') {
+        await AutomationService.generateEventSummary(newEventId);
+      }
+      if (AutomationService && typeof AutomationService.syncAutomatedNotifications === 'function') {
+        await AutomationService.syncAutomatedNotifications();
+      }
+    } catch (e) {
+      console.warn('AutomationService warnings ignored:', e.message);
+    }
+
+    // 5. Activity log
+    await db.query(
+      'INSERT INTO activity_logs (user_id, user_name, action, details) VALUES (?, ?, ?, ?)',
+      [null, 'System (Client)', 'CREATE_EVENT', `Submitted new booking "${eventName}" (ID: ${newEventId}) for client "${clientName}"`]
+    );
+
+    return res.status(201).json({
+      message: 'Booking submitted successfully',
+      eventId: newEventId
+    });
+  } catch (err) {
+    console.error('Create public booking error:', err);
+    return res.status(500).json({ message: 'Error submitting booking' });
   }
 };

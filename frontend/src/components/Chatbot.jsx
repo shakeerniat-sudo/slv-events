@@ -437,7 +437,7 @@ const generateBotResponse = async (userMessage, queryClient, navigate) => {
   // --- NAVIGATION FALLBACK HANDLERS ---
   if (msg.includes('go to') || msg.includes('navigate to') || msg.includes('show me') || msg.includes('open')) {
     if (msg.includes('dashboard') || msg.includes('kpi') || msg.includes('home')) {
-      navigate('/');
+      navigate('/dashboard');
       return "Sure! Navigating you to the Dashboard.";
     }
     if (msg.includes('event')) {

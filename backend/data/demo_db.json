@@ -6,7 +6,7 @@
       "email": "admin@slvevents.com",
       "password_hash": "$2a$10$gLt7glnqhIadRNBeuqbQJO2cO.PCeLuSoThrv6KqkNdp1EEQ9Zkae",
       "role": "Admin",
-      "created_at": "2026-06-13T16:50:37.481Z"
+      "created_at": "2026-06-26T12:53:28.149Z"
     },
     {
       "id": 2,
@@ -14,7 +14,7 @@
       "email": "coordinator@slvevents.com",
       "password_hash": "$2a$10$gLt7glnqhIadRNBeuqbQJO2cO.PCeLuSoThrv6KqkNdp1EEQ9Zkae",
       "role": "Vendor Coordinator",
-      "created_at": "2026-06-13T16:50:37.487Z"
+      "created_at": "2026-06-26T12:53:28.205Z"
     },
     {
       "id": 3,
@@ -22,7 +22,7 @@
       "email": "operations@slvevents.com",
       "password_hash": "$2a$10$gLt7glnqhIadRNBeuqbQJO2cO.PCeLuSoThrv6KqkNdp1EEQ9Zkae",
       "role": "Operations Lead",
-      "created_at": "2026-06-13T16:50:37.487Z"
+      "created_at": "2026-06-26T12:53:28.205Z"
     },
     {
       "id": 4,
@@ -30,7 +30,7 @@
       "email": "finance@slvevents.com",
       "password_hash": "$2a$10$gLt7glnqhIadRNBeuqbQJO2cO.PCeLuSoThrv6KqkNdp1EEQ9Zkae",
       "role": "Finance Team",
-      "created_at": "2026-06-13T16:50:37.487Z"
+      "created_at": "2026-06-26T12:53:28.205Z"
     }
   ],
   "clients": [
@@ -40,7 +40,7 @@
       "phone": "+91 98765 43210",
       "email": "john@example.com",
       "company_name": "TechCorp",
-      "created_at": "2026-06-13T16:50:37.487Z"
+      "created_at": "2026-06-26T12:53:28.205Z"
     },
     {
       "id": 2,
@@ -48,15 +48,7 @@
       "phone": "+91 98765 12345",
       "email": "sarah@example.com",
       "company_name": "Jenkins & Co",
-      "created_at": "2026-06-13T16:50:37.487Z"
-    },
-    {
-      "id": 3,
-      "name": "Rahul sharma",
-      "phone": "9876543210",
-      "email": "rahul@gmail.com",
-      "company_name": "",
-      "created_at": "2026-06-17T16:17:41.970Z"
+      "created_at": "2026-06-26T12:53:28.205Z"
     }
   ],
   "events": [
@@ -70,13 +62,16 @@
       "budget": 150000,
       "guest_count": 300,
       "theme_preference": "Gold & Black Premium",
-      "status": "Completed",
-      "notes": "Needs top decorators and anchors.\nCancellation Reason: idk\nCancellation Reason: ...",
-      "created_at": "2026-06-13T16:50:37.487Z",
-      "workflow_stage": 5,
-      "workflow_mode": "Manual",
+      "status": "Assigned",
+      "notes": "Needs top decorators and anchors.",
+      "workflow_stage": 3,
+      "workflow_mode": "Automatic",
       "event_time": "10:00 AM - 04:00 PM",
-      "tasks": "[{\"id\":1,\"title\":\"Confirm decorator contract\",\"status\":\"Completed\"},{\"id\":2,\"title\":\"Verify audio-visual setup\",\"status\":\"Pending\"}]"
+      "tasks": "[{\"id\":1,\"title\":\"Confirm decorator contract\",\"status\":\"Completed\"},{\"id\":2,\"title\":\"Verify audio-visual setup\",\"status\":\"Pending\"}]",
+      "coordinator_id": 2,
+      "operations_lead_id": 3,
+      "finance_team_id": 4,
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 2,
@@ -88,10 +83,16 @@
       "budget": 350000,
       "guest_count": 500,
       "theme_preference": "Floral Fantasy",
-      "status": "Ready",
+      "status": "Pending",
       "notes": "Provide custom catering preferences.",
-      "created_at": "2026-06-13T16:50:37.487Z",
-      "tasks": "[{\"id\":1,\"title\":\"Finalize catering menu\",\"status\":\"Pending\"},{\"id\":2,\"title\":\"Confirm photographer booking\",\"status\":\"Completed\"}]"
+      "workflow_stage": 1,
+      "workflow_mode": "Automatic",
+      "event_time": "04:00 PM - 11:00 PM",
+      "tasks": "[{\"id\":1,\"title\":\"Finalize catering menu\",\"status\":\"Pending\"},{\"id\":2,\"title\":\"Confirm photographer booking\",\"status\":\"Completed\"}]",
+      "coordinator_id": null,
+      "operations_lead_id": null,
+      "finance_team_id": null,
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 3,
@@ -105,8 +106,14 @@
       "theme_preference": "Futuristic Tech",
       "status": "Pending",
       "notes": "Requires high quality sound and technicians.",
-      "created_at": "2026-06-13T16:50:37.487Z",
-      "tasks": "[{\"id\":1,\"title\":\"Arrange sound equipment delivery\",\"status\":\"Pending\"}]"
+      "workflow_stage": 1,
+      "workflow_mode": "Automatic",
+      "event_time": "09:00 AM - 05:00 PM",
+      "tasks": "[{\"id\":1,\"title\":\"Arrange sound equipment delivery\",\"status\":\"Pending\"}]",
+      "coordinator_id": null,
+      "operations_lead_id": null,
+      "finance_team_id": null,
+      "created_at": "2026-06-26T12:53:28.218Z"
     }
   ],
   "vendors": [
@@ -121,7 +128,7 @@
       "price_range": "High",
       "rating": 4.8,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 2,
@@ -134,7 +141,7 @@
       "price_range": "Medium",
       "rating": 4.5,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 3,
@@ -147,7 +154,7 @@
       "price_range": "High",
       "rating": 4.9,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 4,
@@ -160,7 +167,7 @@
       "price_range": "Medium",
       "rating": 4.7,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 5,
@@ -173,111 +180,7 @@
       "price_range": "High",
       "rating": 4.6,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
-    },
-    {
-      "id": 6,
-      "name": "Elegant Events",
-      "category": "Decorator",
-      "contact_person": "Priya Verma",
-      "phone": "+91 96666 77777",
-      "email": "elegant@events.com",
-      "service_type": "Standard Decor",
-      "price_range": "Medium",
-      "rating": 4.2,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T10:16:21.586Z"
-    },
-    {
-      "id": 7,
-      "name": "Mughal Feasts",
-      "category": "Caterer",
-      "contact_person": "Tariq Ali",
-      "phone": "+91 97777 88888",
-      "email": "mughal@feasts.com",
-      "service_type": "Mughlai & North Indian",
-      "price_range": "High",
-      "rating": 4.8,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T10:16:21.604Z"
-    },
-    {
-      "id": 8,
-      "name": "Lens Magic",
-      "category": "Photographer",
-      "contact_person": "Rahul Bose",
-      "phone": "+91 98888 99999",
-      "email": "lens@magic.com",
-      "service_type": "Traditional & Drone",
-      "price_range": "Medium",
-      "rating": 4.5,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T10:16:21.604Z"
-    },
-    {
-      "id": 9,
-      "name": "DJ Rocky",
-      "category": "Sound Team",
-      "contact_person": "Rocky Bhai",
-      "phone": "+91 99999 00000",
-      "email": "rocky@dj.com",
-      "service_type": "Club & EDM Setup",
-      "price_range": "Medium",
-      "rating": 4.4,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T10:16:21.604Z"
-    },
-    {
-      "id": 6,
-      "name": "Elegant Events",
-      "category": "Decorator",
-      "contact_person": "Priya Verma",
-      "phone": "+91 96666 77777",
-      "email": "elegant@events.com",
-      "service_type": "Standard Decor",
-      "price_range": "Medium",
-      "rating": 4.2,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T15:49:36.280Z"
-    },
-    {
-      "id": 7,
-      "name": "Mughal Feasts",
-      "category": "Caterer",
-      "contact_person": "Tariq Ali",
-      "phone": "+91 97777 88888",
-      "email": "mughal@feasts.com",
-      "service_type": "Mughlai & North Indian",
-      "price_range": "High",
-      "rating": 4.8,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T15:49:36.296Z"
-    },
-    {
-      "id": 8,
-      "name": "Lens Magic",
-      "category": "Photographer",
-      "contact_person": "Rahul Bose",
-      "phone": "+91 98888 99999",
-      "email": "lens@magic.com",
-      "service_type": "Traditional & Drone",
-      "price_range": "Medium",
-      "rating": 4.5,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T15:49:36.296Z"
-    },
-    {
-      "id": 9,
-      "name": "DJ Rocky",
-      "category": "Sound Team",
-      "contact_person": "Rocky Bhai",
-      "phone": "+91 99999 00000",
-      "email": "rocky@dj.com",
-      "service_type": "Club & EDM Setup",
-      "price_range": "Medium",
-      "rating": 4.4,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T15:49:36.297Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     }
   ],
   "staff": [
@@ -288,7 +191,7 @@
       "phone": "+91 81111 11111",
       "experience_years": 5,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 2,
@@ -297,7 +200,7 @@
       "phone": "+91 82222 22222",
       "experience_years": 3,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 3,
@@ -306,7 +209,7 @@
       "phone": "+91 83333 33333",
       "experience_years": 4,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 4,
@@ -315,7 +218,7 @@
       "phone": "+91 84444 44444",
       "experience_years": 1,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 5,
@@ -324,70 +227,7 @@
       "phone": "+91 85555 55555",
       "experience_years": 2,
       "availability_status": "Available",
-      "created_at": "2026-06-13T16:50:37.488Z"
-    },
-    {
-      "id": 6,
-      "name": "sunil",
-      "role": "Supervisor",
-      "phone": "234567890p[]",
-      "experience_years": 1,
-      "availability_status": "Available",
-      "created_at": "2026-06-14T04:57:17.340Z"
-    },
-    {
-      "id": 7,
-      "name": "Neha Gupta",
-      "role": "Coordinator",
-      "phone": "+91 86666 66666",
-      "experience_years": 2,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T10:16:21.604Z"
-    },
-    {
-      "id": 8,
-      "name": "Arjun Das",
-      "role": "Technician",
-      "phone": "+91 87777 77777",
-      "experience_years": 6,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T10:16:21.604Z"
-    },
-    {
-      "id": 9,
-      "name": "Suman Roy",
-      "role": "Helper",
-      "phone": "+91 88888 88888",
-      "experience_years": 1,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T10:16:21.604Z"
-    },
-    {
-      "id": 7,
-      "name": "Neha Gupta",
-      "role": "Coordinator",
-      "phone": "+91 86666 66666",
-      "experience_years": 2,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T15:49:36.297Z"
-    },
-    {
-      "id": 8,
-      "name": "Arjun Das",
-      "role": "Technician",
-      "phone": "+91 87777 77777",
-      "experience_years": 6,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T15:49:36.297Z"
-    },
-    {
-      "id": 9,
-      "name": "Suman Roy",
-      "role": "Helper",
-      "phone": "+91 88888 88888",
-      "experience_years": 1,
-      "availability_status": "Available",
-      "created_at": "2026-06-17T15:49:36.297Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     }
   ],
   "assignments": [
@@ -397,7 +237,7 @@
       "resource_type": "vendor",
       "resource_id": 1,
       "status": "Confirmed",
-      "assigned_at": "2026-06-13T16:50:37.488Z"
+      "assigned_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 2,
@@ -405,7 +245,7 @@
       "resource_type": "vendor",
       "resource_id": 3,
       "status": "Confirmed",
-      "assigned_at": "2026-06-13T16:50:37.488Z"
+      "assigned_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 3,
@@ -413,7 +253,7 @@
       "resource_type": "staff",
       "resource_id": 1,
       "status": "Confirmed",
-      "assigned_at": "2026-06-13T16:50:37.488Z"
+      "assigned_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 4,
@@ -421,35 +261,27 @@
       "resource_type": "staff",
       "resource_id": 4,
       "status": "Pending",
-      "assigned_at": "2026-06-13T16:50:37.488Z"
-    },
-    {
-      "id": 5,
-      "event_id": 1,
-      "resource_type": "vendor",
-      "resource_id": 4,
-      "status": "Confirmed",
-      "assigned_at": "2026-06-24T18:47:39.388Z"
-    },
-    {
-      "id": 6,
-      "event_id": 1,
-      "resource_type": "vendor",
-      "resource_id": 5,
-      "status": "Confirmed",
-      "assigned_at": "2026-06-24T18:47:55.892Z"
+      "assigned_at": "2026-06-26T12:53:28.218Z"
     }
   ],
   "vendor_availability": [],
   "staff_availability": [],
   "inventory": [
     {
+      "id": 1,
+      "item_name": "Chairs (Banquet Gold)",
+      "quantity": 1000,
+      "available_quantity": 700,
+      "status": "In Stock",
+      "created_at": "2026-06-26T12:53:28.218Z"
+    },
+    {
       "id": 2,
       "item_name": "Round Tables (Veneer)",
       "quantity": 100,
       "available_quantity": 70,
       "status": "In Stock",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 3,
@@ -457,7 +289,7 @@
       "quantity": 200,
       "available_quantity": 150,
       "status": "In Stock",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 4,
@@ -465,7 +297,7 @@
       "quantity": 12,
       "available_quantity": 12,
       "status": "In Stock",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 5,
@@ -473,7 +305,7 @@
       "quantity": 5,
       "available_quantity": 4,
       "status": "In Stock",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     }
   ],
   "payments": [
@@ -488,9 +320,9 @@
       "amount": 50000,
       "due_date": "2026-07-01",
       "status": "Paid",
-      "paid_at": "2026-06-13T16:50:37.488Z",
+      "paid_at": "2026-06-26T12:53:28.218Z",
       "notes": "Advance payment received",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 2,
@@ -502,10 +334,10 @@
       "balance": 0,
       "amount": 25000,
       "due_date": "2026-07-15",
-      "status": "Paid",
-      "paid_at": "2026-06-24T17:21:13.204Z",
+      "status": "Pending",
+      "paid_at": null,
       "notes": "Advance for decoration stage design",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 3,
@@ -513,14 +345,14 @@
       "type": "client",
       "vendor_id": null,
       "total_amount": 350000,
-      "advance": 350000,
-      "balance": 0,
+      "advance": 0,
+      "balance": 350000,
       "amount": 100000,
       "due_date": "2026-06-30",
-      "status": "Paid",
-      "paid_at": "2026-06-26T12:13:56.061Z",
+      "status": "Pending",
+      "paid_at": null,
       "notes": "First installment due",
-      "created_at": "2026-06-13T16:50:37.488Z"
+      "created_at": "2026-06-26T12:53:28.218Z"
     }
   ],
   "quotations": [],
@@ -531,8 +363,7 @@
       "message": "Corporate event \"Product Launch 2026\" has been created.",
       "type": "Upcoming Event",
       "is_read": 0,
-      "created_at": "2026-06-13T16:50:37.488Z",
-      "is_deleted": 1
+      "created_at": "2026-06-26T12:53:28.218Z"
     },
     {
       "id": 2,
@@ -540,555 +371,18 @@
       "message": "Royal Decorators has a pending assignment for TechCorp Annual Gala.",
       "type": "Assignment Confirmation",
       "is_read": 0,
-      "created_at": "2026-06-13T16:50:37.488Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 5,
-      "title": "Insufficient Helpers Alert",
-      "message": "⚠ Only 0 helpers available. Required: 2.",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.082Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 14,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Decorator allocated to event \"Product Launch 2026\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.211Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 15,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Caterer allocated to event \"Product Launch 2026\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.229Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 16,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Photographer allocated to event \"Product Launch 2026\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.235Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 17,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Anchor allocated to event \"Product Launch 2026\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.246Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 18,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Product Launch 2026\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:08:59.252Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 21,
-      "title": "New Event Created",
-      "message": "Event \"Wedding Reception\" scheduled for 2026-06-18 at Royal palace has been registered.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:17:42.002Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 22,
-      "title": "Event Summary: Wedding Reception",
-      "message": "Client: Rahul sharma\nEvent Type: Wedding\nDate: 18/06/2026\nVenue: Royal palace\nBudget: $50,000.00\nGuest Count: 200\nAssigned Vendors: None\nAssigned Staff: None\nCurrent Status: Pending",
-      "type": "Event Summary",
-      "is_read": 0,
-      "created_at": "2026-06-17T16:17:42.009Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 23,
-      "title": "Event Status Update",
-      "message": "Event \"Sarah Wedding Reception\" status changed to Confirmed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T17:34:59.192Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 24,
-      "title": "Event Status Update",
-      "message": "Event \"Sarah Wedding Reception\" status changed to Completed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T17:35:01.389Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 25,
-      "title": "Event Status Update",
-      "message": "Event \"Sarah Wedding Reception\" status changed to Pending.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T17:35:04.873Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 26,
-      "title": "Insufficient Helpers Alert",
-      "message": "⚠ Only 0 helpers available. Required: 5.",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-24T17:35:04.921Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 27,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Decorator allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-24T17:35:04.923Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 28,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Caterer allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-24T17:35:04.925Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 29,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Photographer allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-24T17:35:04.926Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 30,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Anchor allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-24T17:35:04.928Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 31,
-      "title": "Missing Assignment Alert",
-      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Sarah Wedding Reception\".",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-24T17:35:04.930Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 32,
-      "title": "Event Status Update",
-      "message": "Event \"TechCorp Annual Gala 2026\" status changed to Ready.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:00:49.811Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 33,
-      "title": "Event Status Update",
-      "message": "Event \"TechCorp Annual Gala 2026\" status changed to Completed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:00:58.913Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 34,
-      "title": "Event Status Update",
-      "message": "Event \"Sarah Wedding Reception\" status changed to Ready.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:10:06.827Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 35,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to In Progress.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:24:34.129Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 40,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Ready.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:24:41.473Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 41,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Completed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:24:44.156Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 42,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Ready.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:24:48.172Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 47,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to In Progress.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:25:24.411Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 48,
-      "title": "Event Status Update",
-      "message": "Event \"TechCorp Annual Gala 2026\" status changed to Completed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:39:21.788Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 49,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Confirmed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:39:38.060Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 54,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to In Progress.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:39:43.066Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 55,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Ready.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:39:47.315Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 56,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Completed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:39:47.474Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 57,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to In Progress.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:40:36.144Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 62,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Confirmed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:40:38.343Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 63,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Pending.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:40:40.578Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 64,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Confirmed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:40:42.230Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 65,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to In Progress.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:40:44.338Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 66,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Ready.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:40:49.761Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 67,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Completed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:40:51.980Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 68,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Pending.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:40:54.587Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 73,
-      "title": "Event Status Update",
-      "message": "Event \"TechCorp Annual Gala 2026\" status changed to Cancelled.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:41:09.676Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 74,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Completed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:46:32.758Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 75,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Ready.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:46:35.429Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 80,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to In Progress.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:46:37.611Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 81,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Confirmed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:46:41.277Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 82,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Cancelled.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:46:47.147Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 83,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Completed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:46:52.937Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 84,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to In Progress.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:46:55.468Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 89,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Pending.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:46:58.232Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 90,
-      "title": "Vendors Assigned",
-      "message": "✅ Vendors assigned successfully.",
-      "type": "Assignment Confirmation",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:47:18.850Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 91,
-      "title": "Staffing Warning",
-      "message": "⚠ Only 0 helpers available.",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:47:18.911Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 92,
-      "title": "Event Summary: TechCorp Annual Gala 2026",
-      "message": "Client: John Doe\nEvent Type: Corporate\nDate: 15/07/2026\nVenue: Grand Palace Hall, Bangalore\nBudget: $1,50,000.00\nGuest Count: 300\nAssigned Vendors: undefined (undefined), undefined (undefined)\nAssigned Staff: undefined (undefined), undefined (undefined)\nCurrent Status: Pending",
-      "type": "Event Summary",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:47:19.008Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 93,
-      "title": "Vendors Assigned",
-      "message": "✅ Vendors assigned successfully.",
-      "type": "Assignment Confirmation",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:47:39.402Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 94,
-      "title": "Staffing Warning",
-      "message": "⚠ Only 0 helpers available.",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:47:39.418Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 95,
-      "title": "Event Summary: TechCorp Annual Gala 2026",
-      "message": "Client: John Doe\nEvent Type: Corporate\nDate: 15/07/2026\nVenue: Grand Palace Hall, Bangalore\nBudget: $1,50,000.00\nGuest Count: 300\nAssigned Vendors: undefined (undefined), undefined (undefined), undefined (undefined)\nAssigned Staff: undefined (undefined), undefined (undefined)\nCurrent Status: Pending",
-      "type": "Event Summary",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:47:39.441Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 96,
-      "title": "Vendors Assigned",
-      "message": "✅ Vendors assigned successfully.",
-      "type": "Assignment Confirmation",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:47:55.903Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 97,
-      "title": "Staffing Warning",
-      "message": "⚠ Only 0 helpers available.",
-      "type": "Conflict Alert",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:47:55.918Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 98,
-      "title": "Event Summary: TechCorp Annual Gala 2026",
-      "message": "Client: John Doe\nEvent Type: Corporate\nDate: 15/07/2026\nVenue: Grand Palace Hall, Bangalore\nBudget: $1,50,000.00\nGuest Count: 300\nAssigned Vendors: undefined (undefined), undefined (undefined), undefined (undefined), undefined (undefined)\nAssigned Staff: undefined (undefined), undefined (undefined)\nCurrent Status: Pending",
-      "type": "Event Summary",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:47:55.950Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 99,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to In Progress.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:48:01.399Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 100,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Ready.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:48:03.493Z",
-      "is_deleted": 1
-    },
-    {
-      "id": 101,
-      "title": "Event Status Update",
-      "message": "Event \"undefined\" status changed to Completed.",
-      "type": "Upcoming Event",
-      "is_read": 0,
-      "created_at": "2026-06-24T18:48:05.569Z",
-      "is_deleted": 1
+      "created_at": "2026-06-26T12:53:28.218Z"
     }
   ],
-  "activity_logs": [],
-  "event_assignments": [
+  "activity_logs": [
     {
-      "assignment_id": 1,
-      "event_id": 1,
-      "decorator_id": null,
-      "caterer_id": null,
-      "photographer_id": 3,
-      "anchor_id": 4,
-      "sound_team_id": 5,
-      "staff_ids": "",
-      "status": "Assigned",
-      "assigned_by": "Admin User",
-      "assigned_at": "2026-06-24T18:47:55.860Z"
+      "id": 1,
+      "user_id": 1,
+      "user_name": "Admin User",
+      "action": "CREATE_EVENT",
+      "details": "Created event: TechCorp Annual Gala 2026",
+      "timestamp": "2026-06-26T12:53:28.218Z"
     }
-  ]
+  ],
+  "event_assignments": []
 }

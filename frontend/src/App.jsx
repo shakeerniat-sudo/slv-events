@@ -21,6 +21,7 @@ import Reports from './pages/Reports';
 import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+import LandingPage from './pages/LandingPage';
 
 // Protected Route Wrapper (Ensures authentication only)
 const ProtectedRoute = ({ children }) => {
@@ -46,7 +47,7 @@ const RoleProtectedRoute = ({ children, allowedRoles }) => {
   const { hasRole } = useAuth();
 
   if (allowedRoles && !hasRole(allowedRoles)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return children;
@@ -78,16 +79,19 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
+          {/* Public Landing & Booking Route */}
+          <Route path="/" element={<LandingPage />} />
+
           {/* Public Login Route */}
           <Route path="/login" element={<Login />} />
 
           {/* Protected Main Routes sharing layout wrapper */}
           <Route element={<ProtectedRoute><LayoutWrapper /></ProtectedRoute>}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route
               path="/events"
               element={
-                <RoleProtectedRoute allowedRoles={['Admin', 'Operations Lead', 'Vendor Coordinator']}>
+                <RoleProtectedRoute allowedRoles={['Admin', 'Operations Lead', 'Vendor Coordinator', 'Finance Team']}>
                   <Events />
                 </RoleProtectedRoute>
               }
@@ -95,7 +99,7 @@ function App() {
             <Route
               path="/events/:id"
               element={
-                <RoleProtectedRoute allowedRoles={['Admin', 'Operations Lead', 'Vendor Coordinator']}>
+                <RoleProtectedRoute allowedRoles={['Admin', 'Operations Lead', 'Vendor Coordinator', 'Finance Team']}>
                   <EventDetail />
                 </RoleProtectedRoute>
               }
