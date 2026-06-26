@@ -3,12 +3,16 @@ const AutomationService = require('../services/automation.service');
 
 const formatDateString = (dateInput) => {
   if (!dateInput) return null;
-  const match = dateInput.toString().match(/^(\d{4}-\d{2}-\d{2})/);
-  if (match) return match[1];
+  const str = dateInput.toString();
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
   try {
     const d = new Date(dateInput);
     if (!isNaN(d.getTime())) {
-      return d.toISOString().split('T')[0];
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
     }
   } catch (e) {}
   return dateInput;
@@ -40,20 +44,22 @@ exports.listEvents = async (req, res) => {
     // Filter by status
     if (status && status !== 'all') {
       filteredEvents = filteredEvents.filter(e => e.status && e.status.toLowerCase() === status.toLowerCase());
+    } else if (status === 'all') {
+      filteredEvents = filteredEvents.filter(e => !e.status || (e.status.toLowerCase() !== 'new' && e.status.toLowerCase() !== 'rejected'));
     }
 
     // Sort
     if (sort) {
       if (sort === 'date_asc') {
-        filteredEvents.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+        filteredEvents.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
       } else if (sort === 'date_desc') {
-        filteredEvents.sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
+        filteredEvents.sort((a, b) => new Date(b.eventDate) - new Date(a.eventDate));
       } else if (sort === 'budget_desc') {
         filteredEvents.sort((a, b) => b.budget - a.budget);
       }
     } else {
       // Default sort by date ascending (upcoming first)
-      filteredEvents.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+      filteredEvents.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
     }
 
     // Pagination (optional)
@@ -166,7 +172,7 @@ exports.createEvent = async (req, res) => {
 
     // 2. Create Event
     const eventResult = await db.query(
-      'INSERT INTO events (name, client_id, event_type, event_date, venue, budget, guest_count, theme_preference, notes, status, tasks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO events (name, client_id, event_type, eventDate, venue, budget, guest_count, theme_preference, notes, status, tasks) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         name,
         clientId,
@@ -280,11 +286,11 @@ exports.updateEvent = async (req, res) => {
     const finId = parseAssignmentId(finance_team_id);
 
     await db.query(
-      'UPDATE events SET name = ?, event_type = ?, event_date = ?, venue = ?, budget = ?, guest_count = ?, theme_preference = ?, notes = ?, status = ?, workflow_stage = ?, workflow_mode = ?, event_time = ?, tasks = ?, inventory = ?, ops_logs = ?, photos = ?, coordinator_id = ?, operations_lead_id = ?, finance_team_id = ? WHERE id = ?',
+      'UPDATE events SET name = ?, event_type = ?, eventDate = ?, venue = ?, budget = ?, guest_count = ?, theme_preference = ?, notes = ?, status = ?, workflow_stage = ?, workflow_mode = ?, event_time = ?, tasks = ?, inventory = ?, ops_logs = ?, photos = ?, coordinator_id = ?, operations_lead_id = ?, finance_team_id = ? WHERE id = ?',
       [
         name || currentEvent.name,
         eventType || currentEvent.event_type,
-        formatDateString(eventDate || currentEvent.event_date),
+        formatDateString(eventDate || currentEvent.eventDate),
         venue || currentEvent.venue,
         parseFloat(budget !== undefined ? budget : currentEvent.budget),
         parseInt(guestCount !== undefined ? guestCount : currentEvent.guest_count),
@@ -305,16 +311,91 @@ exports.updateEvent = async (req, res) => {
       ]
     );
 
-    // If status changed to Completed or Cancelled, notify
-    if (status && status !== events[0].status) {
-      await db.query(
-        'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
-        [
-          'Event Status Update',
-          `Event "${name || currentEvent.name}" status changed to ${status}.`,
-          'Upcoming Event'
-        ]
-      );
+    // If status changed, check transition and notify
+    if (status && status !== currentEvent.status) {
+      const prevStatus = currentEvent.status;
+      
+      // Check if transitioning from "New" to confirm/reject
+      if (prevStatus && prevStatus.toLowerCase() === 'new') {
+        // Fetch client details
+        const clients = await db.query('SELECT * FROM clients WHERE id = ?', [currentEvent.client_id]);
+        const client = clients[0] || {};
+        const clientName = client.name || 'Client';
+        const clientPhone = client.phone || 'N/A';
+        const clientEmail = client.email || 'N/A';
+        const eventName = name || currentEvent.name;
+
+        let formattedDate = 'N/A';
+        if (currentEvent.eventDate) {
+          try {
+            formattedDate = new Date(currentEvent.eventDate).toLocaleDateString('en-GB');
+          } catch (dErr) {
+            console.error('Date format error:', dErr);
+          }
+        }
+
+        if (status.toLowerCase() === 'cancelled' || status.toLowerCase() === 'rejected') {
+          // Rejection Outbox Messages
+          const waMsg = `Hello ${clientName}\n\nYour booking request was not approved.\n\nPlease contact SLV Events for more information.`;
+          const mailMsg = `Hello ${clientName},\n\nUnfortunately your booking request has not been approved.\n\nPlease contact us for more information.\n\nThank you,\nSLV Events`;
+
+          await db.query(
+            'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+            [`[WhatsApp Outbox] Booking Update`, waMsg, 'Upcoming Event']
+          );
+          await db.query(
+            'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+            [`[Email Outbox] SLV Events Booking Update`, mailMsg, 'Upcoming Event']
+          );
+          await db.query(
+            'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+            [`Booking Rejected`, `❌ Booking request "${eventName}" has been rejected.`, 'Upcoming Event']
+          );
+          
+          // Activity Log for Rejection
+          const userName = req.user ? req.user.name : 'System';
+          const userId = req.user ? req.user.id : null;
+          await db.query(
+            'INSERT INTO activity_logs (user_id, user_name, action, details) VALUES (?, ?, ?, ?)',
+            [userId, userName, 'REJECT_BOOKING', `Rejected booking "${eventName}" (ID: ${eventId}) for client "${clientName}"`]
+          );
+        } else {
+          // Confirmation Outbox Messages
+          const waMsg = `Hello ${clientName}\n\nYour event booking has been confirmed.\n\nBooking ID: SLV-EV-${eventId}\nDate: ${formattedDate}\nVenue: ${currentEvent.venue}\n\nThank you for choosing SLV Events.`;
+          const mailMsg = `Hello ${clientName},\n\nYour booking has been confirmed.\n\nBooking ID: SLV-EV-${eventId}\nEvent: ${eventName}\nDate: ${formattedDate}\nVenue: ${currentEvent.venue}\n\nOur team will contact you shortly.\n\nThank you,\nSLV Events`;
+
+          await db.query(
+            'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+            [`[WhatsApp Outbox] Booking Confirmed`, waMsg, 'Upcoming Event']
+          );
+          await db.query(
+            'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+            [`[Email Outbox] SLV Events Booking Confirmed`, mailMsg, 'Upcoming Event']
+          );
+          await db.query(
+            'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+            [`Booking Confirmed`, `🎉 Booking "${eventName}" has been accepted/confirmed. Client notified.`, 'Upcoming Event']
+          );
+
+          // Activity Log for Confirmation
+          const userName = req.user ? req.user.name : 'System';
+          const userId = req.user ? req.user.id : null;
+          await db.query(
+            'INSERT INTO activity_logs (user_id, user_name, action, details) VALUES (?, ?, ?, ?)',
+            [userId, userName, 'CONFIRM_BOOKING', `Accepted and confirmed booking "${eventName}" (ID: ${eventId}) for client "${clientName}"`]
+          );
+        }
+      } else {
+        // Standard status update
+        await db.query(
+          'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+          [
+            'Event Status Update',
+            `Event "${name || currentEvent.name}" status changed to ${status}.`,
+            'Upcoming Event'
+          ]
+        );
+      }
     }
 
     // Sync automated warnings on event status/detail modifications
@@ -360,6 +441,25 @@ exports.deleteEvent = async (req, res) => {
   }
 };
 
+// Clear All Events
+exports.clearAllEvents = async (req, res) => {
+  try {
+    await db.query('DELETE FROM events');
+
+    const userName = req.user ? req.user.name : 'System';
+    const userId = req.user ? req.user.id : null;
+    await db.query(
+      'INSERT INTO activity_logs (user_id, user_name, action, details) VALUES (?, ?, ?, ?)',
+      [userId, userName, 'CLEAR_ALL_EVENTS', 'Cleared all event bookings from database history.']
+    );
+
+    return res.status(200).json({ message: 'All booking history cleared successfully' });
+  } catch (err) {
+    console.error('Clear all events error:', err);
+    return res.status(500).json({ message: 'Error clearing booking history' });
+  }
+};
+
 // Create Public Client Booking
 exports.createPublicBooking = async (req, res) => {
   try {
@@ -399,7 +499,7 @@ exports.createPublicBooking = async (req, res) => {
     // 2. Create Event (Status defaults to 'New')
     const eventName = `${clientName}'s ${eventType}`;
     const eventResult = await db.query(
-      'INSERT INTO events (name, client_id, event_type, event_date, venue, budget, guest_count, notes, status, tasks, workflow_stage, workflow_mode, event_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO events (name, client_id, event_type, eventDate, venue, budget, guest_count, notes, status, tasks, workflow_stage, workflow_mode, event_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         eventName,
         clientId,

@@ -85,7 +85,7 @@ const AssignmentCenter = () => {
   });
 
   // Safe Array conversion to handle unexpected non-array formats defensively
-  const eventsArray = Array.isArray(events) ? events : [];
+  const eventsArray = (Array.isArray(events) ? events : []).filter(e => !e.status || (e.status.toLowerCase() !== 'new' && e.status.toLowerCase() !== 'rejected'));
   const assignmentsArray = Array.isArray(assignments) ? assignments : [];
   const vendorsArray = Array.isArray(vendorsList) ? vendorsList : [];
   const staffArray = Array.isArray(staffList) ? staffList : [];
@@ -186,7 +186,7 @@ const AssignmentCenter = () => {
       });
 
     // Check completeness
-    const requiredVendors = ['Decorator', 'Caterer', 'Photographer', 'Anchor', 'Sound Team'];
+    const requiredVendors = ['Decorator', 'Caterer', 'Photographer', 'Anchor', 'Sound Team', 'Lighting'];
     const requiredStaff = ['Supervisor', 'Coordinator', 'Technician', 'Helper'];
 
     const hasAllVendors = requiredVendors.every(cat => assignedVendors.some(v => v.category === cat));
@@ -679,12 +679,12 @@ const AssignmentCenter = () => {
                           <span>Vendors Checklist</span>
                         </span>
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${hasAllVendors ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-600'}`}>
-                          {event.assignedVendors.length} / 5 sourced
+                          {event.assignedVendors.length} / 6 sourced
                         </span>
                       </h4>
 
                       <div className="grid grid-cols-1 gap-2">
-                        {['Decorator', 'Caterer', 'Photographer', 'Anchor', 'Sound Team'].map(cat => {
+                        {['Decorator', 'Caterer', 'Photographer', 'Anchor', 'Sound Team', 'Lighting'].map(cat => {
                           const assigned = event.assignedVendors.find(v => v.category === cat);
                           return (
                             <div key={cat} className="flex justify-between items-center p-2.5 bg-slate-50/50 border border-slate-150 rounded-xl text-xs">

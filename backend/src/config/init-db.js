@@ -84,7 +84,7 @@ async function initializeDatabase() {
     if (eventsCount[0].count === 0) {
       console.log('🌱 Seeding default events...');
       await db.query(`
-        INSERT INTO events (id, name, client_id, event_type, event_date, venue, budget, guest_count, theme_preference, status, notes) VALUES 
+        INSERT INTO events (id, name, client_id, event_type, eventDate, venue, budget, guest_count, theme_preference, status, notes) VALUES 
         (1, 'TechCorp Annual Gala 2026', 1, 'Corporate', '2026-07-15', 'Grand Palace Hall, Bangalore', 150000.00, 300, 'Gold & Black Premium', 'Assigned', 'Needs top decorators and anchors.'),
         (2, 'Sarah Wedding Reception', 2, 'Wedding', '2026-07-20', 'Lakeside Pavilion', 350000.00, 500, 'Floral Fantasy', 'Pending', 'Provide custom catering preferences.'),
         (3, 'Product Launch 2026', 1, 'Corporate', '2026-08-05', 'Sheraton Convention Center', 80000.00, 150, 'Futuristic Tech', 'Pending', 'Requires high quality sound and technicians.')

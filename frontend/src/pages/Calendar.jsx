@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const Calendar = () => {
   const navigate = useNavigate();
@@ -18,6 +18,7 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDayActivities, setSelectedDayActivities] = useState([]);
   const [selectedDayStr, setSelectedDayStr] = useState('');
+  const [selectedEventForModal, setSelectedEventForModal] = useState(null);
 
   // Fetch all calendar data in parallel via TanStack Query
   const { data: events = [], isLoading: eventsLoading } = useQuery({
@@ -105,7 +106,14 @@ const Calendar = () => {
     // Filter events
     if (showEvents) {
       events.forEach(e => {
-        const evDateStr = e.event_date ? e.event_date.split('T')[0] : '';
+        let evDateStr = '';
+        if (e.event_date) {
+          try {
+            evDateStr = new Date(e.event_date).toISOString().split('T')[0];
+          } catch (err) {
+            evDateStr = e.event_date.split('T')[0];
+          }
+        }
         if (evDateStr === dateStr) {
           // Check upcoming filter
           if (filterUpcomingOnly && evDateStr < todayStr) return;
@@ -116,11 +124,16 @@ const Calendar = () => {
             if (!isCompleted) return;
           }
 
-          const isCancelled = (e.status || '').toLowerCase() === 'cancelled' || e.workflow_stage === 6;
-          const colorClass = isCancelled 
-            ? 'bg-rose-55 border-rose-200 text-rose-700 dark:bg-red-950/45 dark:border-red-900/30 dark:text-red-400' 
-            : 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-900/30';
-          const prefix = isCancelled ? '❌' : '🎉';
+          const statusLower = (e.status || '').toLowerCase();
+          let colorClass = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-900/30'; // Blue for New
+          let prefix = '✉️';
+          if (statusLower === 'rejected' || statusLower === 'cancelled' || e.workflow_stage === 6) {
+            colorClass = 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/45 dark:border-rose-900/30 dark:text-rose-455'; // Red for Rejected
+            prefix = '❌';
+          } else if (statusLower === 'confirmed' || statusLower === 'assigned' || statusLower === 'in progress' || statusLower === 'ready' || statusLower === 'completed') {
+            colorClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/30'; // Green for Confirmed
+            prefix = '🎉';
+          }
 
           dayItems.push({ 
             type: 'event', 
@@ -136,7 +149,15 @@ const Calendar = () => {
     assignments.forEach(as => {
       // Find event for assignment
       const ev = events.find(e => e.id === as.event_id);
-      const evDateStr = ev && ev.event_date ? ev.event_date.split('T')[0] : '';
+      if (!ev) return;
+      let evDateStr = '';
+      if (ev && ev.event_date) {
+        try {
+          evDateStr = new Date(ev.event_date).toISOString().split('T')[0];
+        } catch (err) {
+          evDateStr = ev.event_date.split('T')[0];
+        }
+      }
       if (ev && evDateStr === dateStr) {
         // Check upcoming filter
         if (filterUpcomingOnly && evDateStr < todayStr) return;
@@ -329,7 +350,16 @@ const Calendar = () => {
 
                   <div className="space-y-1 overflow-y-auto max-h-12 text-[8px] mt-1 pr-0.5">
                     {acts.slice(0, 2).map((a, i) => (
-                      <div key={i} className={`px-1.5 py-0.5 border rounded-md truncate font-semibold ${a.color}`}>
+                      <div
+                        key={i}
+                        onClick={(e) => {
+                          if (a.type === 'event') {
+                            e.stopPropagation();
+                            setSelectedEventForModal(a.detail);
+                          }
+                        }}
+                        className={`px-1.5 py-0.5 border rounded-md truncate font-semibold transition-all hover:scale-105 ${a.color}`}
+                      >
                         {a.label}
                       </div>
                     ))}
@@ -384,7 +414,14 @@ const Calendar = () => {
                   {selectedDayActivities.map((act, idx) => (
                     <div
                       key={idx}
-                      className={`p-3 border rounded-xl text-xs flex flex-col gap-1.5 ${act.color}`}
+                      onClick={() => {
+                        if (act.type === 'event') {
+                          setSelectedEventForModal(act.detail);
+                        }
+                      }}
+                      className={`p-3 border rounded-xl text-xs flex flex-col gap-1.5 ${
+                        act.type === 'event' ? 'cursor-pointer hover:scale-[1.01] transition-transform' : ''
+                      } ${act.color}`}
                     >
                       <span className="font-bold">{act.label}</span>
                       
@@ -403,6 +440,88 @@ const Calendar = () => {
         </div>
 
       </div>
+
+      {/* Event Details Click Popup Modal */}
+      {selectedEventForModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white dark:bg-[#111F35] rounded-3xl border border-slate-200 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-100 dark:border-white/[0.04] flex justify-between items-center bg-slate-50/50 dark:bg-slate-905/30">
+              <div>
+                <span className="text-[9px] font-bold text-sky-500 uppercase tracking-widest">Event Agenda Details</span>
+                <h3 className="font-bold text-sm text-slate-805 dark:text-slate-100 mt-0.5">{selectedEventForModal.name}</h3>
+              </div>
+              <button
+                onClick={() => setSelectedEventForModal(null)}
+                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-205 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 space-y-4 text-xs font-semibold text-slate-655 dark:text-slate-350">
+              <div className="grid grid-cols-2 gap-3.5 bg-slate-50 dark:bg-slate-950/40 p-4 rounded-2xl border border-slate-100 dark:border-white/[0.02]">
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Client Name</span>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedEventForModal.client_name || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Event Type</span>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedEventForModal.event_type}</p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Event Date</span>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                    {selectedEventForModal.event_date ? new Date(selectedEventForModal.event_date).toLocaleDateString('en-GB') : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Location / Venue</span>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5 truncate" title={selectedEventForModal.venue}>{selectedEventForModal.venue}</p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Estimated Budget</span>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">₹{parseFloat(selectedEventForModal.budget).toLocaleString()}</p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Guest Count</span>
+                  <p className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">{selectedEventForModal.guest_count || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Booking Status</span>
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase border mt-0.5 ${
+                    selectedEventForModal.status?.toLowerCase() === 'confirmed' ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/30 dark:text-emerald-400' :
+                    selectedEventForModal.status?.toLowerCase() === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-250 dark:bg-rose-955/30 dark:text-rose-455' :
+                    'bg-blue-50 text-blue-700 border-blue-250 dark:bg-blue-950/30 dark:text-blue-400'
+                  }`}>
+                    {selectedEventForModal.status}
+                  </span>
+                </div>
+              </div>
+
+              {selectedEventForModal.notes && (
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Additional Notes</span>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/40 border border-slate-150 dark:border-white/[0.02] rounded-xl text-slate-655 dark:text-slate-350 leading-relaxed mt-1">
+                    {selectedEventForModal.notes}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 dark:border-white/[0.04] bg-slate-50/50 dark:bg-slate-900/30 flex justify-end">
+              <button
+                onClick={() => setSelectedEventForModal(null)}
+                className="px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                Close Details
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

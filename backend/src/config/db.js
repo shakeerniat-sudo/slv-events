@@ -19,16 +19,17 @@ const defaultSeedData = {
     { id: 2, name: 'Sarah Jenkins', phone: '+91 98765 12345', email: 'sarah@example.com', company_name: 'Jenkins & Co', created_at: new Date().toISOString() }
   ],
   events: [
-    { id: 1, name: 'TechCorp Annual Gala 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-07-15', venue: 'Grand Palace Hall, Bangalore', budget: 150000.00, guest_count: 300, theme_preference: 'Gold & Black Premium', status: 'Assigned', notes: 'Needs top decorators and anchors.', workflow_stage: 3, workflow_mode: 'Automatic', event_time: '10:00 AM - 04:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Confirm decorator contract', status: 'Completed' }, { id: 2, title: 'Verify audio-visual setup', status: 'Pending' }]), coordinator_id: 2, operations_lead_id: 3, finance_team_id: 4, created_at: new Date().toISOString() },
-    { id: 2, name: 'Sarah Wedding Reception', client_id: 2, event_type: 'Wedding', event_date: '2026-07-20', venue: 'Lakeside Pavilion', budget: 350000.00, guest_count: 500, theme_preference: 'Floral Fantasy', status: 'Pending', notes: 'Provide custom catering preferences.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '04:00 PM - 11:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Finalize catering menu', status: 'Pending' }, { id: 2, title: 'Confirm photographer booking', status: 'Completed' }]), coordinator_id: null, operations_lead_id: null, finance_team_id: null, created_at: new Date().toISOString() },
-    { id: 3, name: 'Product Launch 2026', client_id: 1, event_type: 'Corporate', event_date: '2026-08-05', venue: 'Sheraton Convention Center', budget: 80000.00, guest_count: 150, theme_preference: 'Futuristic Tech', status: 'Pending', notes: 'Requires high quality sound and technicians.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '09:00 AM - 05:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Arrange sound equipment delivery', status: 'Pending' }]), coordinator_id: null, operations_lead_id: null, finance_team_id: null, created_at: new Date().toISOString() }
+    { id: 1, name: 'TechCorp Annual Gala 2026', client_id: 1, event_type: 'Corporate', eventDate: '2026-07-15', venue: 'Grand Palace Hall, Bangalore', budget: 150000.00, guest_count: 300, theme_preference: 'Gold & Black Premium', status: 'Assigned', notes: 'Needs top decorators and anchors.', workflow_stage: 3, workflow_mode: 'Automatic', event_time: '10:00 AM - 04:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Confirm decorator contract', status: 'Completed' }, { id: 2, title: 'Verify audio-visual setup', status: 'Pending' }]), coordinator_id: 2, operations_lead_id: 3, finance_team_id: 4, created_at: new Date().toISOString() },
+    { id: 2, name: 'Sarah Wedding Reception', client_id: 2, event_type: 'Wedding', eventDate: '2026-07-20', venue: 'Lakeside Pavilion', budget: 350000.00, guest_count: 500, theme_preference: 'Floral Fantasy', status: 'Pending', notes: 'Provide custom catering preferences.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '04:00 PM - 11:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Finalize catering menu', status: 'Pending' }, { id: 2, title: 'Confirm photographer booking', status: 'Completed' }]), coordinator_id: null, operations_lead_id: null, finance_team_id: null, created_at: new Date().toISOString() },
+    { id: 3, name: 'Product Launch 2026', client_id: 1, event_type: 'Corporate', eventDate: '2026-08-05', venue: 'Sheraton Convention Center', budget: 80000.00, guest_count: 150, theme_preference: 'Futuristic Tech', status: 'Pending', notes: 'Requires high quality sound and technicians.', workflow_stage: 1, workflow_mode: 'Automatic', event_time: '09:00 AM - 05:00 PM', tasks: JSON.stringify([{ id: 1, title: 'Arrange sound equipment delivery', status: 'Pending' }]), coordinator_id: null, operations_lead_id: null, finance_team_id: null, created_at: new Date().toISOString() }
   ],
   vendors: [
     { id: 1, name: 'Royal Decorators', category: 'Decorator', contact_person: 'Ramesh Kumar', phone: '+91 91111 22222', email: 'royal@decors.com', service_type: 'Premium Decor', price_range: 'High', rating: 4.8, availability_status: 'Available', created_at: new Date().toISOString() },
     { id: 2, name: 'Spice Route Catering', category: 'Caterer', contact_person: 'Anil Nair', phone: '+91 92222 33333', email: 'spice@route.com', service_type: 'Multi-cuisine Buffet', price_range: 'Medium', rating: 4.5, availability_status: 'Available', created_at: new Date().toISOString() },
     { id: 3, name: 'Pixel Perfect Photography', category: 'Photographer', contact_person: 'Vikram Sen', phone: '+91 93333 44444', email: 'pixel@perfect.com', service_type: 'Candid & Cinematic', price_range: 'High', rating: 4.9, availability_status: 'Available', created_at: new Date().toISOString() },
     { id: 4, name: 'Anchor Sameer', category: 'Anchor', contact_person: 'Sameer Khan', phone: '+91 94444 55555', email: 'sameer@anchor.com', service_type: 'Emcee & Stand-up', price_range: 'Medium', rating: 4.7, availability_status: 'Available', created_at: new Date().toISOString() },
-    { id: 5, name: 'Boom Sound & Stage', category: 'Sound Team', contact_person: 'DJ Alok', phone: '+91 95555 66666', email: 'boom@sound.com', service_type: 'JBL Line Array System', price_range: 'High', rating: 4.6, availability_status: 'Available', created_at: new Date().toISOString() }
+    { id: 5, name: 'Boom Sound & Stage', category: 'Sound Team', contact_person: 'DJ Alok', phone: '+91 95555 66666', email: 'boom@sound.com', service_type: 'JBL Line Array System', price_range: 'High', rating: 4.6, availability_status: 'Available', created_at: new Date().toISOString() },
+    { id: 6, name: 'Glow Lighting Services', category: 'Lighting', contact_person: 'Rahul Mehta', phone: '+91 96666 77777', email: 'glow@lighting.com', service_type: 'LED Ambience & Truss', price_range: 'Medium', rating: 4.6, availability_status: 'Available', created_at: new Date().toISOString() }
   ],
   staff: [
     { id: 1, name: 'Rohan Sharma', role: 'Supervisor', phone: '+91 81111 11111', experience_years: 5, availability_status: 'Available', created_at: new Date().toISOString() },
@@ -242,7 +243,7 @@ function runJsonQuery(sql, params = []) {
       name: params[0],
       client_id: parseInt(params[1]),
       event_type: params[2],
-      event_date: params[3],
+      eventDate: params[3],
       venue: params[4],
       budget: parseFloat(params[5]),
       guest_count: parseInt(params[6]),
@@ -284,6 +285,15 @@ function runJsonQuery(sql, params = []) {
   }
 
   // 10. DELETE FROM events
+  if (sqlClean === 'delete from events') {
+    const origLength = db.events.length;
+    db.events = [];
+    db.assignments = [];
+    db.payments = [];
+    db.event_assignments = [];
+    writeJsonDb(db);
+    return { affectedRows: origLength };
+  }
   if (sqlClean.startsWith('delete from events where id = ?')) {
     const eventId = parseInt(params[0]);
     const origLength = db.events.length;
@@ -454,7 +464,7 @@ function runJsonQuery(sql, params = []) {
         return {
           ...a,
           event_name: ev.name || '',
-          event_date: ev.event_date || '',
+          eventDate: ev.eventDate || '',
           venue: ev.venue || ''
         };
       });
@@ -471,7 +481,7 @@ function runJsonQuery(sql, params = []) {
         return {
           ...a,
           event_name: ev.name || '',
-          event_date: ev.event_date || '',
+          eventDate: ev.eventDate || '',
           venue: ev.venue || ''
         };
       });
@@ -479,7 +489,7 @@ function runJsonQuery(sql, params = []) {
   }
 
   // 20b3. SELECT assignments JOIN events for resource conflict checks
-  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && sqlClean.includes('a.resource_type = ?') && sqlClean.includes('a.resource_id = ?') && sqlClean.includes('e.event_date = ?')) {
+  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && sqlClean.includes('a.resource_type = ?') && sqlClean.includes('a.resource_id = ?') && (sqlClean.includes('e.eventdate = ?') || sqlClean.includes('e.event_date = ?'))) {
     const resType = params[0];
     const resId = parseInt(params[1]);
     const dateStr = params[2];
@@ -492,11 +502,11 @@ function runJsonQuery(sql, params = []) {
         return {
           ...a,
           event_name: ev.name || '',
-          event_date: ev.event_date || '',
+          eventDate: ev.eventDate || '',
           event_id: ev.id
         };
       })
-      .filter(m => m.event_date === dateStr);
+      .filter(m => m.eventDate === dateStr);
 
     if (excludeEventId) {
       matches = matches.filter(m => m.event_id !== excludeEventId);
@@ -505,24 +515,24 @@ function runJsonQuery(sql, params = []) {
   }
 
   // 20b4. SELECT assignments JOIN events for checkAvailability by date
-  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && sqlClean.includes('where e.event_date = ?') && !sqlClean.includes('and e.id != ?')) {
+  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && (sqlClean.includes('where e.eventdate = ?') || sqlClean.includes('where e.event_date = ?')) && !sqlClean.includes('and e.id != ?')) {
     const dateStr = params[0];
     const list = db.assignments
       .map(a => {
         const ev = db.events.find(e => e.id === a.event_id) || {};
         return {
           ...a,
-          event_date: ev.event_date || '',
+          eventDate: ev.eventDate || '',
           event_id: ev.id,
           event_name: ev.name || ''
         };
       })
-      .filter(m => m.event_date === dateStr);
+      .filter(m => m.eventDate === dateStr);
     return list;
   }
 
   // 20b5. SELECT assignments JOIN events for checkAvailability with exclusions
-  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && sqlClean.includes('where e.event_date = ? and e.id != ?')) {
+  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && (sqlClean.includes('where e.eventdate = ? and e.id != ?') || sqlClean.includes('where e.event_date = ? and e.id != ?'))) {
     const dateStr = params[0];
     const excludeEventId = parseInt(params[1]);
     const list = db.assignments
@@ -531,11 +541,11 @@ function runJsonQuery(sql, params = []) {
         return {
           ...a,
           event_name: ev.name || '',
-          event_date: ev.event_date || '',
+          eventDate: ev.eventDate || '',
           event_id: ev.id
         };
       })
-      .filter(m => m.event_date === dateStr && m.event_id !== excludeEventId);
+      .filter(m => m.eventDate === dateStr && m.event_id !== excludeEventId);
     return list;
   }
 
@@ -548,7 +558,7 @@ function runJsonQuery(sql, params = []) {
         const ev = db.events.find(e => e.id === a.event_id);
         return {
           resource_id: a.resource_id,
-          event_date: ev ? ev.event_date : null
+          eventDate: ev ? ev.eventDate : null
         };
       });
     return list;
@@ -566,7 +576,7 @@ function runJsonQuery(sql, params = []) {
           event_id: a.event_id,
           resource_id: a.resource_id,
           event_name: ev.name || '',
-          event_date: ev.event_date || '',
+          eventDate: ev.eventDate || '',
           resource_name: v.name || '',
           resource_phone: v.phone || ''
         };
@@ -920,9 +930,10 @@ function runJsonQuery(sql, params = []) {
       photographer_id: params[3] ? parseInt(params[3]) : null,
       anchor_id: params[4] ? parseInt(params[4]) : null,
       sound_team_id: params[5] ? parseInt(params[5]) : null,
-      staff_ids: params[6] || '',
-      status: params[7] || 'Assigned',
-      assigned_by: params[8] || 'Admin',
+      lighting_team_id: params[6] ? parseInt(params[6]) : null,
+      staff_ids: params[7] || '',
+      status: params[8] || 'Assigned',
+      assigned_by: params[9] || 'Admin',
       assigned_at: new Date().toISOString()
     };
     
@@ -952,9 +963,10 @@ function runJsonQuery(sql, params = []) {
         photographer_id: params[2] ? parseInt(params[2]) : null,
         anchor_id: params[3] ? parseInt(params[3]) : null,
         sound_team_id: params[4] ? parseInt(params[4]) : null,
-        staff_ids: params[5] || '',
-        status: params[6] || 'Assigned',
-        assigned_by: params[7] || 'Admin',
+        lighting_team_id: params[5] ? parseInt(params[5]) : null,
+        staff_ids: params[6] || '',
+        status: params[7] || 'Assigned',
+        assigned_by: params[8] || 'Admin',
         assigned_at: new Date().toISOString()
       };
       writeJsonDb(db);
@@ -1016,6 +1028,17 @@ async function connectDb() {
     // Test connection
     const conn = await pool.getConnection();
     console.log(`✅ Database Connected Successfully to MySQL at ${host}:${port}/${database}`);
+    try {
+      await conn.query('ALTER TABLE events RENAME COLUMN event_date TO eventDate');
+      console.log('✅ Schema migration: Renamed events.event_date to events.eventDate.');
+    } catch (migErr) {
+      try {
+        await conn.query('ALTER TABLE events CHANGE event_date eventDate DATE NOT NULL');
+        console.log('✅ Schema migration: Changed events.event_date to events.eventDate.');
+      } catch (innerErr) {
+        // Already migrated
+      }
+    }
     try {
       await conn.query('ALTER TABLE notifications MODIFY COLUMN type VARCHAR(50) NOT NULL');
       console.log('✅ Schema migration for notifications table completed successfully (modified type to VARCHAR(50)).');
@@ -1107,6 +1130,7 @@ async function connectDb() {
           photographer_id INT DEFAULT NULL,
           anchor_id INT DEFAULT NULL,
           sound_team_id INT DEFAULT NULL,
+          lighting_team_id INT DEFAULT NULL,
           staff_ids VARCHAR(255) DEFAULT NULL,
           status VARCHAR(50) DEFAULT 'Assigned',
           assigned_by VARCHAR(100) DEFAULT NULL,
@@ -1117,6 +1141,31 @@ async function connectDb() {
       console.log('✅ Schema migration for event_assignments table completed successfully.');
     } catch (migErr) {
       console.warn('⚠️ Event assignments table creation warning:', migErr.message);
+    }
+    try {
+      await conn.query('ALTER TABLE event_assignments ADD COLUMN lighting_team_id INT DEFAULT NULL');
+      console.log('✅ Schema migration: Added lighting_team_id column to event_assignments.');
+    } catch (migErr) {
+      if (migErr.code !== 'ER_DUP_FIELDNAME') {
+        console.warn('⚠️ Event assignments table lighting_team_id column warning:', migErr.message);
+      }
+    }
+    try {
+      await conn.query("ALTER TABLE vendors MODIFY COLUMN category ENUM('Decorator', 'Caterer', 'Photographer', 'Anchor', 'Sound Team', 'Lighting') NOT NULL");
+      console.log("✅ Schema migration: Modified category column in vendors table to include 'Lighting'.");
+    } catch (migErr) {
+      console.warn("⚠️ Vendors table category modification warning:", migErr.message);
+    }
+    try {
+      const [rows] = await conn.query("SELECT * FROM vendors WHERE id = 6 OR name = 'Glow Lighting Services'");
+      if (!rows || rows.length === 0) {
+        await conn.query(
+          "INSERT INTO vendors (id, name, category, contact_person, phone, email, service_type, price_range, rating, availability_status) VALUES (6, 'Glow Lighting Services', 'Lighting', 'Rahul Mehta', '+91 96666 77777', 'glow@lighting.com', 'LED Ambience & Truss', 'Medium', 4.6, 'Available')"
+        );
+        console.log("✅ Seeded Glow Lighting Services into MySQL.");
+      }
+    } catch (seedErr) {
+      console.warn("⚠️ Vendors seeding warning:", seedErr.message);
     }
     conn.release();
     isDemoMode = false;

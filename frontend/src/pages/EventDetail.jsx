@@ -73,6 +73,7 @@ const EventDetail = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['eventDetail', id] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
       addToast(`Milestone updated to ${variables.status} (Stage ${variables.stage})`);
     },
     onError: () => {
@@ -242,6 +243,7 @@ const EventDetail = () => {
     onSuccess: (_, newStatus) => {
       queryClient.invalidateQueries({ queryKey: ['eventDetail', id] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
       addToast(`Status successfully changed to ${newStatus}`);
     },
     onError: () => {
@@ -272,6 +274,7 @@ const EventDetail = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['eventDetail', id] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
       addToast('Tasks checklist updated successfully');
     },
     onError: () => {

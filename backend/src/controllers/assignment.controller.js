@@ -1,6 +1,23 @@
 const db = require('../config/db');
 const AutomationService = require('../services/automation.service');
 
+const formatDateSafe = (dateVal) => {
+  if (!dateVal) return '';
+  const str = dateVal.toString();
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  try {
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+  } catch (e) {}
+  return str.split('T')[0];
+};
+
 // Helper to sync event_assignments table from assignments table
 const syncEventAssignmentsTable = async (eventId) => {
   try {
@@ -18,6 +35,7 @@ const syncEventAssignmentsTable = async (eventId) => {
     let photographer_id = null;
     let anchor_id = null;
     let sound_team_id = null;
+    let lighting_team_id = null;
     const staffIds = [];
 
     currentAssignments.forEach(a => {
@@ -28,6 +46,7 @@ const syncEventAssignmentsTable = async (eventId) => {
         else if (cat === 'Photographer') photographer_id = a.resource_id;
         else if (cat === 'Anchor') anchor_id = a.resource_id;
         else if (cat === 'Sound Team') sound_team_id = a.resource_id;
+        else if (cat === 'Lighting') lighting_team_id = a.resource_id;
       } else if (a.resource_type === 'staff') {
         staffIds.push(a.resource_id);
       }
@@ -39,13 +58,13 @@ const syncEventAssignmentsTable = async (eventId) => {
 
     if (existing.length > 0) {
       await db.query(
-        'UPDATE event_assignments SET decorator_id = ?, caterer_id = ?, photographer_id = ?, anchor_id = ?, sound_team_id = ?, staff_ids = ? WHERE event_id = ?',
-        [decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, staffIdsStr, eventId]
+        'UPDATE event_assignments SET decorator_id = ?, caterer_id = ?, photographer_id = ?, anchor_id = ?, sound_team_id = ?, lighting_team_id = ?, staff_ids = ? WHERE event_id = ?',
+        [decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, lighting_team_id, staffIdsStr, eventId]
       );
     } else {
       await db.query(
-        'INSERT INTO event_assignments (event_id, decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, staff_ids, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [eventId, decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, staffIdsStr, 'Assigned']
+        'INSERT INTO event_assignments (event_id, decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, lighting_team_id, staff_ids, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [eventId, decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, lighting_team_id, staffIdsStr, 'Assigned']
       );
     }
   } catch (err) {
@@ -135,10 +154,10 @@ const checkAndSetEventWorkflowStatus = async (eventId) => {
 // Helper to check if resource is assigned on a specific date
 const checkResourceConflict = async (resourceType, resourceId, dateString, excludeEventId = null) => {
   let queryStr = `
-    SELECT a.*, e.name as event_name, e.event_date 
+    SELECT a.*, e.name as event_name, e.eventDate 
     FROM assignments a 
     JOIN events e ON a.event_id = e.id 
-    WHERE a.resource_type = ? AND a.resource_id = ? AND e.event_date = ?
+    WHERE a.resource_type = ? AND a.resource_id = ? AND e.eventDate = ?
   `;
   const params = [resourceType, resourceId, dateString];
   
@@ -168,7 +187,7 @@ exports.createAssignment = async (req, res) => {
     const event = events[0];
 
     // 2. Check for conflicts
-    const conflict = await checkResourceConflict(resourceType, resourceId, event.event_date);
+    const conflict = await checkResourceConflict(resourceType, resourceId, event.eventDate);
     if (conflict && !force) {
       return res.status(409).json({
         message: 'Conflict detected: Resource is already assigned to another event on this day.',
@@ -491,7 +510,7 @@ exports.getRecommendations = async (req, res) => {
     }
 
     const event = events[0];
-    const eventDate = event.event_date;
+    const eventDate = event.eventDate;
     const budget = event.budget;
 
     // Load resources and load assignments in parallel
@@ -505,13 +524,13 @@ exports.getRecommendations = async (req, res) => {
     // Track schedules by date to determine availability
     const busyVendors = new Set();
     const busyStaff = new Set();
-    const targetDateStr = new Date(eventDate).toISOString().split('T')[0];
+    const targetDateStr = formatDateSafe(eventDate);
     const eventsMap = new Map(allEvents.map(ev => [ev.id, ev]));
 
     allAssignments.forEach(ass => {
       const ev = eventsMap.get(ass.event_id);
       if (!ev) return;
-      const evDateStr = new Date(ev.event_date).toISOString().split('T')[0];
+      const evDateStr = formatDateSafe(ev.eventDate);
       if (evDateStr === targetDateStr && ev.id !== eventId) {
         if (ass.resource_type === 'vendor') busyVendors.add(ass.resource_id);
         if (ass.resource_type === 'staff') busyStaff.add(ass.resource_id);
@@ -682,6 +701,7 @@ exports.getEventAssignment = async (req, res) => {
         photographer_id: null,
         anchor_id: null,
         sound_team_id: null,
+        lighting_team_id: null,
         staff_ids: '',
         status: 'Pending'
       });
@@ -703,6 +723,7 @@ exports.saveEventAssignment = async (req, res) => {
       photographer_id,
       anchor_id,
       sound_team_id,
+      lighting_team_id,
       staff_ids,
       status
     } = req.body;
@@ -715,7 +736,7 @@ exports.saveEventAssignment = async (req, res) => {
       return res.status(404).json({ message: 'Event not found' });
     }
     const event = events[0];
-    const eventDate = event.event_date;
+    const eventDate = event.eventDate;
 
     // Normalize staff_ids to comma-separated string
     let staffIdsStr = '';
@@ -730,13 +751,14 @@ exports.saveEventAssignment = async (req, res) => {
 
     if (existing.length > 0) {
       await db.query(
-        'UPDATE event_assignments SET decorator_id = ?, caterer_id = ?, photographer_id = ?, anchor_id = ?, sound_team_id = ?, staff_ids = ?, status = ?, assigned_by = ? WHERE event_id = ?',
+        'UPDATE event_assignments SET decorator_id = ?, caterer_id = ?, photographer_id = ?, anchor_id = ?, sound_team_id = ?, lighting_team_id = ?, staff_ids = ?, status = ?, assigned_by = ? WHERE event_id = ?',
         [
           decorator_id ? parseInt(decorator_id) : null,
           caterer_id ? parseInt(caterer_id) : null,
           photographer_id ? parseInt(photographer_id) : null,
           anchor_id ? parseInt(anchor_id) : null,
           sound_team_id ? parseInt(sound_team_id) : null,
+          lighting_team_id ? parseInt(lighting_team_id) : null,
           staffIdsStr,
           status || 'Assigned',
           assignedBy,
@@ -745,7 +767,7 @@ exports.saveEventAssignment = async (req, res) => {
       );
     } else {
       await db.query(
-        'INSERT INTO event_assignments (event_id, decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, staff_ids, status, assigned_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO event_assignments (event_id, decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, lighting_team_id, staff_ids, status, assigned_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           eventId,
           decorator_id ? parseInt(decorator_id) : null,
@@ -753,6 +775,7 @@ exports.saveEventAssignment = async (req, res) => {
           photographer_id ? parseInt(photographer_id) : null,
           anchor_id ? parseInt(anchor_id) : null,
           sound_team_id ? parseInt(sound_team_id) : null,
+          lighting_team_id ? parseInt(lighting_team_id) : null,
           staffIdsStr,
           status || 'Assigned',
           assignedBy
@@ -768,7 +791,8 @@ exports.saveEventAssignment = async (req, res) => {
       { id: caterer_id, category: 'Caterer' },
       { id: photographer_id, category: 'Photographer' },
       { id: anchor_id, category: 'Anchor' },
-      { id: sound_team_id, category: 'Sound Team' }
+      { id: sound_team_id, category: 'Sound Team' },
+      { id: lighting_team_id, category: 'Lighting' }
     ].filter(v => v.id);
 
     for (const vendor of vendorIds) {
@@ -813,7 +837,7 @@ exports.saveEventAssignment = async (req, res) => {
 
     // Check double bookings and generate warning alerts if any assigned resource is busy
     const conflicts = await db.query(
-      'SELECT a.*, e.name as event_name FROM assignments a JOIN events e ON a.event_id = e.id WHERE e.event_date = ? AND e.id != ?',
+      'SELECT a.*, e.name as event_name FROM assignments a JOIN events e ON a.event_id = e.id WHERE e.eventDate = ? AND e.id != ?',
       [eventDate, eventId]
     );
 

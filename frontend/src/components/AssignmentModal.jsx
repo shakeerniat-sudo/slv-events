@@ -30,6 +30,7 @@ const AssignmentModal = ({ event, onClose }) => {
   const [photographerSearch, setPhotographerSearch] = useState('');
   const [anchorSearch, setAnchorSearch] = useState('');
   const [soundSearch, setSoundSearch] = useState('');
+  const [lightingSearch, setLightingSearch] = useState('');
   const [coordinatorSearch, setCoordinatorSearch] = useState('');
   const [supervisorSearch, setSupervisorSearch] = useState('');
   const [helperSearch, setHelperSearch] = useState('');
@@ -40,6 +41,7 @@ const AssignmentModal = ({ event, onClose }) => {
   const [selectedPhotographer, setSelectedPhotographer] = useState('');
   const [selectedAnchor, setSelectedAnchor] = useState('');
   const [selectedSoundTeam, setSelectedSoundTeam] = useState('');
+  const [selectedLighting, setSelectedLighting] = useState('');
   const [selectedCoordinator, setSelectedCoordinator] = useState('');
   const [selectedSupervisor, setSelectedSupervisor] = useState('');
   const [selectedHelpers, setSelectedHelpers] = useState([]);
@@ -121,6 +123,7 @@ const AssignmentModal = ({ event, onClose }) => {
           setSelectedPhotographer(loadedCurrent.photographer_id ? loadedCurrent.photographer_id.toString() : '');
           setSelectedAnchor(loadedCurrent.anchor_id ? loadedCurrent.anchor_id.toString() : '');
           setSelectedSoundTeam(loadedCurrent.sound_team_id ? loadedCurrent.sound_team_id.toString() : '');
+          setSelectedLighting(loadedCurrent.lighting_team_id ? loadedCurrent.lighting_team_id.toString() : '');
 
           // Map staff details if we have the staff list
           if (loadedStaff.length > 0) {
@@ -228,6 +231,7 @@ const AssignmentModal = ({ event, onClose }) => {
       let photographerVal = selectedPhotographer ? parseInt(selectedPhotographer) : null;
       let anchorVal = selectedAnchor ? parseInt(selectedAnchor) : null;
       let soundTeamVal = selectedSoundTeam ? parseInt(selectedSoundTeam) : null;
+      let lightingVal = selectedLighting ? parseInt(selectedLighting) : null;
 
       let combinedStaffIds = [
         selectedCoordinator ? parseInt(selectedCoordinator) : null,
@@ -247,6 +251,7 @@ const AssignmentModal = ({ event, onClose }) => {
         photographerVal = currentAssignment.photographer_id ? parseInt(currentAssignment.photographer_id) : null;
         anchorVal = currentAssignment.anchor_id ? parseInt(currentAssignment.anchor_id) : null;
         soundTeamVal = currentAssignment.sound_team_id ? parseInt(currentAssignment.sound_team_id) : null;
+        lightingVal = currentAssignment.lighting_team_id ? parseInt(currentAssignment.lighting_team_id) : null;
       }
 
       const payload = {
@@ -255,6 +260,7 @@ const AssignmentModal = ({ event, onClose }) => {
         photographer_id: photographerVal,
         anchor_id: anchorVal,
         sound_team_id: soundTeamVal,
+        lighting_team_id: lightingVal,
         staff_ids: combinedStaffIds,
         status: event.status === 'Pending' ? 'Assigned' : event.status
       };
@@ -277,6 +283,7 @@ const AssignmentModal = ({ event, onClose }) => {
         photographer: getVendorName(photographerVal),
         anchor: getVendorName(anchorVal),
         soundTeam: getVendorName(soundTeamVal),
+        lighting: getVendorName(lightingVal),
         helpers: getStaffNames(combinedStaffIds.filter(id => {
           const s = staffList.find(st => st.id === id);
           return s && s.role === 'Helper';
@@ -318,6 +325,7 @@ const AssignmentModal = ({ event, onClose }) => {
   const photographers = filterVendors('Photographer', photographerSearch);
   const anchors = filterVendors('Anchor', anchorSearch);
   const soundTeams = filterVendors('Sound Team', soundSearch);
+  const lightingTeams = filterVendors('Lighting', lightingSearch);
   const coordinators = filterStaff('Coordinator', coordinatorSearch);
   const supervisors = filterStaff('Supervisor', supervisorSearch);
   const helpers = filterStaff('Helper', helperSearch);
@@ -375,6 +383,9 @@ const AssignmentModal = ({ event, onClose }) => {
 
                 <span className="text-slate-400 font-bold uppercase text-[9px]">Sound Team</span>
                 <span className="col-span-2 font-semibold text-slate-800">{successSummary.soundTeam}</span>
+
+                <span className="text-slate-400 font-bold uppercase text-[9px]">Lighting</span>
+                <span className="col-span-2 font-semibold text-slate-800">{successSummary.lighting}</span>
 
                 <span className="text-slate-400 font-bold uppercase text-[9px]">Helpers</span>
                 <span className="col-span-2 font-semibold text-slate-800 leading-normal">{successSummary.helpers}</span>
@@ -574,6 +585,35 @@ const AssignmentModal = ({ event, onClose }) => {
                         {soundTeams.map(s => (
                           <option key={s.id} value={s.id} disabled={s.status === 'Unavailable'}>
                             {s.name} ({s.reason})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Lighting */}
+                    <div className="space-y-1">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wide">Lighting Vendor</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                          <Search className="w-3.5 h-3.5" />
+                        </span>
+                        <input
+                          type="text"
+                          placeholder="Search Lighting..."
+                          value={lightingSearch}
+                          onChange={(e) => setLightingSearch(e.target.value)}
+                          className="w-full pl-9 pr-4 py-1.5 border border-slate-200 rounded-xl text-[11px] mb-1.5 focus:outline-none focus:border-sky-550"
+                        />
+                      </div>
+                      <select
+                        value={selectedLighting}
+                        onChange={(e) => setSelectedLighting(e.target.value)}
+                        className="w-full p-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-550 cursor-pointer"
+                      >
+                        <option value="">-- Select Lighting --</option>
+                        {lightingTeams.map(l => (
+                          <option key={l.id} value={l.id} disabled={l.status === 'Unavailable'}>
+                            {l.name} ({l.reason})
                           </option>
                         ))}
                       </select>

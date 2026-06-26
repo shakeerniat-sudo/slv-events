@@ -1,5 +1,22 @@
 const db = require('../config/db');
 
+const formatDateSafe = (dateVal) => {
+  if (!dateVal) return '';
+  const str = dateVal.toString();
+  const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[1]}-${match[2]}-${match[3]}`;
+  try {
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+  } catch (e) { }
+  return str.split('T')[0];
+};
+
 /**
  * Normalizes a date to midnight for date-only comparisons.
  */
@@ -39,10 +56,10 @@ const AutomationService = {
       const vendorListStr = vendors.map(v => `${v.name} (${v.category})`).join(', ') || 'None';
       const staffListStr = staff.map(s => `${s.name} (${s.role})`).join(', ') || 'None';
 
-      const summaryText = 
+      const summaryText =
         `Client: ${event.client_name}\n` +
         `Event Type: ${event.event_type}\n` +
-        `Date: ${new Date(event.event_date).toLocaleDateString('en-GB')}\n` +
+        `Date: ${new Date(event.eventDate).toLocaleDateString('en-GB')}\n` +
         `Venue: ${event.venue}\n` +
         `Budget: $${parseFloat(event.budget).toLocaleString(undefined, { minimumFractionDigits: 2 })}\n` +
         `Guest Count: ${event.guest_count}\n` +
@@ -91,8 +108,7 @@ const AutomationService = {
       assignments.forEach(ass => {
         const key = `${ass.resource_type}_${ass.resource_id}`;
         const event = eventsMap.get(ass.event_id);
-        if (!event) return;
-        const dateStr = new Date(event.event_date).toISOString().split('T')[0];
+        const dateStr = formatDateSafe(event.eventDate);
 
         if (!resourceSchedule[key]) resourceSchedule[key] = {};
         if (!resourceSchedule[key][dateStr]) resourceSchedule[key][dateStr] = [];
@@ -104,7 +120,7 @@ const AutomationService = {
         const idVal = parseInt(resourceId);
         Object.entries(schedule).forEach(([dateStr, list]) => {
           if (list.length > 1) {
-            const resourceName = resourceType === 'vendor' 
+            const resourceName = resourceType === 'vendor'
               ? (vendorsMap.get(idVal)?.name || `Vendor ID ${idVal}`)
               : (staffMap.get(idVal)?.name || `Staff ID ${idVal}`);
             const categoryLabel = resourceType === 'vendor'
@@ -128,14 +144,14 @@ const AutomationService = {
       // -------------------------------------------------------------
       events.forEach(event => {
         if (event.status === 'Completed' || event.status === 'Cancelled') return;
-        
+
         // Count helpers assigned
         const helperAssignments = assignments.filter(
-          a => a.event_id === event.id && 
-               a.resource_type === 'staff' && 
-               staffMap.get(a.resource_id)?.role === 'Helper'
+          a => a.event_id === event.id &&
+            a.resource_type === 'staff' &&
+            staffMap.get(a.resource_id)?.role === 'Helper'
         );
-        
+
         // Insufficient helpers rule: 1 helper per 100 guests, minimum 2 helpers (if guest count > 0)
         let requiredHelpers = 0;
         if (event.guest_count > 0) {
@@ -180,14 +196,14 @@ const AutomationService = {
       // -------------------------------------------------------------
       events.forEach(event => {
         if (event.status === 'Completed' || event.status === 'Cancelled') return;
-        const eventDate = normalizeToDateOnly(event.event_date);
+        const eventDate = normalizeToDateOnly(event.eventDate);
         const timeDiff = eventDate.getTime() - today.getTime();
         const diffHours = timeDiff / (1000 * 60 * 60);
 
         if (diffHours >= 0 && diffHours <= 24) {
           currentGenerated.push({
             title: 'Upcoming Event Warning',
-            message: `⚠ Event "${event.name}" starts within 24 hours on ${new Date(event.event_date).toLocaleDateString('en-GB')} at ${event.venue}.`,
+            message: `⚠ Event "${event.name}" starts within 24 hours on ${new Date(event.eventDate).toLocaleDateString('en-GB')} at ${event.venue}.`,
             type: 'Upcoming Event'
           });
         }
@@ -215,7 +231,7 @@ const AutomationService = {
       // -------------------------------------------------------------
       events.forEach(event => {
         if (event.status === 'Completed' || event.status === 'Cancelled') return;
-        const eventDate = normalizeToDateOnly(event.event_date);
+        const eventDate = normalizeToDateOnly(event.eventDate);
         const timeDiff = eventDate.getTime() - today.getTime();
         const daysUntilEvent = Math.round(timeDiff / (1000 * 60 * 60 * 24));
 

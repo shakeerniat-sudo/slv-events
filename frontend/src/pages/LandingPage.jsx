@@ -40,6 +40,7 @@ const LandingPage = () => {
 
   const [loading, setLoading] = useState(false);
   const [successData, setSuccessData] = useState(null);
+  const [submittedData, setSubmittedData] = useState(null);
   const [error, setError] = useState(null);
 
   const eventTypes = [
@@ -57,6 +58,8 @@ const LandingPage = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -64,6 +67,7 @@ const LandingPage = () => {
 
     try {
       const response = await axios.post('/public/bookings', formData);
+      setSubmittedData({ ...formData, eventId: response.data.eventId });
       setSuccessData(response.data);
       addToast('Event booking submitted successfully!');
       
@@ -159,11 +163,11 @@ const LandingPage = () => {
           </div>
 
           <h1 className="text-4xl md:text-6xl font-black tracking-tight text-slate-800 dark:text-white leading-[1.1] font-sans">
-            Crafting Extraordinary <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-500">Experiences</span>
+            Plan Your Event with <span className="bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-500">SLV Events</span>
           </h1>
 
           <p className="text-sm md:text-base text-slate-555 dark:text-slate-400 leading-relaxed font-medium">
-            From seamless corporate galas to breathtaking weddings. SLV Events handles all design, coordination, vendor sourcing, and on-site staff deployment to make your dream reality.
+            Book your event in minutes. Our team will review your request and confirm your booking shortly.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -171,13 +175,13 @@ const LandingPage = () => {
               onClick={() => scrollToSection('booking')}
               className="w-full sm:w-auto px-6 py-3 rounded-xl bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs shadow-lg hover:shadow-sky-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
             >
-              Book Your Event Now
+              Book Event
             </button>
             <button
               onClick={() => scrollToSection('services')}
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-white/[0.06] font-bold text-xs shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-355 hover:bg-slate-55 dark:hover:bg-white/[0.06] font-bold text-xs shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
             >
-              Explore Services
+              View Services
             </button>
           </div>
         </motion.div>
@@ -277,6 +281,8 @@ const LandingPage = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-6 text-xs font-semibold">
+                  
+
                   
                   {/* Row 1: Client Personal Details */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -430,9 +436,19 @@ const LandingPage = () => {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-sky-500/10 hover:scale-[1.01] active:scale-[0.99] transition-all duration-150 disabled:opacity-50 text-xs cursor-pointer"
+                    className="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3.5 rounded-xl shadow-md hover:shadow-sky-500/10 hover:scale-[1.01] active:scale-[0.99] transition-all duration-150 disabled:opacity-50 text-xs cursor-pointer flex items-center justify-center gap-2"
                   >
-                    {loading ? 'Submitting Booking Request...' : 'Submit Booking Request'}
+                    {loading ? (
+                      <>
+                        <svg className="animate-spin h-4.5 w-4.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Submitting your booking...</span>
+                      </>
+                    ) : (
+                      <span>Submit Booking Request</span>
+                    )}
                   </button>
 
                 </form>
@@ -458,35 +474,54 @@ const LandingPage = () => {
                 </div>
 
                 {/* Booking Receipt Summary Card */}
-                <div className="w-full max-w-md bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-white/[0.04] p-6 rounded-2xl text-left space-y-4 text-xs">
+                <div className="w-full max-w-md bg-slate-50 dark:bg-slate-950/40 border border-slate-205 dark:border-white/[0.04] p-6 rounded-2xl text-left space-y-4 text-xs shadow-inner">
                   <div className="flex justify-between items-center border-b border-slate-200/60 dark:border-white/[0.04] pb-3">
                     <span className="font-bold text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Booking ID / Reference</span>
-                    <span className="font-black text-sky-500 text-xs">SLV-EV-{successData.eventId || 'NEW'}</span>
+                    <span className="font-black text-sky-500 text-xs">SLV-EV-{submittedData?.eventId || 'NEW'}</span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-y-3.5 gap-x-4">
                     <div>
                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Client Name</span>
-                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200">{formData.clientName || 'N/A'}</p>
+                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200">{submittedData?.clientName || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Mobile Number</span>
+                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200">{submittedData?.clientPhone || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Email</span>
+                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200 truncate" title={submittedData?.clientEmail}>{submittedData?.clientEmail || 'N/A'}</p>
                     </div>
                     <div>
                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Event Type</span>
-                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200">{formData.eventType || 'N/A'}</p>
+                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200">{submittedData?.eventType || 'N/A'}</p>
                     </div>
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Date Selected</span>
-                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200">{formData.eventDate || 'N/A'}</p>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Event Date</span>
+                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200">
+                        {submittedData?.eventDate ? (() => {
+                          const parts = submittedData.eventDate.split('-');
+                          return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : submittedData.eventDate;
+                        })() : 'N/A'}
+                      </p>
                     </div>
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Venue / Location</span>
-                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200 truncate" title={formData.venue}>{formData.venue || 'N/A'}</p>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Event Location</span>
+                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200 truncate" title={submittedData?.venue}>{submittedData?.venue || 'N/A'}</p>
                     </div>
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Est. Budget</span>
-                      <p className="font-bold mt-0.5 text-slate-850 dark:text-slate-100">₹{parseFloat(formData.budget).toLocaleString()}</p>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Estimated Budget</span>
+                      <p className="font-bold mt-0.5 text-slate-850 dark:text-slate-100">
+                        ₹{submittedData?.budget ? parseFloat(submittedData.budget).toLocaleString() : 'N/A'}
+                      </p>
                     </div>
                     <div>
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Initial Status</span>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Guest Count</span>
+                      <p className="font-bold mt-0.5 text-slate-800 dark:text-slate-200">{submittedData?.guestCount || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Booking Status</span>
                       <p className="font-extrabold mt-0.5 text-amber-500 dark:text-amber-400">NEW</p>
                     </div>
                   </div>

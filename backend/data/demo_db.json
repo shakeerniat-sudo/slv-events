@@ -49,6 +49,22 @@
       "email": "sarah@example.com",
       "company_name": "Jenkins & Co",
       "created_at": "2026-06-26T12:53:28.205Z"
+    },
+    {
+      "id": 3,
+      "name": "shakeer",
+      "phone": "9876543210",
+      "email": "mani@gmail.com",
+      "company_name": "",
+      "created_at": "2026-06-26T15:37:40.305Z"
+    },
+    {
+      "id": 4,
+      "name": "doe",
+      "phone": "9876543210",
+      "email": "mani@gmail.com",
+      "company_name": "",
+      "created_at": "2026-06-26T15:47:05.761Z"
     }
   ],
   "events": [
@@ -57,7 +73,7 @@
       "name": "TechCorp Annual Gala 2026",
       "client_id": 1,
       "event_type": "Corporate",
-      "event_date": "2026-07-15",
+      "eventDate": "2026-07-15",
       "venue": "Grand Palace Hall, Bangalore",
       "budget": 150000,
       "guest_count": 300,
@@ -78,7 +94,7 @@
       "name": "Sarah Wedding Reception",
       "client_id": 2,
       "event_type": "Wedding",
-      "event_date": "2026-07-20",
+      "eventDate": "2026-07-20",
       "venue": "Lakeside Pavilion",
       "budget": 350000,
       "guest_count": 500,
@@ -99,7 +115,7 @@
       "name": "Product Launch 2026",
       "client_id": 1,
       "event_type": "Corporate",
-      "event_date": "2026-08-05",
+      "eventDate": "2026-08-05",
       "venue": "Sheraton Convention Center",
       "budget": 80000,
       "guest_count": 150,
@@ -114,6 +130,40 @@
       "operations_lead_id": null,
       "finance_team_id": null,
       "created_at": "2026-06-26T12:53:28.218Z"
+    },
+    {
+      "id": 4,
+      "name": "shakeer's Wedding",
+      "client_id": 3,
+      "event_type": "Wedding",
+      "eventDate": "2026-06-26",
+      "venue": "Royal palace",
+      "budget": 1000000,
+      "guest_count": 300,
+      "theme_preference": "",
+      "notes": "New",
+      "status": "[]",
+      "workflow_stage": 1,
+      "workflow_mode": "Automatic",
+      "event_time": "10:00 AM - 04:00 PM",
+      "created_at": "2026-06-26T15:37:40.342Z"
+    },
+    {
+      "id": 5,
+      "name": "doe's Birthday",
+      "client_id": 4,
+      "event_type": "Birthday",
+      "eventDate": "2026-06-26",
+      "venue": "Royal palace",
+      "budget": 1500000,
+      "guest_count": 300,
+      "theme_preference": "",
+      "notes": "New",
+      "status": "[]",
+      "workflow_stage": 1,
+      "workflow_mode": "Automatic",
+      "event_time": "10:00 AM - 04:00 PM",
+      "created_at": "2026-06-26T15:47:05.782Z"
     }
   ],
   "vendors": [
@@ -353,6 +403,36 @@
       "paid_at": null,
       "notes": "First installment due",
       "created_at": "2026-06-26T12:53:28.218Z"
+    },
+    {
+      "id": 4,
+      "event_id": 4,
+      "type": "client",
+      "vendor_id": null,
+      "total_amount": 1000000,
+      "advance": 0,
+      "balance": 1000000,
+      "amount": 1000000,
+      "due_date": "2026-06-26",
+      "status": "Pending",
+      "paid_at": "Initial event budget payment",
+      "notes": "",
+      "created_at": "2026-06-26T15:37:40.393Z"
+    },
+    {
+      "id": 5,
+      "event_id": 5,
+      "type": "client",
+      "vendor_id": null,
+      "total_amount": 1500000,
+      "advance": 0,
+      "balance": 1500000,
+      "amount": 1500000,
+      "due_date": "2026-06-26",
+      "status": "Pending",
+      "paid_at": "Initial event budget payment",
+      "notes": "",
+      "created_at": "2026-06-26T15:47:05.804Z"
     }
   ],
   "quotations": [],
@@ -372,6 +452,318 @@
       "type": "Assignment Confirmation",
       "is_read": 0,
       "created_at": "2026-06-26T12:53:28.218Z"
+    },
+    {
+      "id": 3,
+      "title": "Insufficient Helpers Alert",
+      "message": "⚠ Only 1 helpers available. Required: 3.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:34:59.319Z"
+    },
+    {
+      "id": 4,
+      "title": "Insufficient Helpers Alert",
+      "message": "⚠ Only 0 helpers available. Required: 5.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:34:59.615Z"
+    },
+    {
+      "id": 5,
+      "title": "Insufficient Helpers Alert",
+      "message": "⚠ Only 0 helpers available. Required: 2.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:34:59.696Z"
+    },
+    {
+      "id": 6,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"TechCorp Annual Gala 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:34:59.795Z"
+    },
+    {
+      "id": 7,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"TechCorp Annual Gala 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:34:59.968Z"
+    },
+    {
+      "id": 8,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"TechCorp Annual Gala 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.072Z"
+    },
+    {
+      "id": 9,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Decorator allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.177Z"
+    },
+    {
+      "id": 10,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.265Z"
+    },
+    {
+      "id": 11,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Photographer allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.322Z"
+    },
+    {
+      "id": 12,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.361Z"
+    },
+    {
+      "id": 13,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Sarah Wedding Reception\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.409Z"
+    },
+    {
+      "id": 14,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Decorator allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.429Z"
+    },
+    {
+      "id": 15,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.461Z"
+    },
+    {
+      "id": 16,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Photographer allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.499Z"
+    },
+    {
+      "id": 17,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.513Z"
+    },
+    {
+      "id": 18,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"Product Launch 2026\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.532Z"
+    },
+    {
+      "id": 19,
+      "title": "Pending Payment Alert",
+      "message": "⚠ Payment of $25,000.00 (vendor payment) for event \"TechCorp Annual Gala 2026\" is pending. Due date: 15/07/2026.",
+      "type": "Payment Reminder",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.562Z"
+    },
+    {
+      "id": 20,
+      "title": "Pending Payment Alert",
+      "message": "⚠ Payment of $1,00,000.00 (client billing) for event \"Sarah Wedding Reception\" is pending. Due date: 30/06/2026.",
+      "type": "Payment Reminder",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:35:00.608Z"
+    },
+    {
+      "id": 21,
+      "title": "New Event Booking",
+      "message": "A new booking \"shakeer's Wedding\" has been submitted for 2026-06-26 at Royal palace.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.423Z"
+    },
+    {
+      "id": 22,
+      "title": "Event Summary: shakeer's Wedding",
+      "message": "Client: shakeer\nEvent Type: Wedding\nDate: 26/06/2026\nVenue: Royal palace\nBudget: $10,00,000.00\nGuest Count: 300\nAssigned Vendors: undefined (undefined), undefined (undefined)\nAssigned Staff: undefined (undefined), undefined (undefined)\nCurrent Status: []",
+      "type": "Event Summary",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.488Z"
+    },
+    {
+      "id": 23,
+      "title": "Insufficient Helpers Alert",
+      "message": "⚠ Only 0 helpers available. Required: 3.",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.545Z"
+    },
+    {
+      "id": 24,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Decorator allocated to event \"shakeer's Wedding\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.569Z"
+    },
+    {
+      "id": 25,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"shakeer's Wedding\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.587Z"
+    },
+    {
+      "id": 26,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Photographer allocated to event \"shakeer's Wedding\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.607Z"
+    },
+    {
+      "id": 27,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"shakeer's Wedding\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.627Z"
+    },
+    {
+      "id": 28,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"shakeer's Wedding\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.691Z"
+    },
+    {
+      "id": 29,
+      "title": "Upcoming Event Warning",
+      "message": "⚠ Event \"shakeer's Wedding\" starts within 24 hours on 26/06/2026 at Royal palace.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.762Z"
+    },
+    {
+      "id": 30,
+      "title": "Pending Payment Alert",
+      "message": "⚠ Payment of $10,00,000.00 (client billing) for event \"shakeer's Wedding\" is pending. Due date: 26/06/2026.",
+      "type": "Payment Reminder",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.786Z"
+    },
+    {
+      "id": 31,
+      "title": "Event Day Reminder",
+      "message": "Reminder: Monitor live event operations for event \"shakeer's Wedding\".",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:37:40.811Z"
+    },
+    {
+      "id": 32,
+      "title": "New Event Booking",
+      "message": "A new booking \"doe's Birthday\" has been submitted for 2026-06-26 at Royal palace.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:05.822Z"
+    },
+    {
+      "id": 33,
+      "title": "Event Summary: doe's Birthday",
+      "message": "Client: doe\nEvent Type: Birthday\nDate: 26/06/2026\nVenue: Royal palace\nBudget: $15,00,000.00\nGuest Count: 300\nAssigned Vendors: undefined (undefined), undefined (undefined)\nAssigned Staff: undefined (undefined), undefined (undefined)\nCurrent Status: []",
+      "type": "Event Summary",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:05.894Z"
+    },
+    {
+      "id": 34,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Decorator allocated to event \"doe's Birthday\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:05.973Z"
+    },
+    {
+      "id": 35,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Caterer allocated to event \"doe's Birthday\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:06.001Z"
+    },
+    {
+      "id": 36,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Photographer allocated to event \"doe's Birthday\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:06.029Z"
+    },
+    {
+      "id": 37,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Anchor allocated to event \"doe's Birthday\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:06.047Z"
+    },
+    {
+      "id": 38,
+      "title": "Missing Assignment Alert",
+      "message": "⚠ Missing assignment: No Sound Team allocated to event \"doe's Birthday\".",
+      "type": "Conflict Alert",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:06.073Z"
+    },
+    {
+      "id": 39,
+      "title": "Upcoming Event Warning",
+      "message": "⚠ Event \"doe's Birthday\" starts within 24 hours on 26/06/2026 at Royal palace.",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:06.091Z"
+    },
+    {
+      "id": 40,
+      "title": "Pending Payment Alert",
+      "message": "⚠ Payment of $15,00,000.00 (client billing) for event \"doe's Birthday\" is pending. Due date: 26/06/2026.",
+      "type": "Payment Reminder",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:06.099Z"
+    },
+    {
+      "id": 41,
+      "title": "Event Day Reminder",
+      "message": "Reminder: Monitor live event operations for event \"doe's Birthday\".",
+      "type": "Upcoming Event",
+      "is_read": 0,
+      "created_at": "2026-06-26T15:47:06.112Z"
     }
   ],
   "activity_logs": [
@@ -382,6 +774,22 @@
       "action": "CREATE_EVENT",
       "details": "Created event: TechCorp Annual Gala 2026",
       "timestamp": "2026-06-26T12:53:28.218Z"
+    },
+    {
+      "id": 2,
+      "user_id": null,
+      "user_name": "System (Client)",
+      "action": "CREATE_EVENT",
+      "details": "Submitted new booking \"shakeer's Wedding\" (ID: 4) for client \"shakeer\"",
+      "timestamp": "2026-06-26T15:37:40.873Z"
+    },
+    {
+      "id": 3,
+      "user_id": null,
+      "user_name": "System (Client)",
+      "action": "CREATE_EVENT",
+      "details": "Submitted new booking \"doe's Birthday\" (ID: 5) for client \"doe\"",
+      "timestamp": "2026-06-26T15:47:06.145Z"
     }
   ],
   "event_assignments": []

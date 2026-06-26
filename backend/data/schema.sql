@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `events` (
   `name` VARCHAR(150) NOT NULL,
   `client_id` INT NOT NULL,
   `event_type` VARCHAR(50) NOT NULL, -- Wedding, Corporate, Birthday, etc.
-  `event_date` DATE NOT NULL,
+  `eventDate` DATE NOT NULL,
   `venue` VARCHAR(255) NOT NULL,
   `budget` DECIMAL(12, 2) NOT NULL,
   `guest_count` INT NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `events` (
   FOREIGN KEY (`coordinator_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
   FOREIGN KEY (`operations_lead_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
   FOREIGN KEY (`finance_team_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
-  INDEX `idx_event_date` (`event_date`),
+  INDEX `idx_event_date` (`eventDate`),
   INDEX `idx_event_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

@@ -93,6 +93,7 @@ const Dashboard = () => {
   const [reportingIncident, setReportingIncident] = useState(false);
 
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [sentNotificationPreview, setSentNotificationPreview] = useState(null);
   const [reviewForm, setReviewForm] = useState({
     status: 'Pending',
     coordinator_id: '',
@@ -100,14 +101,17 @@ const Dashboard = () => {
     finance_team_id: ''
   });
 
-  // New query for assignments (Ops Lead only)
+  const [bookingHistorySearch, setBookingHistorySearch] = useState('');
+  const [bookingHistoryStatus, setBookingHistoryStatus] = useState('all');
+
+  // New query for assignments (Ops Lead & Admin)
   const { data: allAssignments = [] } = useQuery({
     queryKey: ['assignments-all-dashboard'],
     queryFn: async () => {
       const res = await axios.get('/assignments');
       return res.data || [];
     },
-    enabled: !!user && isOperationsLead
+    enabled: !!user && (isOperationsLead || isAdmin)
   });
 
   // Report Incident Mutation
@@ -143,6 +147,7 @@ const Dashboard = () => {
     onSuccess: () => {
       addToast('Incident logged and system notified!');
       setIncidentForm({ eventId: '', type: 'Vendor Delay', details: '' });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['events-all'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
     },
@@ -160,6 +165,7 @@ const Dashboard = () => {
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['events-all'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
       addToast('Event milestone updated!');
@@ -184,34 +190,99 @@ const Dashboard = () => {
     }
   });
 
-  // Process Booking Mutation (Admin Review & Assignment dispatch)
+  // Process Booking Mutation (Admin Review & Confirmation dispatch)
   const processBookingMutation = useMutation({
-    mutationFn: async ({ eventId, status, coordinator_id, operations_lead_id, finance_team_id }) => {
+    mutationFn: async ({ eventId, status }) => {
       await axios.put(`/events/${eventId}`, {
-        status,
-        coordinator_id: coordinator_id || null,
-        operations_lead_id: operations_lead_id || null,
-        finance_team_id: finance_team_id || null
+        status
       });
 
-      // Insert assignment notification
+      // Insert confirmation notification
       await axios.post('/notifications', {
-        title: 'Team Dispatched for Event',
-        message: `📢 Planner team assigned for "${selectedBooking?.name}". Work begins immediately.`,
+        title: 'Booking Confirmed',
+        message: `🎉 Booking request "${selectedBooking?.name || 'Event'}" has been confirmed. Client notified.`,
         type: 'Assignment Confirmation'
       });
     },
     onSuccess: () => {
-      addToast('Booking processed and planning team assigned!');
+      addToast('Booking confirmed successfully!');
+      
+      const formattedDate = selectedBooking ? new Date(selectedBooking.event_date).toLocaleDateString('en-GB') : '';
+      if (selectedBooking) {
+        setSentNotificationPreview({
+          clientName: selectedBooking.client_name,
+          clientPhone: selectedBooking.client_phone,
+          clientEmail: selectedBooking.client_email,
+          type: 'Confirm',
+          whatsappMessage: `Hello ${selectedBooking.client_name}\n\nYour event booking has been confirmed.\n\nBooking ID: SLV-EV-${selectedBooking.id}\nDate: ${formattedDate}\nVenue: ${selectedBooking.venue}\n\nThank you for choosing SLV Events.`,
+          emailMessage: `Hello ${selectedBooking.client_name},\n\nYour booking has been confirmed.\n\nBooking ID: SLV-EV-${selectedBooking.id}\nEvent: ${selectedBooking.name}\nDate: ${formattedDate}\nVenue: ${selectedBooking.venue}\n\nOur team will contact you shortly.\n\nThank you,\nSLV Events`
+        });
+      }
+
       setSelectedBooking(null);
+      queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['events-all'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
     },
     onError: (err) => {
       console.error(err);
-      addToast(err.response?.data?.message || 'Failed to assign planner team.', 'error');
+      addToast(err.response?.data?.message || 'Failed to confirm booking.', 'error');
     }
   });
+
+  // Quick Reject Booking Mutation
+  const rejectBookingMutation = useMutation({
+    mutationFn: async ({ eventId, name, clientName, clientPhone, clientEmail, eventDate, venue }) => {
+      await axios.put(`/events/${eventId}`, {
+        name,
+        status: 'Rejected'
+      });
+      return { eventId, clientName, clientPhone, clientEmail, eventName: name, eventDate, venue };
+    },
+    onSuccess: (data) => {
+      addToast('Booking rejected. Notifications sent to client!');
+      
+      // Set preview state for visual outbox representation
+      setSentNotificationPreview({
+        clientName: data.clientName,
+        clientPhone: data.clientPhone,
+        clientEmail: data.clientEmail,
+        type: 'Reject',
+        whatsappMessage: `Hello ${data.clientName}\n\nYour booking request was not approved.\n\nPlease contact SLV Events for more information.`,
+        emailMessage: `Hello ${data.clientName},\n\nUnfortunately your booking request has not been approved.\n\nPlease contact us for more information.\n\nThank you,\nSLV Events`
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
+    },
+    onError: (err) => {
+      console.error(err);
+      addToast('Failed to reject booking.', 'error');
+    }
+  });
+
+  const handleConfirmBooking = (booking) => {
+    setSelectedBooking(booking);
+    processBookingMutation.mutate({
+      eventId: booking.id,
+      status: 'Confirmed'
+    });
+  };
+
+  const handleQuickRejectBooking = (booking) => {
+    if (window.confirm(`Are you sure you want to reject the booking request for "${booking.name}"?`)) {
+      rejectBookingMutation.mutate({
+        eventId: booking.id,
+        name: booking.name,
+        clientName: booking.client_name,
+        clientPhone: booking.client_phone,
+        clientEmail: booking.client_email,
+        eventDate: booking.event_date,
+        venue: booking.venue
+      });
+    }
+  };
 
   // Fetch All Users (for Admin Booking Review Assignments)
   const { data: allUsers = [], isLoading: usersLoading } = useQuery({
@@ -364,12 +435,29 @@ const Dashboard = () => {
   if (isAdmin) {
     dashboardTitle = 'Enterprise Control Center';
     dashboardSubtitle = 'Full-scale planning diagnostics and administrative operations';
+    
+    const confirmedCount = allEvents.filter(e => e.status?.toLowerCase() === 'confirmed').length;
+    const rejectedCount = allEvents.filter(e => e.status?.toLowerCase() === 'rejected').length;
+    const newCount = allEvents.filter(e => e.status?.toLowerCase() === 'new').length;
+    
+    const upcomingCount = allEvents.filter(e => 
+      e.status?.toLowerCase() === 'confirmed' && 
+      new Date(e.event_date) >= new Date()
+    ).length;
+
+    const revenueSum = allEvents
+      .filter(e => e.status?.toLowerCase() === 'confirmed')
+      .reduce((sum, e) => sum + parseFloat(e.budget || 0), 0);
+
     statCards = [
-      { title: 'Total Events', value: kpi.totalEvents, subtitle: `${kpi.activeEvents} Active Events`, icon: Calendar, gradient: 'from-[#0284C7] to-[#38BDF8]', glowClass: 'glow-blue', iconColor: 'text-sky-500', iconGlow: 'dark:bg-sky-500/10' },
-      { title: 'Total Vendors', value: kpi.totalVendors, subtitle: 'Partner Directory', icon: Briefcase, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', iconColor: 'text-violet-550', iconGlow: 'dark:bg-violet-500/10' },
-      { title: 'Active Staff', value: kpi.totalStaff, subtitle: 'Rostered Crew', icon: Users, gradient: 'from-[#059669] to-[#34D399]', glowClass: 'glow-green', iconColor: 'text-emerald-500', iconGlow: 'dark:bg-emerald-500/10' },
-      { title: 'Conflict Alerts', value: kpi.conflictAlerts, subtitle: 'Requires Resolution', icon: AlertTriangle, gradient: kpi.conflictAlerts > 0 ? 'from-[#DC2626] to-[#F87171]' : 'from-slate-400 to-slate-550', glowClass: kpi.conflictAlerts > 0 ? 'glow-red' : '', iconColor: kpi.conflictAlerts > 0 ? 'text-rose-500' : 'text-slate-550', iconGlow: kpi.conflictAlerts > 0 ? 'dark:bg-rose-500/10' : 'dark:bg-slate-500/10' },
-      { title: 'Pending Staffing', value: kpi.pendingAssignments, subtitle: 'Awaiting Crewing', icon: Layers, gradient: 'from-[#D97706] to-[#FBBF24]', glowClass: 'glow-orange', iconColor: 'text-amber-500', iconGlow: 'dark:bg-amber-500/10' },
+      { title: 'Total Bookings', value: allEvents.length, subtitle: 'Total request logs', icon: Calendar, gradient: 'from-[#0284C7] to-[#38BDF8]', glowClass: 'glow-blue', iconColor: 'text-sky-500', iconGlow: 'dark:bg-sky-500/10' },
+      { title: 'New Bookings', value: newCount, subtitle: 'Pending action', icon: Clock, gradient: 'from-[#D97706] to-[#FBBF24]', glowClass: 'glow-orange', iconColor: 'text-amber-500', iconGlow: 'dark:bg-amber-500/10' },
+      { title: 'Confirmed Events', value: confirmedCount, subtitle: 'Approved planning pipeline', icon: CheckCircle, gradient: 'from-[#059669] to-[#34D399]', glowClass: 'glow-green', iconColor: 'text-emerald-500', iconGlow: 'dark:bg-emerald-500/10' },
+      { title: 'Rejected Events', value: rejectedCount, subtitle: 'Not approved bookings', icon: X, gradient: 'from-[#DC2626] to-[#F87171]', glowClass: 'glow-red', iconColor: 'text-rose-500', iconGlow: 'dark:bg-rose-500/10' },
+      { title: 'Upcoming Events', value: upcomingCount, subtitle: 'Future confirmed dates', icon: Calendar, gradient: 'from-[#7C3AED] to-[#A78BFA]', glowClass: 'glow-purple', iconColor: 'text-violet-500', iconGlow: 'dark:bg-violet-500/10' },
+      { title: 'Monthly Revenue', value: revenueSum, subtitle: 'Confirmed total contracts', icon: CreditCard, gradient: 'from-[#10B981] to-[#059669]', glowClass: 'glow-green', isMoney: true, iconColor: 'text-emerald-600', iconGlow: 'dark:bg-emerald-500/10' },
+      { title: 'Team Assignments', value: allAssignments.length, subtitle: 'Active vendor/staff shifts', icon: Users, gradient: 'from-[#6366F1] to-[#818CF8]', glowClass: 'glow-indigo', iconColor: 'text-indigo-500', iconGlow: 'dark:bg-indigo-500/10' },
+      { title: 'Recent Activities', value: activities.length, subtitle: 'Logged user actions', icon: ClipboardList, gradient: 'from-slate-500 to-slate-400', glowClass: 'glow-slate', iconColor: 'text-slate-550', iconGlow: 'dark:bg-slate-500/10' }
     ];
   }
 
@@ -544,12 +632,20 @@ const Dashboard = () => {
                       {e.notes && <p className="italic text-[11px] text-slate-455 bg-slate-100 dark:bg-slate-900/60 p-2 rounded-lg mt-2 line-clamp-2">" {e.notes} "</p>}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleReviewBooking(e)}
-                    className="w-full py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider shadow-sm transition-transform active:scale-[0.98] cursor-pointer mt-1"
-                  >
-                    Review & Assign Planner
-                  </button>
+                  <div className="flex gap-2 mt-1">
+                    <button
+                      onClick={() => handleConfirmBooking(e)}
+                      className="flex-1 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider shadow-sm transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => handleQuickRejectBooking(e)}
+                      className="py-2 px-3 bg-rose-50 hover:bg-rose-100 dark:bg-rose-955/15 dark:hover:bg-rose-950/30 text-rose-600 border border-rose-200 dark:border-rose-900/40 font-bold rounded-xl text-[10px] uppercase tracking-wider shadow-sm transition-all hover:scale-[1.01] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1"
+                    >
+                      Reject
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -558,7 +654,7 @@ const Dashboard = () => {
       )}
 
       {/* KPI Stats Grid */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${isAdmin ? 'lg:grid-cols-3 xl:grid-cols-6' : 'lg:grid-cols-4'}`}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((c, idx) => {
           const Icon = c.icon;
           return (
@@ -755,6 +851,7 @@ const Dashboard = () => {
 
       {/* --- ADMIN: RECENT ACTIVITIES --- */}
       {isAdmin && (
+        <>
         <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 border-b border-slate-100 dark:border-slate-800/60 pb-3">
             <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
@@ -820,6 +917,116 @@ const Dashboard = () => {
             </table>
           </div>
         </div>
+
+        {/* Booking History & Archives Section */}
+        <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40 mt-6 border-slate-200 dark:border-slate-850">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-slate-100 dark:border-slate-800/60 pb-3">
+            <div>
+              <h3 className="font-bold text-sm text-slate-850 dark:text-slate-200 flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-sky-500" />
+                <span>Booking History & Archives</span>
+              </h3>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium">Review, search and filter all historical bookings</p>
+            </div>
+            
+            {/* Search Input */}
+            <div className="w-full sm:w-64">
+              <input
+                type="text"
+                placeholder="Search bookings..."
+                value={bookingHistorySearch}
+                onChange={(e) => setBookingHistorySearch(e.target.value)}
+                className="form-input text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Status Filter Tabs */}
+          <div className="flex gap-2 mb-4 border-b border-slate-100 dark:border-slate-850 pb-3 overflow-x-auto">
+            {['all', 'new', 'confirmed', 'rejected'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setBookingHistoryStatus(tab)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all cursor-pointer ${
+                  bookingHistoryStatus === tab
+                    ? 'bg-sky-500 text-white shadow-sm'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-650 dark:text-slate-400'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Table list */}
+          <div className="overflow-x-auto">
+            <table className="modern-table text-xs">
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Event Name</th>
+                  <th>Client</th>
+                  <th>Event Date</th>
+                  <th>Venue</th>
+                  <th>Budget</th>
+                  <th>Status</th>
+                  <th className="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(() => {
+                  const filtered = allEvents.filter(e => {
+                    const matchesSearch = e.name.toLowerCase().includes(bookingHistorySearch.toLowerCase()) ||
+                      (e.client_name && e.client_name.toLowerCase().includes(bookingHistorySearch.toLowerCase())) ||
+                      (e.venue && e.venue.toLowerCase().includes(bookingHistorySearch.toLowerCase()));
+                    const matchesStatus = bookingHistoryStatus === 'all' || (e.status && e.status.toLowerCase() === bookingHistoryStatus);
+                    return matchesSearch && matchesStatus;
+                  });
+
+                  if (filtered.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={8} className="py-8 text-center text-slate-500 font-medium">No matching bookings in archives.</td>
+                      </tr>
+                    );
+                  }
+
+                  return filtered.map(e => (
+                    <tr key={e.id} className="hover:bg-slate-55/35 dark:hover:bg-slate-950/20 transition-colors">
+                      <td className="font-bold text-sky-500">SLV-EV-{e.id}</td>
+                      <td className="font-bold text-slate-800 dark:text-slate-200">{e.name}</td>
+                      <td>
+                        <div className="font-bold">{e.client_name}</div>
+                        <div className="text-[10px] text-slate-400 font-semibold">{e.client_phone}</div>
+                      </td>
+                      <td>{new Date(e.event_date).toLocaleDateString('en-GB')}</td>
+                      <td className="max-w-xs truncate font-medium text-slate-600 dark:text-slate-350" title={e.venue}>{e.venue}</td>
+                      <td className="font-bold">₹{parseFloat(e.budget).toLocaleString()}</td>
+                      <td>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide border ${
+                          e.status?.toLowerCase() === 'confirmed' ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/30 dark:text-emerald-400' :
+                          e.status?.toLowerCase() === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-250 dark:bg-rose-955/30 dark:text-rose-455' :
+                          'bg-amber-50 text-amber-700 border-amber-250 dark:bg-amber-950/30 dark:text-amber-400'
+                        }`}>
+                          {e.status}
+                        </span>
+                      </td>
+                      <td className="text-right">
+                        <button
+                          onClick={() => handleReviewBooking(e)}
+                          className="px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg text-[10px] transition-all cursor-pointer"
+                        >
+                          Review / Details
+                        </button>
+                      </td>
+                    </tr>
+                  ));
+                })()}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        </>
       )}
 
       {/* --- VENDOR COORDINATOR: ASSIGNED EVENTS LOGS --- */}
@@ -1365,6 +1572,90 @@ const Dashboard = () => {
                 </button>
               </div>
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Visual Notification Sent Preview Modal */}
+      <AnimatePresence>
+        {sentNotificationPreview && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 30 }}
+              className="w-full max-w-xl bg-white dark:bg-[#111F35] rounded-3xl border border-slate-205 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-white/[0.04] flex justify-between items-center bg-slate-50/50 dark:bg-slate-905/30">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                    <CheckCircle className="w-4.5 h-4.5" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest font-sans">System Outbox Dispatch</span>
+                    <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 mt-0.5">
+                      Client Alerts Successfully Dispatched!
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSentNotificationPreview(null)}
+                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Preview Body */}
+              <div className="p-6 overflow-y-auto space-y-6 text-xs leading-normal font-semibold">
+                <p className="text-slate-500 dark:text-slate-400 font-medium">
+                  We have simulated the external email and WhatsApp API requests for this booking update. Below are the actual message templates transmitted:
+                </p>
+
+                {/* WhatsApp Chat Simulation */}
+                <div className="space-y-2">
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest font-sans">WhatsApp Message Bubble (Simulated)</span>
+                  <div className="p-4 bg-[#E5DDD5] dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-2xl relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-[0.06] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] dark:bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+                    <div className="flex justify-start relative z-10">
+                      <div className="bg-[#DCF8C6] text-slate-800 dark:bg-emerald-950 dark:text-slate-100 max-w-[85%] rounded-2xl rounded-tl-none p-3.5 shadow-sm text-xs border border-emerald-200/40 dark:border-emerald-900/30">
+                        <p className="font-semibold text-emerald-600 dark:text-emerald-400 text-[10px] uppercase tracking-wider mb-1">SLV Events Official</p>
+                        <p className="whitespace-pre-wrap select-all font-medium leading-relaxed font-sans">{sentNotificationPreview.whatsappMessage}</p>
+                        <span className="block text-[9px] text-slate-400 dark:text-slate-500 text-right mt-1.5 font-semibold">
+                          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Email Client Simulation */}
+                <div className="space-y-2">
+                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest font-sans">Email Client (Simulated)</span>
+                  <div className="border border-slate-200 dark:border-white/[0.04] rounded-2xl overflow-hidden shadow-inner bg-slate-50 dark:bg-slate-905/30">
+                    <div className="p-3 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-white/[0.04] space-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                      <p><strong>From:</strong> updates@slvevents.com</p>
+                      <p><strong>To:</strong> {sentNotificationPreview.clientEmail || 'N/A'}</p>
+                      <p><strong>Subject:</strong> Booking Request Update - SLV Events</p>
+                    </div>
+                    <div className="p-4 bg-white dark:bg-[#151D2A] text-slate-700 dark:text-slate-350 font-medium font-sans">
+                      <p className="whitespace-pre-wrap leading-relaxed select-all">{sentNotificationPreview.emailMessage}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Footer */}
+              <div className="p-6 border-t border-slate-100 dark:border-white/[0.04] bg-slate-50/50 dark:bg-slate-900/30 flex justify-end">
+                <button
+                  onClick={() => setSentNotificationPreview(null)}
+                  className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer text-xs uppercase tracking-wide"
+                >
+                  Close & Refresh Dashboard
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

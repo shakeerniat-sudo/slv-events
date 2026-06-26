@@ -197,7 +197,7 @@ const Staff = () => {
             {staffData.map(s => (
               <div
                 key={s.id}
-                className="glass-card p-6 flex flex-col justify-between h-56 bg-white hover:bg-slate-50/50 dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/40 relative overflow-hidden group hover:scale-[1.01] duration-150"
+                className="glass-card p-6 flex flex-col justify-between h-48 bg-white hover:bg-slate-50/50 dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/40 relative overflow-hidden group hover:scale-[1.01] duration-150"
               >
                 <div>
                   <div className="flex justify-between items-start mb-3">
@@ -215,31 +215,29 @@ const Staff = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 mt-4">
+                  <div className="space-y-2 text-xs text-slate-500 dark:text-slate-400 mt-4">
                     <div className="flex items-center gap-2">
                       <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
-                      <span className="text-slate-705 dark:text-slate-300 font-medium">{s.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1 mb-1">
-                      <button
-                        onClick={() => window.location.href = `tel:${s.phone}`}
-                        className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
+                      <a 
+                        href={`tel:${s.phone}`} 
+                        className="hover:text-sky-500 transition-colors font-medium text-slate-705 dark:text-slate-300 select-all"
+                        title="Click to Call"
                       >
-                        📞 Call
-                      </button>
-                      <button
-                        onClick={() => {
-                          const message = `Hello ${s.name},\n\nYou have been assigned to an event.\n\nPlease confirm your availability.\n\nSLV Events`;
-                          window.open(`https://wa.me/${s.phone}?text=${encodeURIComponent(message)}`, "_blank");
-                        }}
-                        className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
-                      >
-                        💬 WhatsApp
-                      </button>
+                        {s.phone}
+                      </a>
                     </div>
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
-                      <span className="text-slate-705 dark:text-slate-300 capitalize">Available Status: {s.availability_status}</span>
+                      <span className="text-slate-705 dark:text-slate-300 capitalize flex items-center gap-1.5">
+                        Status: 
+                        <span className={`px-1.5 py-0.5 rounded font-bold text-[9px] uppercase ${
+                          s.availability_status?.toLowerCase() === 'available' 
+                            ? 'bg-emerald-500/10 text-emerald-500' 
+                            : 'bg-rose-500/10 text-rose-500'
+                        }`}>
+                          {s.availability_status || 'available'}
+                        </span>
+                      </span>
                     </div>
                   </div>
                 </div>

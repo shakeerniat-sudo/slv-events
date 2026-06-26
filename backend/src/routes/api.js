@@ -44,6 +44,7 @@ router.get('/events', authenticateToken, authorizeRoles('Admin', 'Operations Lea
 router.get('/events/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator', 'Finance Team'), eventController.getEventDetail);
 router.post('/events', authenticateToken, authorizeRoles('Admin'), eventController.createEvent);
 router.put('/events/:id', authenticateToken, authorizeRoles('Admin', 'Operations Lead', 'Vendor Coordinator', 'Finance Team'), eventController.updateEvent);
+router.delete('/events', authenticateToken, authorizeRoles('Admin'), eventController.clearAllEvents);
 router.delete('/events/:id', authenticateToken, authorizeRoles('Admin'), eventController.deleteEvent);
 
 // ==========================================
