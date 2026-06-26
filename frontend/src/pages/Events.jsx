@@ -386,33 +386,35 @@ const Events = () => {
                         )}
                       </div>
                       
-                      <div className="flex items-center gap-1.5 w-full">
-                        <motion.button
-                          whileHover={{ scale: 1.03 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => navigate(`/events/${ev.id}`)}
-                          className="flex-1 py-1 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
-                        >
-                          View
-                        </motion.button>
-                        {isCoordinator && (
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="flex items-center gap-2 w-full">
                           <motion.button
-                            whileHover={{ scale: 1.03 }}
+                            whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => handleEditClick(ev)}
-                            className="flex-1 py-1 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                            onClick={() => navigate(`/events/${ev.id}`)}
+                            className="flex-1 py-1.5 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl text-[10px] font-bold transition-colors cursor-pointer"
                           >
-                            Edit
+                            View
                           </motion.button>
-                        )}
+                          {isCoordinator && (
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              onClick={() => handleEditClick(ev)}
+                              className="flex-1 py-1.5 text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-xl text-[10px] font-bold transition-colors cursor-pointer"
+                            >
+                              Edit
+                            </motion.button>
+                          )}
+                        </div>
                         {isCoordinator && (
                           <motion.button
-                            whileHover={{ scale: 1.03 }}
+                            whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setActiveAssignEvent(ev)}
-                            className="px-2.5 py-1 bg-sky-500 hover:bg-sky-600 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer whitespace-nowrap"
+                            className="w-full py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-[10px] font-bold transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
                           >
-                            Assign Vendors & Staff
+                            <span>Assign Vendors & Staff</span>
                           </motion.button>
                         )}
                       </div>

@@ -295,7 +295,7 @@ exports.updateEvent = async (req, res) => {
         'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
         [
           'Event Status Update',
-          `Event "${name}" status changed to ${status}.`,
+          `Event "${name || currentEvent.name}" status changed to ${status}.`,
           'Upcoming Event'
         ]
       );
@@ -308,7 +308,7 @@ exports.updateEvent = async (req, res) => {
     const userId = req.user ? req.user.id : null;
     await db.query(
       'INSERT INTO activity_logs (user_id, user_name, action, details) VALUES (?, ?, ?, ?)',
-      [userId, userName, 'UPDATE_EVENT', `Updated event "${name}" (ID: ${eventId}) details.`]
+      [userId, userName, 'UPDATE_EVENT', `Updated event "${name || currentEvent.name}" (ID: ${eventId}) details.`]
     );
 
     return res.status(200).json({ message: 'Event updated successfully' });

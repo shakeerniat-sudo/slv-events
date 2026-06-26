@@ -32,6 +32,7 @@ router.delete('/users/:id', authenticateToken, authorizeRoles('Admin'), authCont
 router.get('/dashboard/kpi', authenticateToken, dashboardController.getKpiStats);
 router.get('/dashboard/charts', authenticateToken, dashboardController.getChartsData);
 router.get('/dashboard/activities', authenticateToken, dashboardController.getRecentActivities);
+router.delete('/dashboard/activities', authenticateToken, authorizeRoles('Admin'), dashboardController.clearActivities);
 
 // ==========================================
 // Events Routes

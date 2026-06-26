@@ -206,7 +206,7 @@ const Vendors = () => {
             {vendorsData.map(vendor => (
               <div
                 key={vendor.id}
-                className="glass-card p-6 flex flex-col justify-between h-60 bg-white hover:bg-slate-50/50 dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/40 relative overflow-hidden group hover:scale-[1.01] duration-150"
+                className="glass-card p-6 flex flex-col justify-between h-56 bg-white hover:bg-slate-50/50 dark:bg-[#111C30]/20 dark:hover:bg-[#111C30]/40 relative overflow-hidden group hover:scale-[1.01] duration-150"
               >
                 <div>
                   <div className="flex justify-between items-start mb-3">
@@ -227,28 +227,11 @@ const Vendors = () => {
                   <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 mt-4">
                     <div className="flex items-center gap-2">
                       <span className="text-slate-450 dark:text-slate-500 font-medium">Contact:</span>
-                      <span className="text-slate-700 dark:text-slate-300 font-semibold">{vendor.contact_person || 'N/A'}</span>
+                      <span className="text-slate-705 dark:text-slate-300 font-semibold">{vendor.contact_person || 'N/A'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
                       <span className="text-slate-705 dark:text-slate-300">{vendor.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-1 mb-1">
-                      <button
-                        onClick={() => window.location.href = `tel:${vendor.phone}`}
-                        className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
-                      >
-                        📞 Call
-                      </button>
-                      <button
-                        onClick={() => {
-                          const message = `Hello ${vendor.name},\n\nYou have been assigned to an event.\n\nPlease confirm your availability.\n\nThank you.\n\nSLV Events`;
-                          window.open(`https://wa.me/${vendor.phone}?text=${encodeURIComponent(message)}`, "_blank");
-                        }}
-                        className="flex-1 py-1 px-2 bg-slate-100 hover:bg-slate-205 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 rounded-lg text-[10px] font-bold transition-colors cursor-pointer flex items-center justify-center gap-1"
-                      >
-                        💬 WhatsApp
-                      </button>
                     </div>
                     <div className="flex items-center gap-2">
                       <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
@@ -258,10 +241,7 @@ const Vendors = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex justify-between items-center border-t border-slate-150 dark:border-slate-850/80 pt-4 mt-6">
-                  <div className="text-[10px] uppercase font-bold tracking-wider text-slate-450 dark:text-slate-500">
-                    Tier: <span className="text-slate-700 dark:text-slate-300 font-bold">{vendor.price_range}</span>
-                  </div>
+                <div className="flex justify-end items-center border-t border-slate-150 dark:border-slate-850/80 pt-4 mt-6">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleViewSchedule(vendor)}
@@ -278,7 +258,7 @@ const Vendors = () => {
                           e.preventDefault();
                           setTimeout(() => handleDeleteVendor(vendor.id), 0);
                         }}
-                        className="p-1.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950 text-slate-450 hover:text-rose-500 dark:hover:text-rose-400 rounded-lg border border-slate-200 dark:border-slate-700/50 transition-colors cursor-pointer"
+                        className="p-1.5 bg-slate-100 hover:bg-rose-50 dark:bg-slate-800 dark:hover:bg-rose-950 text-slate-455 hover:text-rose-500 dark:hover:text-rose-400 rounded-lg border border-slate-200 dark:border-slate-700/50 transition-colors cursor-pointer"
                         title="Delete Vendor"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

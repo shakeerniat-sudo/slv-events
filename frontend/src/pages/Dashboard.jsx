@@ -55,6 +55,27 @@ const AnimatedCounter = ({ value, duration = 0.8 }) => {
   return <span>{count}</span>;
 };
 
+const CustomTooltip = ({ active, payload, label, formatter }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200/60 dark:border-slate-800/60 p-3 rounded-2xl shadow-xl text-xs font-semibold text-slate-805 dark:text-slate-200 animate-fade-in-up">
+        <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider font-bold">{label}</p>
+        <div className="space-y-1">
+          {payload.map((p, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.stroke || p.fill }} />
+              <span>
+                {p.name}: <span className="font-extrabold text-slate-900 dark:text-white">{formatter ? formatter(p.value) : p.value}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const Dashboard = () => {
   const { user } = useAuth();
   const { theme, addToast } = useUIStore();
@@ -251,6 +272,20 @@ const Dashboard = () => {
       queryClient.invalidateQueries({ queryKey: ['payments-all-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
       addToast('Invoice marked as paid.');
+    }
+  });
+
+  // Clear activity logs mutation (Admin only)
+  const clearLogsMutation = useMutation({
+    mutationFn: async () => {
+      await axios.delete('/dashboard/activities');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dashboardActivities'] });
+      addToast('Recent activity logs cleared.');
+    },
+    onError: (err) => {
+      addToast(err.response?.data?.message || 'Failed to clear activity logs.', 'error');
     }
   });
 
@@ -479,20 +514,12 @@ const Dashboard = () => {
                           <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} />
-                      <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} />
-                      <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} />
-                      <Tooltip
-                        formatter={(val) => `₹${val.toLocaleString()}`}
-                        contentStyle={{
-                          backgroundColor: isDark ? '#111F35' : '#ffffff',
-                          borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
-                          borderRadius: '12px',
-                          color: isDark ? '#f8fafc' : '#0f172a'
-                        }}
-                      />
-                      <Area type="monotone" dataKey="Revenue" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
-                      <Area type="monotone" dataKey="Payout" stroke="#8b5cf6" strokeWidth={2} fillOpacity={1} fill="url(#colorPay)" />
+                      <CartesianGrid strokeDasharray="4 4" stroke={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'} vertical={false} />
+                      <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} axisLine={false} />
+                      <Tooltip content={<CustomTooltip formatter={(val) => `₹${val.toLocaleString()}`} />} />
+                      <Area type="monotone" dataKey="Revenue" stroke="#10b981" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRev)" />
+                      <Area type="monotone" dataKey="Payout" stroke="#8b5cf6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorPay)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 )}
@@ -522,18 +549,11 @@ const Dashboard = () => {
                           <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} />
-                      <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} />
-                      <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} allowDecimals={false} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: isDark ? '#111F35' : '#ffffff',
-                          borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
-                          borderRadius: '12px',
-                          color: isDark ? '#f8fafc' : '#0f172a'
-                        }}
-                      />
-                      <Area type="monotone" dataKey="events" name="Events Count" stroke="#0ea5e9" strokeWidth={2} fillOpacity={1} fill="url(#colorEvents)" />
+                      <CartesianGrid strokeDasharray="4 4" stroke={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'} vertical={false} />
+                      <XAxis dataKey="name" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={10} allowDecimals={false} tickLine={false} axisLine={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area type="monotone" dataKey="events" name="Events Count" stroke="#0ea5e9" strokeWidth={2.5} fillOpacity={1} fill="url(#colorEvents)" />
                     </AreaChart>
                   </ResponsiveContainer>
                 )}
@@ -561,22 +581,15 @@ const Dashboard = () => {
                     <BarChart data={charts.staffUtilization} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorStaff" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#34d399" stopOpacity={0.4} />
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.9} />
+                          <stop offset="95%" stopColor="#34d399" stopOpacity={0.6} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} horizontal={false} />
-                      <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} tickLine={false} />
-                      <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={65} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: isDark ? '#111F35' : '#ffffff',
-                          borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
-                          borderRadius: '12px',
-                          color: isDark ? '#f8fafc' : '#0f172a'
-                        }}
-                      />
-                      <Bar dataKey="utilizationRate" name="Utilization Rate %" fill="url(#colorStaff)" radius={[0, 4, 4, 0]} barSize={10} />
+                      <CartesianGrid strokeDasharray="4 4" stroke={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'} horizontal={false} />
+                      <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} tickLine={false} axisLine={false} />
+                      <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={75} tickLine={false} axisLine={false} />
+                      <Tooltip content={<CustomTooltip formatter={(val) => `${val}%`} />} />
+                      <Bar dataKey="utilizationRate" name="Utilization Rate" fill="url(#colorStaff)" radius={[0, 99, 99, 0]} barSize={12} background={{ fill: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)', radius: 99 }} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -599,22 +612,15 @@ const Dashboard = () => {
                     <BarChart data={charts.vendorUtilization} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorUtilization" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.4} />
+                          <stop offset="5%" stopColor="#6366f1" stopOpacity={0.9} />
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.6} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? 'rgba(255,255,255,0.03)' : '#e2e8f0'} horizontal={false} />
-                      <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} tickLine={false} />
-                      <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={65} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: isDark ? '#111F35' : '#ffffff',
-                          borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
-                          borderRadius: '12px',
-                          color: isDark ? '#f8fafc' : '#0f172a'
-                        }}
-                      />
-                      <Bar dataKey="utilizationRate" name="Utilization Rate %" fill="url(#colorUtilization)" radius={[0, 4, 4, 0]} barSize={10} />
+                      <CartesianGrid strokeDasharray="4 4" stroke={isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'} horizontal={false} />
+                      <XAxis type="number" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} domain={[0, 100]} tickLine={false} axisLine={false} />
+                      <YAxis dataKey="name" type="category" stroke={isDark ? '#64748b' : '#94a3b8'} fontSize={9} width={75} tickLine={false} axisLine={false} />
+                      <Tooltip content={<CustomTooltip formatter={(val) => `${val}%`} />} />
+                      <Bar dataKey="utilizationRate" name="Utilization Rate" fill="url(#colorUtilization)" radius={[0, 99, 99, 0]} barSize={12} background={{ fill: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.03)', radius: 99 }} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -633,10 +639,23 @@ const Dashboard = () => {
       {/* --- ADMIN: RECENT ACTIVITIES --- */}
       {isAdmin && (
         <div className="glass-card p-6 bg-white dark:bg-[#111C30]/40">
-          <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-indigo-500" />
-            <span>Recent System Activity Logs</span>
-          </h3>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 border-b border-slate-100 dark:border-slate-800/60 pb-3">
+            <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-indigo-500" />
+              <span>Recent System Activity Logs</span>
+            </h3>
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to clear all recent activity logs?')) {
+                  clearLogsMutation.mutate();
+                }
+              }}
+              disabled={clearLogsMutation.isPending}
+              className="px-3.5 py-1.5 bg-rose-500 hover:bg-rose-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow active:scale-95 cursor-pointer"
+            >
+              {clearLogsMutation.isPending ? 'Clearing Logs...' : 'Clear Logs'}
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="modern-table">
               <thead>

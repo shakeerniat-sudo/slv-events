@@ -432,7 +432,102 @@ function runJsonQuery(sql, params = []) {
     return list;
   }
 
-  // 20b. SELECT assignments JOIN events (vendor/staff dates check)
+  // 20b1. SELECT assignments JOIN events for vendor details
+  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && sqlClean.includes("resource_type = 'vendor'") && sqlClean.includes("resource_id = ?")) {
+    const vendorId = parseInt(params[0]);
+    const list = db.assignments
+      .filter(a => a.resource_type === 'vendor' && a.resource_id === vendorId)
+      .map(a => {
+        const ev = db.events.find(e => e.id === a.event_id) || {};
+        return {
+          ...a,
+          event_name: ev.name || '',
+          event_date: ev.event_date || '',
+          venue: ev.venue || ''
+        };
+      });
+    return list;
+  }
+
+  // 20b2. SELECT assignments JOIN events for staff details
+  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && sqlClean.includes("resource_type = 'staff'") && sqlClean.includes("resource_id = ?")) {
+    const staffId = parseInt(params[0]);
+    const list = db.assignments
+      .filter(a => a.resource_type === 'staff' && a.resource_id === staffId)
+      .map(a => {
+        const ev = db.events.find(e => e.id === a.event_id) || {};
+        return {
+          ...a,
+          event_name: ev.name || '',
+          event_date: ev.event_date || '',
+          venue: ev.venue || ''
+        };
+      });
+    return list;
+  }
+
+  // 20b3. SELECT assignments JOIN events for resource conflict checks
+  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && sqlClean.includes('a.resource_type = ?') && sqlClean.includes('a.resource_id = ?') && sqlClean.includes('e.event_date = ?')) {
+    const resType = params[0];
+    const resId = parseInt(params[1]);
+    const dateStr = params[2];
+    const excludeEventId = params[3] ? parseInt(params[3]) : null;
+
+    let matches = db.assignments
+      .filter(a => a.resource_type === resType && a.resource_id === resId)
+      .map(a => {
+        const ev = db.events.find(e => e.id === a.event_id) || {};
+        return {
+          ...a,
+          event_name: ev.name || '',
+          event_date: ev.event_date || '',
+          event_id: ev.id
+        };
+      })
+      .filter(m => m.event_date === dateStr);
+
+    if (excludeEventId) {
+      matches = matches.filter(m => m.event_id !== excludeEventId);
+    }
+    return matches;
+  }
+
+  // 20b4. SELECT assignments JOIN events for checkAvailability by date
+  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && sqlClean.includes('where e.event_date = ?') && !sqlClean.includes('and e.id != ?')) {
+    const dateStr = params[0];
+    const list = db.assignments
+      .map(a => {
+        const ev = db.events.find(e => e.id === a.event_id) || {};
+        return {
+          ...a,
+          event_date: ev.event_date || '',
+          event_id: ev.id,
+          event_name: ev.name || ''
+        };
+      })
+      .filter(m => m.event_date === dateStr);
+    return list;
+  }
+
+  // 20b5. SELECT assignments JOIN events for checkAvailability with exclusions
+  if (sqlClean.includes('from assignments a join events e on a.event_id = e.id') && sqlClean.includes('where e.event_date = ? and e.id != ?')) {
+    const dateStr = params[0];
+    const excludeEventId = parseInt(params[1]);
+    const list = db.assignments
+      .map(a => {
+        const ev = db.events.find(e => e.id === a.event_id) || {};
+        return {
+          ...a,
+          event_name: ev.name || '',
+          event_date: ev.event_date || '',
+          event_id: ev.id
+        };
+      })
+      .filter(m => m.event_date === dateStr && m.event_id !== excludeEventId);
+    return list;
+  }
+
+  // 20b6. Fallback generic check (keeps compatibility with any other cases)
   if (sqlClean.includes('from assignments a join events e on a.event_id = e.id')) {
     const type = sqlClean.includes("resource_type = 'vendor'") ? 'vendor' : 'staff';
     const list = db.assignments
@@ -781,6 +876,13 @@ function runJsonQuery(sql, params = []) {
     db.activity_logs.push(log);
     writeJsonDb(db);
     return { insertId: newId };
+  }
+
+  // 36b. DELETE FROM activity_logs
+  if (sqlClean.startsWith('delete from activity_logs')) {
+    db.activity_logs = [];
+    writeJsonDb(db);
+    return { affectedRows: 1 };
   }
 
   // 37. SELECT event_assignments

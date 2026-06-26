@@ -146,3 +146,13 @@ exports.getRecentActivities = async (req, res) => {
     return res.status(500).json({ message: 'Error fetching logs' });
   }
 };
+
+exports.clearActivities = async (req, res) => {
+  try {
+    await db.query('DELETE FROM activity_logs');
+    return res.status(200).json({ message: 'Activity logs cleared successfully' });
+  } catch (err) {
+    console.error('Clear activities error:', err);
+    return res.status(500).json({ message: 'Error clearing activity logs' });
+  }
+};
