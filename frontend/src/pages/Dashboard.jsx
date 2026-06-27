@@ -289,11 +289,13 @@ const Dashboard = () => {
   });
 
   const handleConfirmBooking = (booking) => {
-    setSelectedBooking(booking);
-    processBookingMutation.mutate({
-      eventId: booking.id,
-      status: 'Confirmed'
-    });
+    if (window.confirm(`Are you sure you want to confirm the booking request for "${booking.name}"?`)) {
+      setSelectedBooking(booking);
+      processBookingMutation.mutate({
+        eventId: booking.id,
+        status: 'Confirmed'
+      });
+    }
   };
 
   const handleQuickRejectBooking = (booking) => {
