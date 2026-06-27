@@ -107,11 +107,16 @@ const Calendar = () => {
     if (showEvents) {
       events.forEach(e => {
         let evDateStr = '';
-        if (e.event_date) {
+        if (e.event_date && !e.event_date.toString().includes('Invalid Date')) {
           try {
-            evDateStr = new Date(e.event_date).toISOString().split('T')[0];
+            const dObj = new Date(e.event_date);
+            if (!isNaN(dObj.getTime())) {
+              evDateStr = dObj.toISOString().split('T')[0];
+            } else {
+              evDateStr = e.event_date.toString().split('T')[0];
+            }
           } catch (err) {
-            evDateStr = e.event_date.split('T')[0];
+            evDateStr = e.event_date.toString().split('T')[0];
           }
         }
         if (evDateStr === dateStr) {
@@ -151,11 +156,16 @@ const Calendar = () => {
       const ev = events.find(e => e.id === as.event_id);
       if (!ev) return;
       let evDateStr = '';
-      if (ev && ev.event_date) {
+      if (ev && ev.event_date && !ev.event_date.toString().includes('Invalid Date')) {
         try {
-          evDateStr = new Date(ev.event_date).toISOString().split('T')[0];
+          const dObj = new Date(ev.event_date);
+          if (!isNaN(dObj.getTime())) {
+            evDateStr = dObj.toISOString().split('T')[0];
+          } else {
+            evDateStr = ev.event_date.toString().split('T')[0];
+          }
         } catch (err) {
-          evDateStr = ev.event_date.split('T')[0];
+          evDateStr = ev.event_date.toString().split('T')[0];
         }
       }
       if (ev && evDateStr === dateStr) {

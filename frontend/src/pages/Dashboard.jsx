@@ -36,6 +36,19 @@ import {
   CartesianGrid
 } from 'recharts';
 
+const formatToGBSafe = (dateVal) => {
+  if (!dateVal) return '';
+  const str = dateVal.toString();
+  if (str === 'Invalid Date' || str.includes('Invalid Date')) return '';
+  try {
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString('en-GB');
+    }
+  } catch (e) {}
+  return '';
+};
+
 const AnimatedCounter = ({ value, duration = 0.8 }) => {
   const [count, setCount] = useState(0);
 
@@ -93,7 +106,22 @@ const Dashboard = () => {
   const [reportingIncident, setReportingIncident] = useState(false);
 
   const [selectedBooking, setSelectedBooking] = useState(null);
-  const [sentNotificationPreview, setSentNotificationPreview] = useState(null);
+  
+  const openWhatsAppForClient = (phone, message) => {
+    if (!phone) {
+      addToast('Client phone number is missing or invalid.', 'error');
+      return false;
+    }
+    const cleanPhone = phone.replace(/[^\d]/g, '');
+    if (!cleanPhone) {
+      addToast('Client phone number is missing or invalid.', 'error');
+      return false;
+    }
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    return true;
+  };
+
   const [reviewForm, setReviewForm] = useState({
     status: 'Pending',
     coordinator_id: '',
@@ -192,9 +220,12 @@ const Dashboard = () => {
 
   // Process Booking Mutation (Admin Review & Confirmation dispatch)
   const processBookingMutation = useMutation({
-    mutationFn: async ({ eventId, status }) => {
+    mutationFn: async ({ eventId, status, coordinator_id, operations_lead_id, finance_team_id }) => {
       await axios.put(`/events/${eventId}`, {
-        status
+        status,
+        coordinator_id,
+        operations_lead_id,
+        finance_team_id
       });
 
       // Insert confirmation notification
@@ -204,19 +235,18 @@ const Dashboard = () => {
         type: 'Assignment Confirmation'
       });
     },
-    onSuccess: () => {
-      addToast('Booking confirmed successfully!');
-      
-      const formattedDate = selectedBooking ? new Date(selectedBooking.event_date).toLocaleDateString('en-GB') : '';
-      if (selectedBooking) {
-        setSentNotificationPreview({
-          clientName: selectedBooking.client_name,
-          clientPhone: selectedBooking.client_phone,
-          clientEmail: selectedBooking.client_email,
-          type: 'Confirm',
-          whatsappMessage: `Hello ${selectedBooking.client_name}\n\nYour event booking has been confirmed.\n\nBooking ID: SLV-EV-${selectedBooking.id}\nDate: ${formattedDate}\nVenue: ${selectedBooking.venue}\n\nThank you for choosing SLV Events.`,
-          emailMessage: `Hello ${selectedBooking.client_name},\n\nYour booking has been confirmed.\n\nBooking ID: SLV-EV-${selectedBooking.id}\nEvent: ${selectedBooking.name}\nDate: ${formattedDate}\nVenue: ${selectedBooking.venue}\n\nOur team will contact you shortly.\n\nThank you,\nSLV Events`
-        });
+    onSuccess: (data, variables) => {
+      const booking = selectedBooking;
+      if (booking && (variables.status === 'Confirmed' || variables.status === 'Assigned')) {
+        const formattedDate = formatToGBSafe(booking.event_date);
+        const msg = `Hello ${booking.client_name},\n\nYour event booking has been confirmed.\n\nBooking ID: SLV-EV-${booking.id}\nDate: ${formattedDate}\nVenue: ${booking.venue}\n\nThank you for choosing SLV Events.`;
+        
+        const opened = openWhatsAppForClient(booking.client_phone, msg);
+        if (opened) {
+          addToast('Booking confirmed. WhatsApp opened successfully.');
+        }
+      } else {
+        addToast(`Booking updated successfully!`);
       }
 
       setSelectedBooking(null);
@@ -232,25 +262,21 @@ const Dashboard = () => {
 
   // Quick Reject Booking Mutation
   const rejectBookingMutation = useMutation({
-    mutationFn: async ({ eventId, name, clientName, clientPhone, clientEmail, eventDate, venue }) => {
+    mutationFn: async ({ eventId, name, clientName, clientPhone, clientEmail, eventDate, venue, rejectionReason }) => {
       await axios.put(`/events/${eventId}`, {
         name,
-        status: 'Rejected'
+        status: 'Rejected',
+        notes: rejectionReason
       });
-      return { eventId, clientName, clientPhone, clientEmail, eventName: name, eventDate, venue };
+      return { eventId, clientName, clientPhone, clientEmail, eventName: name, eventDate, venue, rejectionReason };
     },
     onSuccess: (data) => {
-      addToast('Booking rejected. Notifications sent to client!');
+      const msg = `Hello ${data.clientName},\n\nUnfortunately your booking request was not approved.\n\nReason: ${data.rejectionReason || 'Booking requirements could not be fulfilled.'}\n\nPlease contact us for more information.\n\nThank you,\nSLV Events`;
       
-      // Set preview state for visual outbox representation
-      setSentNotificationPreview({
-        clientName: data.clientName,
-        clientPhone: data.clientPhone,
-        clientEmail: data.clientEmail,
-        type: 'Reject',
-        whatsappMessage: `Hello ${data.clientName}\n\nYour booking request was not approved.\n\nPlease contact SLV Events for more information.`,
-        emailMessage: `Hello ${data.clientName},\n\nUnfortunately your booking request has not been approved.\n\nPlease contact us for more information.\n\nThank you,\nSLV Events`
-      });
+      const opened = openWhatsAppForClient(data.clientPhone, msg);
+      if (opened) {
+        addToast('Booking rejected. WhatsApp opened successfully.');
+      }
 
       queryClient.invalidateQueries({ queryKey: ['events'] });
       queryClient.invalidateQueries({ queryKey: ['events-all'] });
@@ -271,17 +297,19 @@ const Dashboard = () => {
   };
 
   const handleQuickRejectBooking = (booking) => {
-    if (window.confirm(`Are you sure you want to reject the booking request for "${booking.name}"?`)) {
-      rejectBookingMutation.mutate({
-        eventId: booking.id,
-        name: booking.name,
-        clientName: booking.client_name,
-        clientPhone: booking.client_phone,
-        clientEmail: booking.client_email,
-        eventDate: booking.event_date,
-        venue: booking.venue
-      });
-    }
+    const reason = window.prompt(`Enter the reason for rejecting the booking request for "${booking.name}":`);
+    if (reason === null) return; // Cancelled
+    
+    rejectBookingMutation.mutate({
+      eventId: booking.id,
+      name: booking.name,
+      clientName: booking.client_name,
+      clientPhone: booking.client_phone,
+      clientEmail: booking.client_email,
+      eventDate: booking.event_date,
+      venue: booking.venue,
+      rejectionReason: reason.trim() || 'Booking requirements could not be fulfilled.'
+    });
   };
 
   // Fetch All Users (for Admin Booking Review Assignments)
@@ -408,6 +436,39 @@ const Dashboard = () => {
       addToast('Invoice marked as paid.');
     }
   });
+
+  // Delete single event booking
+  const deleteEventMutation = useMutation({
+    mutationFn: async (id) => {
+      await axios.delete(`/events/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardActivities'] });
+      addToast('Booking deleted successfully.');
+    },
+    onError: (err) => {
+      addToast(err.response?.data?.message || 'Failed to delete booking.', 'error');
+    }
+  });
+
+  // Clear all event bookings
+  const clearAllEventsMutation = useMutation({
+    mutationFn: async () => {
+      await axios.delete('/events');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events-all'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardKpi'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboardActivities'] });
+      addToast('All booking history cleared successfully.');
+    },
+    onError: (err) => {
+      addToast(err.response?.data?.message || 'Failed to clear booking history.', 'error');
+    }
+  });
+
 
   // Clear activity logs mutation (Admin only)
   const clearLogsMutation = useMutation({
@@ -626,7 +687,7 @@ const Dashboard = () => {
                     <div className="mt-3 space-y-1.5 text-slate-555 dark:text-slate-400 font-medium">
                       <p><strong>Client:</strong> {e.client_name} ({e.client_phone || 'N/A'})</p>
                       <p><strong>Email:</strong> {e.client_email || 'N/A'}</p>
-                      <p><strong>Date:</strong> {new Date(e.event_date).toLocaleDateString('en-GB')}</p>
+                      <p><strong>Date:</strong> {formatToGBSafe(e.event_date)}</p>
                       <p><strong>Venue:</strong> {e.venue}</p>
                       <p><strong>Budget:</strong> ₹{parseFloat(e.budget).toLocaleString()} | <strong>Guests:</strong> {e.guest_count || 'N/A'}</p>
                       {e.notes && <p className="italic text-[11px] text-slate-455 bg-slate-100 dark:bg-slate-900/60 p-2 rounded-lg mt-2 line-clamp-2">" {e.notes} "</p>}
@@ -929,15 +990,26 @@ const Dashboard = () => {
               <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 font-medium">Review, search and filter all historical bookings</p>
             </div>
             
-            {/* Search Input */}
-            <div className="w-full sm:w-64">
+            {/* Search Input & Clear All */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Search bookings..."
                 value={bookingHistorySearch}
                 onChange={(e) => setBookingHistorySearch(e.target.value)}
-                className="form-input text-xs"
+                className="form-input text-xs w-full sm:w-64"
               />
+              <button
+                onClick={() => {
+                  if (window.confirm("Are you sure you want to delete all booking history? This action is permanent and cannot be undone.")) {
+                    clearAllEventsMutation.mutate();
+                  }
+                }}
+                disabled={clearAllEventsMutation.isPending}
+                className="px-3 py-2 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-lg text-[10px] uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer disabled:opacity-50"
+              >
+                {clearAllEventsMutation.isPending ? 'Clearing...' : 'Clear All'}
+              </button>
             </div>
           </div>
 
@@ -999,7 +1071,7 @@ const Dashboard = () => {
                         <div className="font-bold">{e.client_name}</div>
                         <div className="text-[10px] text-slate-400 font-semibold">{e.client_phone}</div>
                       </td>
-                      <td>{new Date(e.event_date).toLocaleDateString('en-GB')}</td>
+                      <td>{formatToGBSafe(e.event_date)}</td>
                       <td className="max-w-xs truncate font-medium text-slate-600 dark:text-slate-350" title={e.venue}>{e.venue}</td>
                       <td className="font-bold">₹{parseFloat(e.budget).toLocaleString()}</td>
                       <td>
@@ -1011,12 +1083,22 @@ const Dashboard = () => {
                           {e.status}
                         </span>
                       </td>
-                      <td className="text-right">
+                      <td className="text-right flex items-center justify-end gap-2">
                         <button
                           onClick={() => handleReviewBooking(e)}
                           className="px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-lg text-[10px] transition-all cursor-pointer"
                         >
                           Review / Details
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to permanently delete the booking for "${e.name}"?`)) {
+                              deleteEventMutation.mutate(e.id);
+                            }
+                          }}
+                          className="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-950/60 dark:text-rose-400 font-bold rounded-lg text-[10px] transition-all cursor-pointer"
+                        >
+                          Delete
                         </button>
                       </td>
                     </tr>
@@ -1048,7 +1130,7 @@ const Dashboard = () => {
                   <div key={e.id} className="p-3.5 bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-2xl flex justify-between items-center text-xs">
                     <div>
                       <h4 className="font-bold text-slate-800 dark:text-slate-250">{e.name}</h4>
-                      <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-1">Date: {new Date(e.event_date).toLocaleDateString('en-GB')} | Venue: {e.venue}</p>
+                      <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-1">Date: {formatToGBSafe(e.event_date)} | Venue: {e.venue}</p>
                     </div>
                     <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-250 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-900/40 rounded-full font-bold text-[9px] uppercase tracking-wide">
                       Pending
@@ -1364,7 +1446,7 @@ const Dashboard = () => {
                         </span>
                       </td>
                       <td className="font-bold text-slate-900 dark:text-slate-200">₹{parseFloat(pay.amount).toLocaleString()}</td>
-                      <td className="text-slate-500 dark:text-slate-450">{new Date(pay.due_date).toLocaleDateString('en-GB')}</td>
+                      <td className="text-slate-500 dark:text-slate-450">{formatToGBSafe(pay.due_date)}</td>
                       <td>
                         <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border ${
                           pay.status === 'Overdue'
@@ -1445,7 +1527,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Event Date</span>
-                    <p className="font-bold text-slate-800 dark:text-slate-205 mt-0.5">{new Date(selectedBooking.event_date).toLocaleDateString('en-GB')}</p>
+                    <p className="font-bold text-slate-800 dark:text-slate-205 mt-0.5">{formatToGBSafe(selectedBooking.event_date)}</p>
                   </div>
                   <div>
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Location / Venue</span>
@@ -1577,89 +1659,6 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
-      {/* Visual Notification Sent Preview Modal */}
-      <AnimatePresence>
-        {sentNotificationPreview && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              className="w-full max-w-xl bg-white dark:bg-[#111F35] rounded-3xl border border-slate-205 dark:border-white/[0.08] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
-            >
-              {/* Header */}
-              <div className="p-6 border-b border-slate-100 dark:border-white/[0.04] flex justify-between items-center bg-slate-50/50 dark:bg-slate-905/30">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                    <CheckCircle className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest font-sans">System Outbox Dispatch</span>
-                    <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100 mt-0.5">
-                      Client Alerts Successfully Dispatched!
-                    </h3>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSentNotificationPreview(null)}
-                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Preview Body */}
-              <div className="p-6 overflow-y-auto space-y-6 text-xs leading-normal font-semibold">
-                <p className="text-slate-500 dark:text-slate-400 font-medium">
-                  We have simulated the external email and WhatsApp API requests for this booking update. Below are the actual message templates transmitted:
-                </p>
-
-                {/* WhatsApp Chat Simulation */}
-                <div className="space-y-2">
-                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest font-sans">WhatsApp Message Bubble (Simulated)</span>
-                  <div className="p-4 bg-[#E5DDD5] dark:bg-slate-950 border border-slate-205 dark:border-slate-850 rounded-2xl relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-[0.06] pointer-events-none bg-[radial-gradient(#000_1px,transparent_1px)] dark:bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
-                    <div className="flex justify-start relative z-10">
-                      <div className="bg-[#DCF8C6] text-slate-800 dark:bg-emerald-950 dark:text-slate-100 max-w-[85%] rounded-2xl rounded-tl-none p-3.5 shadow-sm text-xs border border-emerald-200/40 dark:border-emerald-900/30">
-                        <p className="font-semibold text-emerald-600 dark:text-emerald-400 text-[10px] uppercase tracking-wider mb-1">SLV Events Official</p>
-                        <p className="whitespace-pre-wrap select-all font-medium leading-relaxed font-sans">{sentNotificationPreview.whatsappMessage}</p>
-                        <span className="block text-[9px] text-slate-400 dark:text-slate-500 text-right mt-1.5 font-semibold">
-                          {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Email Client Simulation */}
-                <div className="space-y-2">
-                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest font-sans">Email Client (Simulated)</span>
-                  <div className="border border-slate-200 dark:border-white/[0.04] rounded-2xl overflow-hidden shadow-inner bg-slate-50 dark:bg-slate-905/30">
-                    <div className="p-3 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-white/[0.04] space-y-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                      <p><strong>From:</strong> updates@slvevents.com</p>
-                      <p><strong>To:</strong> {sentNotificationPreview.clientEmail || 'N/A'}</p>
-                      <p><strong>Subject:</strong> Booking Request Update - SLV Events</p>
-                    </div>
-                    <div className="p-4 bg-white dark:bg-[#151D2A] text-slate-700 dark:text-slate-350 font-medium font-sans">
-                      <p className="whitespace-pre-wrap leading-relaxed select-all">{sentNotificationPreview.emailMessage}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Footer */}
-              <div className="p-6 border-t border-slate-100 dark:border-white/[0.04] bg-slate-50/50 dark:bg-slate-900/30 flex justify-end">
-                <button
-                  onClick={() => setSentNotificationPreview(null)}
-                  className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer text-xs uppercase tracking-wide"
-                >
-                  Close & Refresh Dashboard
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 };

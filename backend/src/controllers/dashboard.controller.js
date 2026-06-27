@@ -25,13 +25,13 @@ exports.getKpiStats = async (req, res) => {
     // Build list of assignments grouped by date to find overlaps
     const [vendorAssignments, staffAssignments] = await Promise.all([
       db.query(`
-        SELECT a.resource_id, e.event_date
+        SELECT a.resource_id, e.eventDate
         FROM assignments a
         JOIN events e ON a.event_id = e.id
         WHERE a.resource_type = 'vendor'
       `),
       db.query(`
-        SELECT a.resource_id, e.event_date
+        SELECT a.resource_id, e.eventDate
         FROM assignments a
         JOIN events e ON a.event_id = e.id
         WHERE a.resource_type = 'staff'
@@ -41,7 +41,7 @@ exports.getKpiStats = async (req, res) => {
     const detectOverlapCount = (list) => {
       const dates = {};
       list.forEach(item => {
-        const key = `${item.resource_id}_${item.event_date}`;
+        const key = `${item.resource_id}_${item.eventDate}`;
         dates[key] = (dates[key] || 0) + 1;
       });
       return Object.values(dates).filter(count => count > 1).length;
@@ -79,7 +79,7 @@ exports.getChartsData = async (req, res) => {
     const eventCounts = Array(12).fill(0);
     
     events.forEach(e => {
-      const d = new Date(e.event_date);
+      const d = new Date(e.eventDate);
       if (d.getFullYear() === currentYear) {
         eventCounts[d.getMonth()]++;
       }

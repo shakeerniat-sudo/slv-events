@@ -95,6 +95,7 @@ router.delete('/inventory/:id', authenticateToken, authorizeRoles('Admin', 'Oper
 // Notifications Routes
 // ==========================================
 router.get('/notifications', authenticateToken, notificationController.listNotifications);
+router.post('/notifications', authenticateToken, notificationController.createNotification);
 router.put('/notifications/:id/read', authenticateToken, notificationController.markAsRead);
 router.delete('/notifications/:id', authenticateToken, notificationController.deleteNotification);
 router.delete('/notifications', authenticateToken, notificationController.deleteAllNotifications);

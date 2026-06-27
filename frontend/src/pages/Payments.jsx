@@ -285,7 +285,7 @@ const Payments = () => {
                           {p.status}
                         </span>
                       </td>
-                      <td className="text-slate-600 dark:text-slate-400">{new Date(p.due_date).toLocaleDateString('en-GB')}</td>
+                      <td className="text-slate-600 dark:text-slate-400">{p.due_date && !p.due_date.toString().includes('Invalid Date') && !isNaN(new Date(p.due_date).getTime()) ? new Date(p.due_date).toLocaleDateString('en-GB') : ''}</td>
                       <td className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-2">
                           {p.status !== 'Paid' && isFinance && (

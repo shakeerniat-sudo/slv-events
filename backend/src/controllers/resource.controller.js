@@ -57,7 +57,7 @@ exports.getVendorDetail = async (req, res) => {
 
     // Get assignments schedule
     const assignments = await db.query(
-      "SELECT a.*, e.name as event_name, e.event_date, e.venue FROM assignments a JOIN events e ON a.event_id = e.id WHERE a.resource_type = 'vendor' AND a.resource_id = ?",
+      "SELECT a.*, e.name as event_name, e.eventDate, e.venue FROM assignments a JOIN events e ON a.event_id = e.id WHERE a.resource_type = 'vendor' AND a.resource_id = ?",
       [id]
     );
 
@@ -222,7 +222,7 @@ exports.getStaffDetail = async (req, res) => {
 
     // Get assignments schedule
     const assignments = await db.query(
-      "SELECT a.*, e.name as event_name, e.event_date, e.venue FROM assignments a JOIN events e ON a.event_id = e.id WHERE a.resource_type = 'staff' AND a.resource_id = ?",
+      "SELECT a.*, e.name as event_name, e.eventDate, e.venue FROM assignments a JOIN events e ON a.event_id = e.id WHERE a.resource_type = 'staff' AND a.resource_id = ?",
       [id]
     );
 

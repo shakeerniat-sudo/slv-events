@@ -481,7 +481,7 @@ const Vendors = () => {
                     </div>
                     <div className="text-right shrink-0">
                       <span className="text-[10px] font-bold text-sky-600 bg-sky-50 border border-sky-200 dark:text-sky-400 dark:bg-sky-950/60 dark:border-sky-900/35 px-2.5 py-0.5 rounded-full">
-                        {new Date(item.event_date).toLocaleDateString('en-GB')}
+                        {item.event_date && !item.event_date.toString().includes('Invalid Date') && !isNaN(new Date(item.event_date).getTime()) ? new Date(item.event_date).toLocaleDateString('en-GB') : ''}
                       </span>
                     </div>
                   </div>

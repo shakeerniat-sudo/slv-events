@@ -69,7 +69,7 @@ const AutomationService = {
 
       await db.query(
         'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
-        [`Event Summary: ${event.name}`, summaryText, 'Event Summary']
+        [`Event Summary: ${event.name}`, summaryText, 'Upcoming Event']
       );
       console.log(`Generated event summary for event ID ${eventId}`);
     } catch (err) {

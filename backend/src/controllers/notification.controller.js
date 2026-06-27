@@ -58,3 +58,23 @@ exports.deleteAllNotifications = async (req, res) => {
     return res.status(500).json({ message: 'Error clearing notifications' });
   }
 };
+
+exports.createNotification = async (req, res) => {
+  try {
+    const { title, message, type } = req.body;
+    if (!title || !message) {
+      return res.status(400).json({ message: 'Title and message are required' });
+    }
+    const result = await db.query(
+      'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+      [title, message, type || 'Upcoming Event']
+    );
+    return res.status(201).json({
+      message: 'Notification created successfully',
+      notificationId: result.insertId
+    });
+  } catch (err) {
+    console.error('[NOTIFICATION CONTROLLER ERROR] Create notification error:', err);
+    return res.status(500).json({ message: 'Error creating notification', error: err.message });
+  }
+};

@@ -132,10 +132,10 @@ const LandingPage = () => {
             {user ? (
               <button
                 onClick={() => navigate('/dashboard')}
-                className="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer flex items-center gap-2"
+                className="px-3.5 py-1.5 border border-sky-500 bg-sky-500/10 hover:bg-sky-500/20 text-sky-600 dark:text-sky-400 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5"
               >
-                Go to Dashboard
-                <ArrowRight className="w-3.5 h-3.5" />
+                Dashboard
+                <ArrowRight className="w-3.5 h-3.5 text-sky-550 dark:text-sky-400" />
               </button>
             ) : (
               <button

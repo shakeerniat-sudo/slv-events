@@ -384,6 +384,16 @@ exports.updateEvent = async (req, res) => {
             'INSERT INTO activity_logs (user_id, user_name, action, details) VALUES (?, ?, ?, ?)',
             [userId, userName, 'CONFIRM_BOOKING', `Accepted and confirmed booking "${eventName}" (ID: ${eventId}) for client "${clientName}"`]
           );
+
+          // Create event assignments row automatically if it does not exist
+          const existingAssignments = await db.query('SELECT * FROM event_assignments WHERE event_id = ?', [eventId]);
+          if (existingAssignments.length === 0) {
+            await db.query(
+              'INSERT INTO event_assignments (event_id, decorator_id, caterer_id, photographer_id, anchor_id, sound_team_id, lighting_team_id, staff_ids, status, assigned_by) VALUES (?, NULL, NULL, NULL, NULL, NULL, NULL, NULL, ?, ?)',
+              [eventId, 'Assigned', userName]
+            );
+            console.log(`[AUTO ASSIGNMENT] Created event_assignments row for event ID ${eventId}`);
+          }
         }
       } else {
         // Standard status update
@@ -395,6 +405,42 @@ exports.updateEvent = async (req, res) => {
             'Upcoming Event'
           ]
         );
+      }
+    }
+
+    // Check and log notifications for newly assigned team leads
+    const updatedEventName = name || currentEvent.name;
+    if (coordId !== undefined && coordId !== currentEvent.coordinator_id) {
+      if (coordId) {
+        const coords = await db.query('SELECT name FROM users WHERE id = ?', [coordId]);
+        if (coords.length > 0) {
+          await db.query(
+            'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+            ['Vendor Coordinator Assigned', `Vendor Coordinator ${coords[0].name} has been assigned to "${updatedEventName}".`, 'Assignment Confirmation']
+          );
+        }
+      }
+    }
+    if (opsId !== undefined && opsId !== currentEvent.operations_lead_id) {
+      if (opsId) {
+        const ops = await db.query('SELECT name FROM users WHERE id = ?', [opsId]);
+        if (ops.length > 0) {
+          await db.query(
+            'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+            ['Operations Lead Assigned', `Operations Lead ${ops[0].name} has been assigned to "${updatedEventName}".`, 'Assignment Confirmation']
+          );
+        }
+      }
+    }
+    if (finId !== undefined && finId !== currentEvent.finance_team_id) {
+      if (finId) {
+        const fins = await db.query('SELECT name FROM users WHERE id = ?', [finId]);
+        if (fins.length > 0) {
+          await db.query(
+            'INSERT INTO notifications (title, message, type) VALUES (?, ?, ?)',
+            ['Finance Lead Assigned', `Finance Lead ${fins[0].name} has been assigned to "${updatedEventName}".`, 'Assignment Confirmation']
+          );
+        }
       }
     }
 
@@ -410,8 +456,11 @@ exports.updateEvent = async (req, res) => {
 
     return res.status(200).json({ message: 'Event updated successfully' });
   } catch (err) {
-    console.error('Update event error:', err);
-    return res.status(500).json({ message: 'Error updating event' });
+    console.error('[EVENT CONTROLLER ERROR] Update event error:', err);
+    return res.status(500).json({ 
+      message: 'Error updating event or confirming booking', 
+      error: err.message 
+    });
   }
 };
 
@@ -567,7 +616,10 @@ exports.createPublicBooking = async (req, res) => {
       eventId: newEventId
     });
   } catch (err) {
-    console.error('Create public booking error:', err);
-    return res.status(500).json({ message: 'Error submitting booking' });
+    console.error('[EVENT CONTROLLER ERROR] Create public booking error:', err);
+    return res.status(500).json({ 
+      message: 'Error submitting booking request. Please verify fields or database state.', 
+      error: err.message 
+    });
   }
 };

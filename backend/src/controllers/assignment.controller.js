@@ -193,7 +193,7 @@ exports.createAssignment = async (req, res) => {
         message: 'Conflict detected: Resource is already assigned to another event on this day.',
         conflict: {
           eventName: conflict.event_name,
-          date: conflict.event_date
+          date: conflict.eventDate
         }
       });
     }
@@ -352,14 +352,14 @@ exports.getConflicts = async (req, res) => {
     // Query list of all assignments with their events.
     const [vendorAssignments, staffAssignments] = await Promise.all([
       db.query(`
-        SELECT a.id, a.event_id, a.resource_id, e.name as event_name, e.event_date, v.name as resource_name, v.phone as resource_phone
+        SELECT a.id, a.event_id, a.resource_id, e.name as event_name, e.eventDate, v.name as resource_name, v.phone as resource_phone
         FROM assignments a
         JOIN events e ON a.event_id = e.id
         JOIN vendors v ON a.resource_id = v.id
         WHERE a.resource_type = 'vendor'
       `),
       db.query(`
-        SELECT a.id, a.event_id, a.resource_id, e.name as event_name, e.event_date, s.name as resource_name, s.phone as resource_phone
+        SELECT a.id, a.event_id, a.resource_id, e.name as event_name, e.eventDate, s.name as resource_name, s.phone as resource_phone
         FROM assignments a
         JOIN events e ON a.event_id = e.id
         JOIN staff s ON a.resource_id = s.id
@@ -373,7 +373,7 @@ exports.getConflicts = async (req, res) => {
       const groupedByDate = {}; // date -> { resourceId -> [assignments] }
       
       assignments.forEach(as => {
-        const date = as.event_date;
+        const date = as.eventDate;
         const resId = as.resource_id;
         
         if (!groupedByDate[date]) groupedByDate[date] = {};
@@ -424,7 +424,7 @@ exports.checkAvailability = async (req, res) => {
       db.query('SELECT id, name, category, rating, availability_status FROM vendors'),
       db.query('SELECT id, name, role, experience_years, availability_status FROM staff'),
       db.query(
-        'SELECT a.*, e.event_date, e.id as event_id, e.name as event_name FROM assignments a JOIN events e ON a.event_id = e.id WHERE e.event_date = ?',
+        'SELECT a.*, e.eventDate, e.id as event_id, e.name as event_name FROM assignments a JOIN events e ON a.event_id = e.id WHERE e.eventDate = ?',
         [date]
       ),
       db.query('SELECT * FROM vendor_availability WHERE date = ?', [date]),

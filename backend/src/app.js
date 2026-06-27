@@ -34,7 +34,14 @@ app.get('/health', (req, res) => {
 });
 
 // Database initialization
-db.connectDb();
+db.connectDb()
+  .then(() => {
+    console.log('✅ Database initialized and verified.');
+  })
+  .catch((err) => {
+    console.error('❌ CRITICAL: Database initialization failed:', err.message);
+    process.exit(1);
+  });
 
 // Centralized Error Handler
 // eslint-disable-next-line no-unused-vars
