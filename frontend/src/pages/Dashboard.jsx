@@ -221,7 +221,7 @@ const Dashboard = () => {
 
   // Process Booking Mutation (Admin Review & Confirmation dispatch)
   const processBookingMutation = useMutation({
-    mutationFn: async ({ eventId, status, coordinator_id, operations_lead_id, finance_team_id }) => {
+    mutationFn: async ({ eventId, status, coordinator_id, operations_lead_id, finance_team_id, eventName }) => {
       await axios.put(`/events/${eventId}`, {
         status,
         coordinator_id,
@@ -232,7 +232,7 @@ const Dashboard = () => {
       // Insert confirmation notification
       await axios.post('/notifications', {
         title: 'Booking Confirmed',
-        message: `🎉 Booking request "${selectedBooking?.name || 'Event'}" has been confirmed. Client notified.`,
+        message: `🎉 Booking request "${eventName || 'Event'}" has been confirmed. Client notified.`,
         type: 'Assignment Confirmation'
       });
     },
@@ -1652,7 +1652,8 @@ const Dashboard = () => {
                       operations_lead_id: reviewForm.operations_lead_id,
                       finance_team_id: reviewForm.finance_team_id,
                       isReviewModal: true,
-                      booking: selectedBooking
+                      booking: selectedBooking,
+                      eventName: selectedBooking.name
                     });
                   }}
                   className="px-5 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer text-xs font-bold disabled:opacity-50"
@@ -1690,7 +1691,6 @@ const Dashboard = () => {
                   onClick={() => {
                     const booking = confirmingEventBooking;
                     setConfirmingEventBooking(null);
-                    setSelectedBooking(booking);
                     processBookingMutation.mutate({
                       eventId: booking.id,
                       status: 'Confirmed',
@@ -1698,7 +1698,8 @@ const Dashboard = () => {
                       operations_lead_id: booking.operations_lead_id || '',
                       finance_team_id: booking.finance_team_id || '',
                       isCardConfirm: true,
-                      booking: booking
+                      booking: booking,
+                      eventName: booking.name
                     });
                   }}
                   className="px-5 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl text-xs shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
