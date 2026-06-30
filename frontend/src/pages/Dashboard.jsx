@@ -106,6 +106,7 @@ const Dashboard = () => {
   const [reportingIncident, setReportingIncident] = useState(false);
 
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [confirmingEventBooking, setConfirmingEventBooking] = useState(null);
   
   const openWhatsAppForClient = (phone, message) => {
     if (!phone) {
@@ -236,8 +237,12 @@ const Dashboard = () => {
       });
     },
     onSuccess: (data, variables) => {
-      const booking = selectedBooking;
-      if (booking && (variables.status === 'Confirmed' || variables.status === 'Assigned')) {
+      const booking = variables.booking || selectedBooking;
+      if (booking && variables.isCardConfirm) {
+        const formattedDate = formatToGBSafe(booking.event_date);
+        const msg = `Hello ${booking.client_name},\n\nYour event booking has been confirmed.\n\nBooking ID: SLV-EV-${booking.id}\nDate: ${formattedDate}\nVenue: ${booking.venue}\n\nThank you for choosing SLV Events.`;
+        openWhatsAppForClient(booking.client_phone, msg);
+      } else if (booking && variables.isReviewModal && variables.coordinator_id && variables.operations_lead_id && variables.finance_team_id) {
         const formattedDate = formatToGBSafe(booking.event_date);
         const msg = `Hello ${booking.client_name},\n\nYour event booking has been confirmed.\n\nBooking ID: SLV-EV-${booking.id}\nDate: ${formattedDate}\nVenue: ${booking.venue}\n\nThank you for choosing SLV Events.`;
         
@@ -246,7 +251,11 @@ const Dashboard = () => {
           addToast('Booking confirmed. WhatsApp opened successfully.');
         }
       } else {
-        addToast(`Booking updated successfully!`);
+        if (variables.status === 'Confirmed') {
+          addToast('Booking confirmed successfully!');
+        } else {
+          addToast(`Booking updated successfully!`);
+        }
       }
 
       setSelectedBooking(null);
@@ -289,13 +298,7 @@ const Dashboard = () => {
   });
 
   const handleConfirmBooking = (booking) => {
-    if (window.confirm(`Are you sure you want to confirm the booking request for "${booking.name}"?`)) {
-      setSelectedBooking(booking);
-      processBookingMutation.mutate({
-        eventId: booking.id,
-        status: 'Confirmed'
-      });
-    }
+    setConfirmingEventBooking(booking);
   };
 
   const handleQuickRejectBooking = (booking) => {
@@ -1647,7 +1650,9 @@ const Dashboard = () => {
                       status: reviewForm.status,
                       coordinator_id: reviewForm.coordinator_id,
                       operations_lead_id: reviewForm.operations_lead_id,
-                      finance_team_id: reviewForm.finance_team_id
+                      finance_team_id: reviewForm.finance_team_id,
+                      isReviewModal: true,
+                      booking: selectedBooking
                     });
                   }}
                   className="px-5 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer text-xs font-bold disabled:opacity-50"
@@ -1656,6 +1661,51 @@ const Dashboard = () => {
                 </button>
               </div>
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {confirmingEventBooking && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-205 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4 text-slate-800 dark:text-slate-200"
+            >
+              <h3 className="text-base font-bold">Confirm Event</h3>
+              <p className="text-xs text-slate-605 dark:text-slate-400 font-medium leading-relaxed">
+                Are you sure you want to confirm this event and send a confirmation message to the client?
+              </p>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setConfirmingEventBooking(null)}
+                  className="px-4 py-2 border border-slate-205 hover:bg-slate-100 dark:border-white/10 dark:hover:bg-white/[0.04] text-slate-655 dark:text-slate-350 rounded-xl transition-all cursor-pointer text-xs font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const booking = confirmingEventBooking;
+                    setConfirmingEventBooking(null);
+                    setSelectedBooking(booking);
+                    processBookingMutation.mutate({
+                      eventId: booking.id,
+                      status: 'Confirmed',
+                      coordinator_id: booking.coordinator_id || '',
+                      operations_lead_id: booking.operations_lead_id || '',
+                      finance_team_id: booking.finance_team_id || '',
+                      isCardConfirm: true,
+                      booking: booking
+                    });
+                  }}
+                  className="px-5 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl text-xs shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  Confirm
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
